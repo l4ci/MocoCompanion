@@ -1,0 +1,42 @@
+
+# ── macOS ──
+.DS_Store
+Thumbs.db
+
+# ── Editor ──
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# ── Xcode ──
+DerivedData/
+*.xcuserdata/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+.build/
+
+# ── Secrets ──
+.env
+.env.*
+!.env.example
+
+# ── GSD ──
+.gsd
+
+# ── bg-shell ──
+.bg-shell/
+
+# ── Build artifacts ──
+*.log
+coverage/
+.cache/
+tmp/
+appicon.png

@@ -1,0 +1,72 @@
+name: MocoCompanion
+options:
+  bundleIdPrefix: com.mococompanion
+  deploymentTarget:
+    macOS: "26.0"
+  xcodeVersion: "26.4"
+  generateEmptyDirectories: false
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+      ONLY_ACTIVE_ARCH: true
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  MocoCompanion:
+    type: application
+    platform: macOS
+    sources:
+      - path: MocoCompanion
+        excludes:
+          - "**/.DS_Store"
+    resources:
+      - path: MocoCompanion/Localizable.xcstrings
+      - path: MocoCompanion/Info.plist
+        buildPhase: none
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mococompanion.app
+        PRODUCT_NAME: "$(TARGET_NAME)"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_FILE: MocoCompanion/Info.plist
+        INFOPLIST_KEY_LSUIElement: true
+        INFOPLIST_KEY_NSMainNibFile: ""
+        CODE_SIGN_STYLE: Automatic
+        COMBINE_HIDPI_IMAGES: true
+        SWIFT_EMIT_LOC_STRINGS: true
+        ENABLE_PREVIEWS: true
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+
+  MocoCompanionTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+      - path: MocoCompanion/Utilities/DateUtilities.swift
+      - path: MocoCompanion/Utilities/GreetingHelper.swift
+      - path: MocoCompanion/Utilities/Logger+App.swift
+      - path: MocoCompanion/Search/FuzzyMatcher.swift
+      - path: MocoCompanion/Search/SearchEntry.swift
+      - path: MocoCompanion/Search/ProjectTaskRef.swift
+      - path: MocoCompanion/Search/TagExtractor.swift
+      - path: MocoCompanion/API/Models/MocoProjectModels.swift
+      - path: MocoCompanion/API/Models/MocoActivityModels.swift
+      - path: MocoCompanion/State/TimerState.swift
+      - path: MocoCompanion/Panel/MenuBarDisplayState.swift
+      - path: MocoCompanion/Localizable.xcstrings
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mococompanion.tests
+        GENERATE_INFOPLIST_FILE: true
+        SWIFT_VERSION: "6.0"

@@ -1,0 +1,62 @@
+import SwiftUI
+
+/// Reusable duration display for an activity.
+/// Shows live-updating elapsed time for running activities,
+/// static compact hours for stopped ones.
+struct ActivityDurationText: View {
+    let activity: MocoActivity
+    let isSelected: Bool
+
+    var font: Font? = nil
+    var runningColor: Color = .green
+    var stoppedOpacity: Double = 0.5
+
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+
+    /// Resolved font — uses the explicit font if provided, otherwise scales with the entry boost.
+    private var resolvedFont: Font {
+        font ?? .system(size: 15 + fontBoost, weight: .medium, design: .monospaced)
+    }
+
+    var body: some View {
+        if activity.isTimerRunning,
+           let startedAt = activity.timerStartedAt,
+           let startDate = DateUtilities.parseISO8601(startedAt) {
+            let baseSecs = Double(activity.seconds)
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
+                Text(DateUtilities.formatElapsedCompact(liveSecs))
+                    .font(resolvedFont)
+                    .foregroundStyle(isSelected ? .white : runningColor)
+                    .accessibilityLabel("Timer running: \(DateUtilities.formatElapsedCompact(liveSecs))")
+            }
+        } else {
+            Text(DateUtilities.formatHoursCompact(activity.hours))
+                .font(resolvedFont)
+                .foregroundStyle(isSelected ? .white.opacity(0.7) : .primary.opacity(stoppedOpacity))
+                .accessibilityLabel("\(DateUtilities.formatHoursCompact(activity.hours)) tracked")
+        }
+    }
+}
+
+/// Large padded elapsed time display (HH:MM:SS) for the status popover timer section.
+struct ElapsedTimeText: View {
+    let activity: MocoActivity?
+
+    var body: some View {
+        if let activity,
+           let startedAt = activity.timerStartedAt,
+           let startDate = DateUtilities.parseISO8601(startedAt) {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let elapsed = context.date.timeIntervalSince(startDate)
+                Text(DateUtilities.formatElapsedPadded(elapsed))
+                    .font(.system(size: 18, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.primary)
+            }
+        } else {
+            Text("--:--:--")
+                .font(.system(size: 18, weight: .medium, design: .monospaced))
+                .foregroundStyle(.tertiary)
+        }
+    }
+}

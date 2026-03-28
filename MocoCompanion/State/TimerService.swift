@@ -1,0 +1,275 @@
+import Foundation
+import os
+
+/// Owns the timer lifecycle: start, pause, resume, stop, continue, toggle.
+/// Pure timer state machine — activity CRUD is delegated to ActivityService.
+@Observable
+@MainActor
+final class TimerService {
+    private let logger = Logger(category: "TimerService")
+
+    // MARK: - Observable State
+
+    private(set) var timerState: TimerState = .idle
+    private(set) var currentActivity: MocoActivity?
+    var lastError: MocoError?
+
+    /// The ID of the currently running or paused activity, or nil if idle.
+    var activeActivityId: Int? {
+        switch timerState {
+        case .idle: nil
+        case .running(let id, _): id
+        case .paused(let id, _): id
+        }
+    }
+
+    /// Alias for backward compatibility — TimerState is now a standalone type.
+    typealias TimerState = MocoCompanion.TimerState
+
+    // MARK: - Dependencies
+
+    private let clientFactory: () -> (any TimerAPI)?
+    private let sideEffects: TimerSideEffects
+    private let userIdProvider: () -> Int?
+
+    /// Called by coordinator when an activity is updated (pause/resume/continue).
+    var onActivityChanged: ((MocoActivity) -> Void)?
+    /// Called by coordinator after sync completes to refresh today stats.
+    /// Receives the activities already fetched during sync to avoid a duplicate API call.
+    var onSyncCompleted: (([MocoActivity]?) async -> Void)?
+
+    init(
+        clientFactory: @escaping () -> (any TimerAPI)?,
+        sideEffects: TimerSideEffects,
+        userIdProvider: @escaping () -> Int? = { nil }
+    ) {
+        self.clientFactory = clientFactory
+        self.sideEffects = sideEffects
+        self.userIdProvider = userIdProvider
+    }
+
+    // MARK: - Public API
+
+    /// Start a new timer for a project+task. Stops any running timer first.
+    func startTimer(projectId: Int, taskId: Int, description: String) async -> Result<MocoActivity, MocoError> {
+        guard let client = clientFactory() else {
+            let error = MocoError.invalidConfiguration
+            lastError = error
+            logger.warning("Cannot start timer — API not configured")
+            return .failure(error)
+        }
+
+        let tag = TagExtractor.extract(from: description)
+        logger.info("startTimer: projectId=\(projectId) taskId=\(taskId) tag=\(tag ?? "nil")")
+
+        sideEffects.suppressStopNotification()
+        await stopRunningTimer(client: client)
+
+        let today = DateUtilities.todayString()
+
+        do {
+            let apiDescription = TagExtractor.stripTags(from: description)
+            let created = try await client.createActivity(
+                date: today, projectId: projectId, taskId: taskId,
+                description: apiDescription, seconds: 0, tag: tag
+            )
+            logger.info("Created activity id=\(created.id) project=\(created.project.name)")
+
+            var activity = created
+            if !created.isTimerRunning {
+                activity = try await client.startTimer(activityId: created.id)
+                logger.info("Timer started via explicit startTimer call")
+            } else {
+                logger.info("Timer already running after createActivity — skipping startTimer")
+            }
+
+            currentActivity = activity
+            timerState = .running(activityId: activity.id, projectName: activity.project.name)
+            lastError = nil
+
+            sideEffects.onTimerStarted(projectId: projectId, taskId: taskId, description: description, projectName: activity.project.name)
+
+            return .success(activity)
+        } catch {
+            handleError(error, label: "startTimer")
+            await sync()
+            return .failure(MocoError.from(error))
+        }
+    }
+
+    /// Context-aware toggle: running → pause, paused → resume, idle entry → continue.
+    func toggleTimer(for activityId: Int, projectName: String) async {
+        switch timerState {
+        case .running(let runningId, _) where runningId == activityId:
+            await pauseTimer()
+        case .paused(let pausedId, _) where pausedId == activityId:
+            await resumeTimer()
+        default:
+            await continueTimer(activityId: activityId, projectName: projectName)
+        }
+    }
+
+    /// Pause the currently running timer.
+    func pauseTimer() async {
+        guard let client = clientFactory() else { return }
+        guard case .running(let activityId, let projectName) = timerState else {
+            logger.info("pauseTimer: no running timer to pause")
+            return
+        }
+
+        do {
+            let stopped = try await client.stopTimer(activityId: activityId)
+            timerState = .paused(activityId: activityId, projectName: projectName)
+            logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
+            sideEffects.onTimerPaused(projectName: projectName)
+            onActivityChanged?(stopped)
+        } catch {
+            handleError(error, label: "pauseTimer")
+        }
+    }
+
+    /// Resume the currently paused timer.
+    func resumeTimer() async {
+        guard let client = clientFactory() else { return }
+        guard case .paused(let activityId, let projectName) = timerState else {
+            logger.info("resumeTimer: no paused timer to resume")
+            return
+        }
+
+        do {
+            let started = try await client.startTimer(activityId: activityId)
+            currentActivity = started
+            timerState = .running(activityId: activityId, projectName: projectName)
+            logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
+            sideEffects.onTimerResumed(projectName: projectName)
+            onActivityChanged?(started)
+        } catch {
+            handleError(error, label: "resumeTimer")
+        }
+    }
+
+    /// Toggle the timer based on current state (used for empty-submit).
+    func handleEmptySubmit() async {
+        switch timerState {
+        case .running:
+            await pauseTimer()
+        case .paused:
+            await resumeTimer()
+        case .idle:
+            logger.info("handleEmptySubmit: no timer to toggle")
+        }
+    }
+
+    /// Stop the currently running timer completely.
+    func stopTimer() async {
+        guard let client = clientFactory() else { return }
+        guard case .running(let activityId, let projectName) = timerState else { return }
+
+        do {
+            _ = try await client.stopTimer(activityId: activityId)
+            logger.info("Timer stopped: activityId=\(activityId) project=\(projectName)")
+            sideEffects.onTimerStopped()
+        } catch {
+            handleError(error, label: "stopTimer")
+        }
+
+        clearTimerState()
+    }
+
+    /// Sync timer state from the server.
+    func sync() async {
+        let activities = await syncCurrentTimer()
+        await onSyncCompleted?(activities)
+    }
+
+    /// Whether an activity is the currently paused timer.
+    func isPausedActivity(_ activity: MocoActivity) -> Bool {
+        if case .paused(let id, _) = timerState { return activity.id == id }
+        return false
+    }
+
+    // MARK: - Private
+
+    private func clearTimerState() {
+        currentActivity = nil
+        timerState = .idle
+    }
+
+    private func clearTimerStateIfTracking(_ activityId: Int) {
+        switch timerState {
+        case .running(let id, _) where id == activityId: clearTimerState()
+        case .paused(let id, _) where id == activityId: clearTimerState()
+        default: break
+        }
+    }
+
+    private func continueTimer(activityId: Int, projectName: String) async {
+        guard let client = clientFactory() else { return }
+
+        sideEffects.suppressStopNotification()
+        await stopRunningTimer(client: client)
+
+        do {
+            let started = try await client.startTimer(activityId: activityId)
+            currentActivity = started
+            timerState = .running(activityId: started.id, projectName: projectName)
+            lastError = nil
+            logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
+            sideEffects.onTimerContinued(projectId: started.project.id, taskId: started.task.id, projectName: projectName)
+            onActivityChanged?(started)
+        } catch {
+            handleError(error, label: "continueTimer")
+            await syncCurrentTimer()
+        }
+    }
+
+    private func stopRunningTimer(client: any TimerAPI) async {
+        if case .running = timerState {
+            await stopTimer()
+            return
+        }
+
+        let today = DateUtilities.todayString()
+        do {
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userIdProvider())
+            if let running = activities.first(where: { $0.isTimerRunning }) {
+                logger.info("Found externally running timer: activityId=\(running.id) — stopping it")
+                _ = try await client.stopTimer(activityId: running.id)
+                sideEffects.onExternalTimerStopped()
+            }
+        } catch {
+            logger.error("stopRunningTimer server check failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func syncCurrentTimer() async -> [MocoActivity]? {
+        guard let client = clientFactory() else { return nil }
+        let today = DateUtilities.todayString()
+
+        do {
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userIdProvider())
+            if let running = activities.first(where: { $0.isTimerRunning }) {
+                if case .running(let currentId, _) = timerState, currentId == running.id { return activities }
+                currentActivity = running
+                timerState = .running(activityId: running.id, projectName: running.project.name)
+                logger.info("Synced running timer: activityId=\(running.id) project=\(running.project.name)")
+            } else if case .running = timerState {
+                clearTimerState()
+                logger.info("Timer stopped externally — cleared local state")
+            }
+            lastError = nil
+            return activities
+        } catch {
+            logger.error("syncCurrentTimer failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func handleError(_ error: any Error, label: String) {
+        let mocoError = MocoError.from(error)
+        lastError = mocoError
+        sideEffects.onError(mocoError)
+        logger.error("\(label) failed: \(error.localizedDescription)")
+        Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "TimerService") }
+    }
+}
