@@ -3,7 +3,7 @@ import SwiftUI
 /// Timer status hint row shown when search is empty and a timer is active.
 /// Shows the current project/task with elapsed time and pause/resume hint.
 struct TimerHintSection: View {
-    let timerState: TimerService.TimerState
+    let timerState: TimerState
     let currentActivity: MocoActivity?
     @Binding var selectedIndex: Int
 
@@ -16,14 +16,14 @@ struct TimerHintSection: View {
             timerHintRow(
                 iconColor: .green,
                 projectName: projectName,
-                actionLabel: "pause",
+                hint: String(localized: "hint.enterPause"),
                 taskName: currentActivity?.task.name
             )
         case .paused(_, let projectName):
             timerHintRow(
                 iconColor: .orange,
                 projectName: projectName,
-                actionLabel: "resume",
+                hint: String(localized: "hint.enterResume"),
                 taskName: currentActivity?.task.name
             )
         case .idle:
@@ -31,7 +31,7 @@ struct TimerHintSection: View {
         }
     }
 
-    private func timerHintRow(iconColor: Color, projectName: String, actionLabel: String, taskName: String?) -> some View {
+    private func timerHintRow(iconColor: Color, projectName: String, hint: String, taskName: String?) -> some View {
         let isFocused = selectedIndex == -1
 
         return VStack(spacing: 0) {
@@ -46,14 +46,14 @@ struct TimerHintSection: View {
                 isHovered: false,
                 isRunning: iconColor == .green,
                 isPaused: iconColor == .orange,
-                hints: ["⏎ to \(actionLabel)"]
+                hints: [hint]
             ) {
                 elapsedTimeBadge(isFocused: isFocused)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(projectName), \(actionLabel). \(taskName ?? "")")
+            .accessibilityLabel("\(projectName), \(hint). \(taskName ?? "")")
         }
     }
 
@@ -67,12 +67,12 @@ struct TimerHintSection: View {
                 let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
                 Text(DateUtilities.formatElapsedCompact(liveSecs))
                     .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
-                    .foregroundStyle(isFocused ? .white.opacity(0.5) : .green)
+                    .foregroundStyle(isFocused ? theme.selectedTextTertiary : .green)
             }
         } else if let activity = currentActivity {
             Text(DateUtilities.formatHoursCompact(Double(activity.seconds) / 3600.0))
                 .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
-                .foregroundStyle(isFocused ? .white.opacity(0.5) : .secondary)
+                .foregroundStyle(isFocused ? theme.selectedTextTertiary : .secondary)
         }
     }
 }

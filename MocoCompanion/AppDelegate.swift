@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var statusItemController: StatusItemController?
     private var hotKey: HotKey?
     private var settingsWindow: NSWindow?
+    private var setupWizardWindow: NSWindow?
+    private let updateChecker = UpdateChecker()
 
     // Background tasks
     private var backgroundPollingTask: Task<Void, Never>?
@@ -40,6 +42,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             await AppLogger.shared.app("Application launched", level: .info, context: "Lifecycle")
         }
 
+        // LSUIElement apps have no dock icon, so macOS won't derive the
+        // notification icon from the bundle automatically. Set it explicitly
+        // so Notification Center shows our app icon on every banner.
+        if let iconImage = NSImage(named: "AppIcon") {
+            NSApp.applicationIconImage = iconImage
+        }
+
         panelController.appState = appState
         updateHotKey()
         NotificationDispatcher.requestAuthorization()
@@ -56,16 +65,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         sic.setup()
         statusItemController = sic
 
-        // First launch: auto-open settings if not configured
+        // First launch: show setup wizard if not configured
         if !appState.settings.isConfigured {
-            Self.logger.info("First launch detected — opening settings for onboarding")
-            showSettings()
+            Self.logger.info("First launch detected — showing setup wizard")
+            showSetupWizard()
         }
 
         Task {
             await appState.fetchSession()
             await appState.fetchProjects()
             await timerService.sync()
+        }
+
+        // Delayed update check — 5 seconds after launch to avoid blocking startup
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            if let release = await updateChecker.checkForUpdate() {
+                Self.logger.info("Update available: \(release.version)")
+                let content = UNMutableNotificationContent()
+                content.title = String(localized: "update.available")
+                content.body = String(localized: "update.body \(release.version)")
+                content.sound = .default
+                content.userInfo = ["updateURL": release.url.absoluteString]
+
+                let request = UNNotificationRequest(
+                    identifier: "update-available",
+                    content: content,
+                    trigger: nil
+                )
+                try? await UNUserNotificationCenter.current().add(request)
+            }
         }
 
         // Background managers — all monitors registered in AppState.monitorEngine
@@ -83,7 +112,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
 
         timerSyncTask = repeatingTask(every: .seconds(60)) { [weak self] in
-            await self?.timerService.sync()
+            guard let self else { return }
+            // R013: only sync when a timer is active — avoids 1 API call/min at idle
+            guard case .running = await self.timerService.timerState else { return }
+            await self.timerService.sync()
         }
     }
 
@@ -101,6 +133,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
         [.banner, .sound]
+    }
+
+    /// Handle notification click — opens update URL if present.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let userInfo = response.notification.request.content.userInfo
+        if let urlString = userInfo["updateURL"] as? String,
+           let url = URL(string: urlString) {
+            await MainActor.run {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    // MARK: - Setup Wizard
+
+    private func showSetupWizard() {
+        if let existing = setupWizardWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let wizardView = SetupWizardView(
+            settings: appState.settings,
+            onComplete: { [weak self] in
+                guard let self else { return }
+                self.setupWizardWindow?.close()
+                self.setupWizardWindow = nil
+                Self.logger.info("Setup wizard completed — fetching session and projects")
+                Task {
+                    await self.appState.fetchSession()
+                    await self.appState.fetchProjects()
+                    await self.timerService.sync()
+                    // Open the panel so the user sees the app immediately after setup
+                    self.panelController.show()
+                }
+            }
+        )
+
+        let hostingView = NSHostingController(rootView: wizardView)
+
+        let window = NSWindow(contentViewController: hostingView)
+        window.title = String(localized: "setup.welcome")
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 450, height: 440))
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        setupWizardWindow = window
+        Self.logger.info("Setup wizard window opened")
     }
 
     // MARK: - Settings

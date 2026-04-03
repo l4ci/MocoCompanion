@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The search bar at the top of the quick-entry popup.
@@ -11,7 +12,7 @@ struct SearchFieldView: View {
     let hasActiveTimer: Bool
     let hasMinSearchChars: Bool
     let displayItemCount: Int
-    var avatarUrl: String? = nil
+    var avatarImage: NSImage? = nil
     var userFirstname: String? = nil
 
     var onSubmit: () -> Void
@@ -27,15 +28,13 @@ struct SearchFieldView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // User avatar or fallback initials
-            if let urlStr = avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    userInitials
-                }
-                .frame(width: avatarSize, height: avatarSize)
-                .clipShape(Circle())
+            // User avatar (cached) or fallback
+            if let nsImage = avatarImage {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: avatarSize, height: avatarSize)
+                    .clipShape(Circle())
             } else {
                 userInitials
             }
@@ -44,8 +43,8 @@ struct SearchFieldView: View {
                 .textFieldStyle(.plain)
                 .font(.system(size: 24 + fontBoost, weight: .regular))
                 .focused($focusedField, equals: .search)
-                .accessibilityLabel("Search projects and tasks")
-                .accessibilityHint("Type to filter, arrow keys to navigate, Enter to select")
+                .accessibilityLabel(String(localized: "a11y.searchField"))
+                .accessibilityHint(String(localized: "a11y.searchHint"))
                 .onSubmit { onSubmit() }
                 .onChange(of: searchText) {
                     selectedIndex = (isSearchEmpty && hasActiveTimer) ? -1 : 0
@@ -83,7 +82,7 @@ struct SearchFieldView: View {
                         .font(.system(size: 18 + fontBoost))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
+                .accessibilityLabel(String(localized: "a11y.clearSearch"))
             }
 
             PanelTabSwitcher(activeTab: $activeTab)
@@ -93,11 +92,23 @@ struct SearchFieldView: View {
     }
 
     private var userInitials: some View {
-        let initial = String((userFirstname ?? "M").prefix(1))
-        return Text(initial)
-            .font(.system(size: 16 + fontBoost, weight: .heavy, design: .rounded))
-            .foregroundStyle(.white)
-            .frame(width: avatarSize, height: avatarSize)
-            .background(Circle().fill(Color.accentColor.gradient))
+        Group {
+            if let name = userFirstname, !name.isEmpty {
+                // Logged in but no avatar — show initials
+                let initial = String(name.prefix(1))
+                Text(initial)
+                    .font(.system(size: 16 + fontBoost, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: avatarSize, height: avatarSize)
+                    .background(Circle().fill(Color.accentColor.gradient))
+            } else {
+                // Not logged in — show app icon
+                Image("AppIconImage")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: avatarSize, height: avatarSize)
+                    .clipShape(Circle())
+            }
+        }
     }
 }

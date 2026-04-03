@@ -18,7 +18,13 @@ struct MocoClient: MocoClientProtocol, Sendable {
     private static let encoder = JSONEncoder()
 
     var baseURL: URL? {
-        URL(string: "https://\(subdomain).mocoapp.com/api/v1")
+        guard Self.isValidSubdomain(subdomain) else { return nil }
+        return URL(string: "https://\(subdomain).mocoapp.com/api/v1")
+    }
+
+    /// Validate that a subdomain contains only allowed characters (a-z, 0-9, hyphen).
+    static func isValidSubdomain(_ value: String) -> Bool {
+        !value.isEmpty && value.range(of: #"^[a-zA-Z0-9-]+$"#, options: .regularExpression) != nil
     }
 
     init(subdomain: String, apiKey: String, session: URLSession = .shared, rateGate: APIRateGate? = nil) {
@@ -268,6 +274,14 @@ struct MocoClient: MocoClientProtocol, Sendable {
             await AppLogger.shared.apiRequest(method: method, url: url, statusCode: 200, duration: 0, error: "Decoding: \(detail)")
             throw MocoError.decodingError(detail)
         }
+    }
+}
+
+// MARK: - Debug Safety
+
+extension MocoClient: CustomDebugStringConvertible {
+    var debugDescription: String {
+        "MocoClient(subdomain: \(subdomain), apiKey: [REDACTED])"
     }
 }
 

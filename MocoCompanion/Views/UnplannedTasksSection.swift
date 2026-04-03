@@ -63,18 +63,18 @@ struct PlannedTaskRow: View {
         HStack(spacing: 10) {
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: captionSize))
-                .foregroundStyle(isSelected ? .white.opacity(0.7) : .blue.opacity(0.7))
+                .foregroundStyle(isSelected ? theme.selectedTextSecondary : theme.plannedIndicator)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
                     if !task.customerName.isEmpty {
                         Text(task.customerName)
-                            .foregroundStyle(isSelected ? .white.opacity(0.7) : theme.textSecondary)
+                            .foregroundStyle(isSelected ? theme.selectedTextSecondary : theme.textSecondary)
                         Text(" › ")
-                            .foregroundStyle(isSelected ? .white.opacity(0.4) : theme.textTertiary)
+                            .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     }
                     Text(task.projectName)
-                        .foregroundStyle(isSelected ? .white : theme.textPrimary)
+                        .foregroundStyle(isSelected ? theme.selectedTextPrimary : theme.textPrimary)
                 }
                 .font(.system(size: bodySize))
                 .lineLimit(1)
@@ -82,7 +82,7 @@ struct PlannedTaskRow: View {
                 Text(task.taskName)
                     .font(.system(size: bodySize))
                     .fontWeight(.semibold)
-                    .foregroundStyle(isSelected ? .white.opacity(0.7) : theme.textSecondary)
+                    .foregroundStyle(isSelected ? theme.selectedTextSecondary : theme.textSecondary)
                     .lineLimit(1)
 
                 if isSelected || isHovered {
@@ -90,7 +90,7 @@ struct PlannedTaskRow: View {
                         Text(String(localized: "hint.enterStart"))
                             .font(.system(size: captionSize, weight: .medium))
                     }
-                    .foregroundStyle(isSelected ? .white.opacity(0.4) : theme.textTertiary)
+                    .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     .padding(.top, 2)
                 }
             }
@@ -99,18 +99,18 @@ struct PlannedTaskRow: View {
 
             Text(String(format: "%.0fh", task.plannedHours))
                 .font(.system(size: captionSize, weight: .medium, design: .monospaced))
-                .foregroundStyle(isSelected ? .white.opacity(0.5) : .blue.opacity(0.6))
+                .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.plannedIndicatorSubtle)
 
             Button {
                 startTimer()
             } label: {
                 Image(systemName: "play.circle.fill")
                     .font(.system(size: bodySize + 2))
-                    .foregroundStyle(isSelected ? .white : .green)
+                    .foregroundStyle(isSelected ? theme.selectedTextPrimary : .green)
             }
             .buttonStyle(.plain)
             .help("Start timer")
-            .accessibilityLabel("Start timer for \(task.projectName)")
+            .accessibilityLabel(String(localized: "a11y.startTimer \(task.projectName)"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

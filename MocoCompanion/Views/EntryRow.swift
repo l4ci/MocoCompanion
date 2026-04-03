@@ -50,24 +50,24 @@ struct EntryRow<Duration: View>: View {
             if shortcutIndex >= 0 && shortcutIndex < 6 {
                 Text("⌘\(shortcutIndex + 1)")
                     .font(.system(size: captionSize, weight: .medium, design: .rounded))
-                    .foregroundStyle(isSelected ? .white.opacity(0.65) : isHovered ? theme.textSecondary : theme.textTertiary)
+                    .foregroundStyle(isSelected ? theme.selectedTextSecondary : isHovered ? theme.textSecondary : theme.textTertiary)
                     .frame(width: 28, alignment: .center)
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .fill(isSelected ? Color.white.opacity(0.12) : theme.surface)
+                            .fill(isSelected ? theme.selectedSurface : theme.surface)
                     )
             }
 
             // Status dot
             if isRunning {
                 Circle()
-                    .fill(isSelected ? .white : .green)
+                    .fill(isSelected ? theme.selectedTextPrimary : .green)
                     .frame(width: 7, height: 7)
                     .shadow(color: (isSelected ? Color.clear : .green).opacity(0.4), radius: 3)
             } else if isPaused {
                 Circle()
-                    .fill(isSelected ? .white : .orange)
+                    .fill(isSelected ? theme.selectedTextPrimary : .orange)
                     .frame(width: 7, height: 7)
             }
 
@@ -77,24 +77,24 @@ struct EntryRow<Duration: View>: View {
                 HStack(spacing: 0) {
                     if let customerName, !customerName.isEmpty {
                         Text(customerName)
-                            .foregroundStyle(isSelected ? .white : theme.textPrimary)
+                            .foregroundStyle(isSelected ? theme.selectedTextPrimary : theme.textPrimary)
                         Text(" › ")
-                            .foregroundStyle(isSelected ? .white.opacity(0.5) : theme.textTertiary)
+                            .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     }
                     Text(projectName)
-                        .foregroundStyle(isSelected ? .white : theme.textPrimary)
+                        .foregroundStyle(isSelected ? theme.selectedTextPrimary : theme.textPrimary)
 
                     if let isFavorite, let onToggleFavorite {
                         Button {
                             onToggleFavorite()
                         } label: {
                             Image(systemName: isFavorite ? "star.fill" : "star")
-                                .foregroundStyle(isFavorite ? Color.yellow : (isHighlighted ? Color.white.opacity(0.35) : theme.textTertiary.opacity(0.4)))
+                                .foregroundStyle(isFavorite ? Color.yellow : (isHighlighted ? theme.selectedTextTertiary : theme.textTertiary.opacity(0.4)))
                                 .font(.system(size: captionSize))
                         }
                         .buttonStyle(.plain)
                         .padding(.leading, 4)
-                        .help(isFavorite ? "Remove from favorites" : "Add to favorites")
+                        .help(isFavorite ? String(localized: "a11y.removeFavorite") : String(localized: "a11y.addFavorite"))
                     }
                 }
                 .font(.system(size: bodySize))
@@ -105,7 +105,7 @@ struct EntryRow<Duration: View>: View {
                     Text(taskName)
                         .font(.system(size: bodySize))
                         .fontWeight(.semibold)
-                        .foregroundStyle(isSelected ? .white : theme.textPrimary)
+                        .foregroundStyle(isSelected ? theme.selectedTextPrimary : theme.textPrimary)
 
                     if let badgeColor = budgetBadge.color {
                         Circle()
@@ -117,7 +117,7 @@ struct EntryRow<Duration: View>: View {
                     if let desc = description, !desc.isEmpty {
                         Text("· \(desc)")
                             .font(.system(size: bodySize))
-                            .foregroundStyle(isSelected ? .white.opacity(0.55) : theme.textTertiary)
+                            .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     }
                 }
                 .lineLimit(1)
@@ -130,7 +130,7 @@ struct EntryRow<Duration: View>: View {
                                 .font(.system(size: captionSize, weight: .medium))
                         }
                     }
-                    .foregroundStyle(isSelected ? .white.opacity(0.4) : theme.textTertiary)
+                    .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     .padding(.top, 2)
                 }
             }
@@ -148,7 +148,26 @@ struct EntryRow<Duration: View>: View {
         )
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(customerName ?? "") \(projectName), \(taskName)")
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    /// Rich VoiceOver label: includes project/task, timer state, and description.
+    private var accessibilityDescription: String {
+        var parts: [String] = []
+        if let customerName, !customerName.isEmpty {
+            parts.append(customerName)
+        }
+        parts.append(projectName)
+        parts.append(taskName)
+        if isRunning {
+            parts.append(String(localized: "a11y.timerRunning"))
+        } else if isPaused {
+            parts.append(String(localized: "a11y.timerPaused"))
+        }
+        if let desc = description, !desc.isEmpty {
+            parts.append(desc)
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -204,9 +223,9 @@ extension BudgetBadge {
     var tooltip: String {
         switch self {
         case .none: return ""
-        case .projectWarning: return "Project budget over 50% consumed"
-        case .projectCritical: return "Project budget over 90% consumed"
-        case .taskCritical: return "Task has less than 1 hour remaining"
+        case .projectWarning: return String(localized: "budget.projectWarning.tooltip")
+        case .projectCritical: return String(localized: "budget.projectCritical.tooltip")
+        case .taskCritical: return String(localized: "budget.taskCritical.tooltip")
         }
     }
 }

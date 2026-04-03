@@ -31,6 +31,35 @@ final class IdleReminderMonitor: PollingMonitor {
         String(localized: "idle.msg9"),
         String(localized: "idle.msg10"),
         String(localized: "idle.msg11"),
+        String(localized: "idle.msg12"),
+        String(localized: "idle.msg13"),
+        String(localized: "idle.msg14"),
+        String(localized: "idle.msg15"),
+        String(localized: "idle.msg16"),
+        String(localized: "idle.msg17"),
+        String(localized: "idle.msg18"),
+        String(localized: "idle.msg19"),
+        String(localized: "idle.msg20"),
+        String(localized: "idle.msg21"),
+        String(localized: "idle.msg22"),
+        String(localized: "idle.msg23"),
+        String(localized: "idle.msg24"),
+        String(localized: "idle.msg25"),
+        String(localized: "idle.msg26"),
+        String(localized: "idle.msg27"),
+        String(localized: "idle.msg28"),
+        String(localized: "idle.msg29"),
+        String(localized: "idle.msg30"),
+        String(localized: "idle.msg31"),
+        String(localized: "idle.msg32"),
+        String(localized: "idle.msg33"),
+        String(localized: "idle.msg34"),
+        String(localized: "idle.msg35"),
+        String(localized: "idle.msg36"),
+        String(localized: "idle.msg37"),
+        String(localized: "idle.msg38"),
+        String(localized: "idle.msg39"),
+        String(localized: "idle.msg40"),
     ]
 
     init(timerService: TimerService, activityService: ActivityService, settings: SettingsStore) {
@@ -109,9 +138,10 @@ final class IdleReminderMonitor: PollingMonitor {
         guard hoursRunning >= 3 else { return nil }
 
         forgottenTimerFired = true
+        let hours = String(format: "%.0f", hoursRunning)
         return MonitorAlert(
             type: .forgottenTimer,
-            message: String(format: "Timer running for %.0fh on %@. Still working?", hoursRunning, projectName),
+            message: String(localized: "forgotten.message \(hours) \(projectName)"),
             dedupKey: "IdleReminder:forgotten",
             dedupStrategy: .once
         )
@@ -127,10 +157,21 @@ final class IdleReminderMonitor: PollingMonitor {
         guard schedule.workingDays.contains(weekday) else { return nil }
         guard hour == schedule.hoursEnd else { return nil }
 
+        let hours = activityService.todayTotalHours
+        let message: String
+        if hours >= 8 {
+            message = String(localized: "eod.fullDay \(String(format: "%.1f", hours))")
+        } else if hours >= 4 {
+            message = String(localized: "eod.solidDay \(String(format: "%.1f", hours))")
+        } else if hours > 0 {
+            message = String(localized: "eod.lightDay \(String(format: "%.1f", hours))")
+        } else {
+            message = String(localized: "eod.noEntries")
+        }
+
         return MonitorAlert(
             type: .endOfDaySummary,
-            message: String(format: "You tracked %.1fh today (%.0f%% billable)",
-                            activityService.todayTotalHours, activityService.todayBillablePercentage),
+            message: message,
             dedupKey: "IdleReminder:eod",
             dedupStrategy: .perDay
         )

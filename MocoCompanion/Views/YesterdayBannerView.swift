@@ -86,6 +86,6 @@ struct YesterdayBannerView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Dismiss yesterday warning")
+        .accessibilityLabel(String(localized: "a11y.dismissWarning"))
     }
 }

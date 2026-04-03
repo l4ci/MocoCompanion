@@ -30,18 +30,65 @@ struct PanelContentView: View {
         }
     }
 
-    @Environment(\.theme) private var theme
-
-    private var fontBoost: CGFloat { CGFloat(appState.settings.entryFontSizeBoost) }
-    private var avatarSize: CGFloat { 38 + fontBoost }
-
     /// Effective color scheme — respects the user's appearance setting, falling back to system.
     private var effectiveColorScheme: ColorScheme {
         Theme.colorScheme(from: appState.settings.appearance) ?? colorScheme
     }
 
     var body: some View {
+        PanelContentInner(
+            appState: appState,
+            favoritesManager: favoritesManager,
+            activeTab: $activeTab,
+            initialSearchText: $initialSearchText,
+            preSelectedEntry: $preSelectedEntry
+        )
+        .frame(width: appState.settings.panelWidth)
+        .frame(minHeight: 56)
+        .preferredColorScheme(Theme.colorScheme(from: appState.settings.appearance))
+        .withTheme(colorScheme: effectiveColorScheme)
+        .environment(\.entryFontSizeBoost, CGFloat(appState.settings.entryFontSizeBoost))
+    }
+}
+
+/// Inner content that reads the theme environment set by PanelContentView.
+/// Split out so `.background(theme.panelBackground)` resolves against the correct theme.
+private struct PanelContentInner: View {
+    @Bindable var appState: AppState
+    var favoritesManager: FavoritesManager
+    @Binding var activeTab: PanelContentView.PanelTab
+    @Binding var initialSearchText: String
+    @Binding var preSelectedEntry: SearchEntry?
+
+    @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// First-use hint visibility — driven by settings, dismissed on interaction.
+    @State private var showFirstUseHint: Bool
+
+    private var avatarSize: CGFloat { 38 + fontBoost }
+
+    init(appState: AppState, favoritesManager: FavoritesManager, activeTab: Binding<PanelContentView.PanelTab>, initialSearchText: Binding<String>, preSelectedEntry: Binding<SearchEntry?>) {
+        self.appState = appState
+        self.favoritesManager = favoritesManager
+        self._activeTab = activeTab
+        self._initialSearchText = initialSearchText
+        self._preSelectedEntry = preSelectedEntry
+        self._showFirstUseHint = State(initialValue: !appState.settings.hasSeenFirstUseHint)
+    }
+
+    var body: some View {
         VStack(spacing: 0) {
+            if !appState.networkMonitor.isOnline {
+                OfflineBannerView(queuedCount: appState.entryQueue.count)
+            }
+
+            if showFirstUseHint {
+                FirstUseHintView(isVisible: $showFirstUseHint)
+                theme.divider.frame(height: 1)
+            }
+
             switch activeTab {
             case .search:
                 QuickEntryView(
@@ -70,8 +117,6 @@ struct PanelContentView: View {
                 )
             }
         }
-        .frame(width: appState.settings.panelWidth)
-        .frame(minHeight: 56)
         .background(theme.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
@@ -82,29 +127,27 @@ struct PanelContentView: View {
         .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         .onKeyPress(phases: .down) { _ in
             NSCursor.setHiddenUntilMouseMoves(true)
+            dismissFirstUseHint()
             return .ignored
         }
-        .preferredColorScheme(Theme.colorScheme(from: appState.settings.appearance))
-        .withTheme(colorScheme: effectiveColorScheme)
-        .environment(\.entryFontSizeBoost, CGFloat(appState.settings.entryFontSizeBoost))
+    }
+
+    // MARK: - First-Use Hint
+
+    private func dismissFirstUseHint() {
+        guard showFirstUseHint else { return }
+        animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
+            showFirstUseHint = false
+        }
+        appState.settings.hasSeenFirstUseHint = true
     }
 
     // MARK: - Today Header (replaces search bar)
 
     private var todayHeader: some View {
         HStack(spacing: 12) {
-            // User avatar or fallback initials
-            if let profile = appState.currentUserProfile, let urlStr = profile.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    userInitials
-                }
-                .frame(width: avatarSize, height: avatarSize)
-                .clipShape(Circle())
-            } else {
-                userInitials
-            }
+            // User avatar (cached) or app icon fallback (not logged in)
+            userAvatarView
 
             VStack(alignment: .leading, spacing: 2) {
                 // Greeting
@@ -126,26 +169,40 @@ struct PanelContentView: View {
         .padding(.vertical, 16)
     }
 
-    private var userInitials: some View {
-        Image("AppIconImage")
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-            .frame(width: avatarSize, height: avatarSize)
-            .clipShape(Circle())
+    @ViewBuilder
+    private var userAvatarView: some View {
+        if let nsImage = appState.cachedAvatarImage {
+            Image(nsImage: nsImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: avatarSize, height: avatarSize)
+                .clipShape(Circle())
+        } else if let profile = appState.currentUserProfile {
+            // Logged in but no avatar — show initials
+            let initial = String(profile.firstname.prefix(1))
+            Text(initial)
+                .font(.system(size: 16 + fontBoost, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(width: avatarSize, height: avatarSize)
+                .background(Circle().fill(Color.accentColor.gradient))
+        } else {
+            // Not logged in — show app icon
+            Image("AppIconImage")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: avatarSize, height: avatarSize)
+                .clipShape(Circle())
+        }
     }
 
     private var greetingText: String {
-        GreetingHelper.currentGreeting(name: appState.currentUserProfile?.firstname)
+        GreetingHelper.currentGreeting(name: appState.currentUserProfile?.firstname, locale: appState.settings.resolvedLocale)
     }
 
-    private static let todayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "de_DE")
-        f.dateFormat = "EEEE, d. MMMM"
-        return f
-    }()
-
     private var todayDateString: String {
-        Self.todayFormatter.string(from: Date())
+        let f = DateFormatter()
+        f.locale = appState.settings.resolvedLocale
+        f.dateFormat = "EEEE, d. MMMM"
+        return f.string(from: Date())
     }
 }

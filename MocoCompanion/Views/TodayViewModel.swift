@@ -15,7 +15,7 @@ final class TodayViewModel {
 
     // MARK: - Navigation State
 
-    var selectedDay: TodayView.DaySelection = .today {
+    var selectedDay: DaySelection = .today {
         didSet {
             selectedIndex = 0
             selectedActivityId = nil
@@ -26,6 +26,10 @@ final class TodayViewModel {
     var hoveredActivityId: Int?
     var editingActivityId: Int?
     var deletingActivityId: Int?
+
+    /// Bumped on data changes to force SwiftUI re-render even when selectedIndex
+    /// doesn't change (e.g., deleting the last item clamps to the same index).
+    var dataVersion = 0
 
     init(timerService: TimerService, activityService: ActivityService, favoritesManager: FavoritesManager) {
         self.timerService = timerService
@@ -111,6 +115,8 @@ final class TodayViewModel {
     func syncSelectionAfterDataChange() {
         // Clear hover state — the hovered entry may have been deleted
         hoveredActivityId = nil
+        // Bump version to force re-render even if selectedIndex stays the same
+        dataVersion &+= 1
 
         if let targetId = selectedActivityId,
            let newIndex = sortedActivities.firstIndex(where: { $0.id == targetId }) {
@@ -249,7 +255,17 @@ final class TodayViewModel {
     /// Unified keyboard dispatch. Replaces 12 individual onKeyPress handlers in the view.
     /// Returns a KeyAction that the view maps to SwiftUI side effects.
     func handleKeyPress(key: KeyEquivalent, characters: String, modifiers: NSEvent.ModifierFlags) -> KeyAction {
-        // Block all keys during edit/delete mode
+        // Handle Escape during edit/delete mode — cancel without closing panel
+        if editingActivityId != nil && key == .escape {
+            editingActivityId = nil
+            return .handled
+        }
+        if deletingActivityId != nil && key == .escape {
+            deletingActivityId = nil
+            return .handled
+        }
+
+        // Block all other keys during edit/delete mode
         guard editingActivityId == nil && deletingActivityId == nil else { return .ignored }
 
         switch key {

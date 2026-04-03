@@ -9,7 +9,7 @@ final class GreetingHelperTests: XCTestCase {
 
     func testEarlyMorning() {
         let result = GreetingHelper.greeting(hour: 6, name: "Test")
-        XCTAssertTrue(result.contains("Guten Morgen"))
+        XCTAssertTrue(result.contains("Frühaufsteher"))
     }
 
     func testLunchGreeting() {
@@ -29,12 +29,12 @@ final class GreetingHelperTests: XCTestCase {
 
     func testLateNightGreeting() {
         let result = GreetingHelper.greeting(hour: 23, name: "Test")
-        XCTAssertTrue(result.contains("Guten Abend"))
+        XCTAssertTrue(result.contains("Nachtschicht"))
     }
 
     func testMidnightGreeting() {
         let result = GreetingHelper.greeting(hour: 0, name: "Test")
-        XCTAssertTrue(result.contains("Guten Morgen"))
+        XCTAssertTrue(result.contains("Nachtschicht"))
     }
 
     func testBoundary11() {
@@ -60,5 +60,16 @@ final class GreetingHelperTests: XCTestCase {
     func testCurrentGreetingWithoutName() {
         let result = GreetingHelper.currentGreeting(name: nil)
         XCTAssertTrue(result.contains("Moco"))
+    }
+
+    func testFridayAfternoon() {
+        // weekday 6 = Friday
+        let result = GreetingHelper.greeting(hour: 16, weekday: 6, name: "Volker")
+        XCTAssertEqual(result, "Schönen Freitag, Volker")
+    }
+
+    func testFridayMorningIsNormal() {
+        let result = GreetingHelper.greeting(hour: 9, weekday: 6, name: "Volker")
+        XCTAssertEqual(result, "Guten Morgen, Volker")
     }
 }

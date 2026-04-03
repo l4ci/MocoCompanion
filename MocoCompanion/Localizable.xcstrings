@@ -7,8 +7,6 @@
     "· %@": {},
     "(↩)": {},
     "(Esc)": {},
-    "(nachmittags)": {},
-    "(vormittags)": {},
     "%@": {},
     "%@ › %@": {
       "localizations": {
@@ -20,18 +18,7 @@
         }
       }
     },
-    "%@ %@, %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ %2$@, %3$@"
-          }
-        }
-      }
-    },
     "%@ tab": {},
-    "%@ tracked": {},
     "%@, %@": {
       "localizations": {
         "en": {
@@ -72,6 +59,7 @@
         }
       }
     },
+    "%@.mocoapp.com": {},
     "%lld %@": {
       "localizations": {
         "en": {
@@ -86,70 +74,482 @@
     "⌘%lld": {},
     "0.0h": {},
     "A": {},
-    "absence.absence": {
-      "extractionState": "stale",
+    "a11y.activityDescription": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Abwesend"
+            "value": "Aktivitätsbeschreibung"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Absent"
+            "value": "Activity description"
           }
         }
       }
     },
-    "absence.banner": {
-      "extractionState": "stale",
+    "a11y.addFavorite": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ — %@"
+            "value": "Zu Favoriten hinzufügen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ — %@"
+            "value": "Add to favorites"
           }
         }
       }
     },
-    "absence.holiday": {
-      "extractionState": "stale",
+    "a11y.cancelDelete": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Feiertag"
+            "value": "Löschen abbrechen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Public holiday"
+            "value": "Cancel delete"
           }
         }
       }
     },
-    "absence.vacation": {
-      "extractionState": "stale",
+    "a11y.cancelSearch": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Urlaub"
+            "value": "Suche abbrechen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vacation"
+            "value": "Cancel search"
+          }
+        }
+      }
+    },
+    "a11y.changeProject %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projekt wechseln: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change project: %@"
+          }
+        }
+      }
+    },
+    "a11y.clearSearch": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suche löschen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        }
+      }
+    },
+    "a11y.confirmDelete": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen bestätigen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm delete"
+          }
+        }
+      }
+    },
+    "a11y.description": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreibung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        }
+      }
+    },
+    "a11y.dismissWarning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warnung schließen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss warning"
+          }
+        }
+      }
+    },
+    "a11y.editDescription": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreibung bearbeiten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit description"
+          }
+        }
+      }
+    },
+    "a11y.hours": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stunden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hours"
+          }
+        }
+      }
+    },
+    "a11y.hoursToBook": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stunden zum Buchen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hours to book"
+          }
+        }
+      }
+    },
+    "a11y.hoursTracked %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ erfasst"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tracked"
+          }
+        }
+      }
+    },
+    "a11y.noEntriesToday": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Einträge heute. Tab drücken zum Suchen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entries today. Press Tab to search."
+          }
+        }
+      }
+    },
+    "a11y.noEntriesYesterday": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Einträge gestern"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entries yesterday"
+          }
+        }
+      }
+    },
+    "a11y.removeFavorite": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus Favoriten entfernen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from favorites"
+          }
+        }
+      }
+    },
+    "a11y.saveChanges": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Änderungen speichern"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save changes"
+          }
+        }
+      }
+    },
+    "a11y.searchField": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projekte und Aufgaben suchen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search projects and tasks"
+          }
+        }
+      }
+    },
+    "a11y.searchHint": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen zum Filtern, Pfeiltasten zur Navigation, Enter zum Auswählen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type to filter, arrow keys to navigate, Enter to select"
+          }
+        }
+      }
+    },
+    "a11y.startTimer %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer starten für %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start timer for %@"
+          }
+        }
+      }
+    },
+    "a11y.stopTimer %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer stoppen für %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop timer for %@"
+          }
+        }
+      }
+    },
+    "a11y.timerPaused": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer pausiert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "timer paused"
+          }
+        }
+      }
+    },
+    "a11y.timerRunning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer läuft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "timer running"
+          }
+        }
+      }
+    },
+    "a11y.timerRunningDuration %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer läuft: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer running: %@"
+          }
+        }
+      }
+    },
+    "about.author": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autor"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Author"
+          }
+        }
+      }
+    },
+    "about.disclaimer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MocoCompanion ist eine unabhängige, inoffizielle Begleit-App für MOCO. Kein Bezug zu hundertzehn GmbH."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MocoCompanion is an independent, unofficial companion app for MOCO. Not affiliated with hundertzehn GmbH."
+          }
+        }
+      }
+    },
+    "about.license": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lizenz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "License"
+          }
+        }
+      }
+    },
+    "about.repository": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Repository"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Repository"
+          }
+        }
+      }
+    },
+    "absence.afternoon": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(nachmittags)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(afternoon)"
+          }
+        }
+      }
+    },
+    "absence.morning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(vormittags)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(morning)"
           }
         }
       }
@@ -203,17 +603,34 @@
       }
     },
     "action.deleteConfirm": {
+      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "\"%@\" löschen?"
+            "value": "\"%@\" löschen? Das kann nicht rückgängig gemacht werden."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete \"%@\"?"
+            "value": "Delete \"%@\"? This cannot be undone."
+          }
+        }
+      }
+    },
+    "action.deleteConfirm %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" löschen? Das kann nicht rückgängig gemacht werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete \"%@\"? This cannot be undone."
           }
         }
       }
@@ -234,21 +651,57 @@
         }
       }
     },
-    "Activity description": {},
-    "Add to favorites": {},
-    "API Log Level": {},
-    "App Log Level": {},
-    "Appearance": {},
-    "Auto": {},
-    "Autocomplete Descriptions": {},
+    "API Key": {},
     "Billable: %@ percent": {},
-    "Cancel delete": {},
-    "Cancel search": {},
-    "Change project: %@": {},
-    "Clear search": {},
+    "budget.projectCritical.tooltip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projektbudget zu über 90% verbraucht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project budget over 90% consumed"
+          }
+        }
+      }
+    },
+    "budget.projectWarning.tooltip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projektbudget zu über 50% verbraucht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project budget over 50% consumed"
+          }
+        }
+      }
+    },
+    "budget.taskCritical.tooltip": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgabe hat weniger als 1 Stunde übrig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task has less than 1 hour remaining"
+          }
+        }
+      }
+    },
     "Command %lld to select": {},
-    "Confirm delete": {},
-    "Dark": {},
     "debug.apiLog": {
       "localizations": {
         "de": {
@@ -282,7 +735,6 @@
       }
     },
     "debug.apiLogLevel": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -331,7 +783,6 @@
       }
     },
     "debug.appLogLevel": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -475,8 +926,6 @@
         }
       }
     },
-    "Default Tab": {},
-    "Description": {},
     "description.acceptSuggestion": {
       "localizations": {
         "de": {
@@ -557,9 +1006,6 @@
         }
       }
     },
-    "Dismiss yesterday warning": {},
-    "Duplicate": {},
-    "Duplicate entry": {},
     "Edit description": {},
     "edit.description": {
       "localizations": {
@@ -573,6 +1019,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Description…"
+          }
+        }
+      }
+    },
+    "edit.descriptionPlaceholder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschreibung (#TICKET-123)…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description (#TICKET-123)…"
           }
         }
       }
@@ -609,26 +1071,7 @@
         }
       }
     },
-    "End": {},
     "Error: %@": {},
-    "Failed to load projects. Right-click menu bar icon → Refresh.": {},
-    "hint.copy": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C Kopieren"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C copy to today"
-          }
-        }
-      }
-    },
     "hint.delete": {
       "localizations": {
         "de": {
@@ -673,23 +1116,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "⏎ continue"
-          }
-        }
-      }
-    },
-    "hint.enterDelete": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ Löschen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ delete"
           }
         }
       }
@@ -742,23 +1168,6 @@
         }
       }
     },
-    "hint.escCancel": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⎋ Abbrechen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⎋ cancel"
-          }
-        }
-      }
-    },
     "hint.favorite": {
       "localizations": {
         "de": {
@@ -775,42 +1184,6 @@
         }
       }
     },
-    "hint.toPause": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ Pausieren"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ to pause"
-          }
-        }
-      }
-    },
-    "hint.toResume": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ Fortsetzen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⏎ to resume"
-          }
-        }
-      }
-    },
-    "Hours": {},
-    "Hours to book": {},
     "hours.placeholder": {
       "localizations": {
         "de": {
@@ -1067,23 +1440,6 @@
         }
       }
     },
-    "idle.dontForget": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vergiss nicht, deine Zeit zu erfassen!"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Don't forget to track your time!"
-          }
-        }
-      }
-    },
     "idle.msg1": {
       "localizations": {
         "de": {
@@ -1137,13 +1493,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine unerfasste Minute ist gerade vergangen!"
+            "value": "Eine Minute ist vergangen — Zeit für die Zeiterfassung?"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "An untracked minute just passed!"
+            "value": "A minute just passed — time to start tracking?"
           }
         }
       }
@@ -1260,10 +1616,7 @@
         }
       }
     },
-    "Launch at Login": {},
-    "Light": {},
     "Loading projects…": {},
-    "Log": {},
     "menu.newTimer": {
       "localizations": {
         "de": {
@@ -1328,6 +1681,7 @@
         }
       }
     },
+    "MocoCompanion": {},
     "mode.manual": {
       "localizations": {
         "de": {
@@ -1360,8 +1714,6 @@
         }
       }
     },
-    "No entries today. Press Tab to search.": {},
-    "No entries yesterday": {},
     "notifDesc.activityDeleted": {
       "localizations": {
         "de": {
@@ -1380,16 +1732,16 @@
     },
     "notifDesc.activityDuplicated": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When a time entry is duplicated to today"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wenn ein Zeiteintrag auf heute dupliziert wird"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a time entry is duplicated to today"
           }
         }
       }
@@ -1508,16 +1860,16 @@
     },
     "notifDesc.manualEntry": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When a manual time entry is booked"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wenn ein manueller Zeiteintrag gebucht wird"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a manual time entry is booked"
           }
         }
       }
@@ -1550,23 +1902,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "When a previous entry's timer is continued"
-          }
-        }
-      }
-    },
-    "notifDesc.timerPaused": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wenn der aktuelle Timer pausiert wird"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When the current timer is paused"
           }
         }
       }
@@ -1715,23 +2050,6 @@
         }
       }
     },
-    "notification.apiError": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API-Fehler"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API errors"
-          }
-        }
-      }
-    },
     "notification.budgetProjectWarning": {
       "localizations": {
         "de": {
@@ -1780,23 +2098,6 @@
         }
       }
     },
-    "notification.endOfDay": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zusammenfassung"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "End of day summary"
-          }
-        }
-      }
-    },
     "notification.entryDeleted": {
       "localizations": {
         "de": {
@@ -1829,57 +2130,6 @@
         }
       }
     },
-    "notification.forgottenTimer": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vergessener Timer"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forgotten timer"
-          }
-        }
-      }
-    },
-    "notification.idleReminder": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idle-Erinnerung"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idle reminder"
-          }
-        }
-      }
-    },
-    "notification.projectsSynced": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d Projekte synchronisiert"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d projects synced"
-          }
-        }
-      }
-    },
     "notification.timerContinued": {
       "localizations": {
         "de": {
@@ -1892,23 +2142,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Timer continued"
-          }
-        }
-      }
-    },
-    "notification.timerPaused": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timer pausiert"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timer paused"
           }
         }
       }
@@ -1957,23 +2190,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Timer stopped"
-          }
-        }
-      }
-    },
-    "notification.yesterdayIncomplete": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gestrige Stunden unvollständig"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yesterday hours incomplete"
           }
         }
       }
@@ -2028,16 +2244,16 @@
     },
     "notifLabel.activityDuplicated": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entry duplicated"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Eintrag dupliziert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry duplicated"
           }
         }
       }
@@ -2156,16 +2372,16 @@
     },
     "notifLabel.manualEntry": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manual entry"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Manueller Eintrag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual entry"
           }
         }
       }
@@ -2198,23 +2414,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Timer continued"
-          }
-        }
-      }
-    },
-    "notifLabel.timerPaused": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timer pausiert"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timer paused"
           }
         }
       }
@@ -2284,7 +2483,22 @@
       }
     },
     "of %@": {},
-    "Open Settings to configure your Moco API key.": {},
+    "onboard.keyboardHint": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen zum Suchen, ↑↓ navigieren, ⏎ auswählen, Tab wechselt Ansicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type to search, ↑↓ to navigate, ⏎ to select, Tab to switch views"
+          }
+        }
+      }
+    },
     "planned.header": {
       "localizations": {
         "de": {
@@ -2301,59 +2515,7 @@
         }
       }
     },
-    "planned.hours": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%.0fh geplant"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%.0fh planned"
-          }
-        }
-      }
-    },
-    "planned.hoursShort": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%.0fh"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%.0fh"
-          }
-        }
-      }
-    },
-    "planned.ofPlanned": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "von %.0fh"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "of %.0fh"
-          }
-        }
-      }
-    },
     "popover.noDescription": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -2433,52 +2595,18 @@
         }
       }
     },
-    "projects.loading": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projekte laden…"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading projects…"
-          }
-        }
-      }
-    },
     "projects.noProjects": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Noch keine Projekte synchronisiert.\nKonfiguriere deinen Account und aktualisiere."
+            "value": "Noch keine Projekte synchronisiert.\nTrage deine Account-Daten ein und tippe auf Aktualisieren."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No projects synced yet.\nConfigure your account and refresh."
-          }
-        }
-      }
-    },
-    "projects.notAvailable": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projekte nicht verfügbar"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projects not available"
+            "value": "No projects synced yet.\nAdd your account details and tap Refresh."
           }
         }
       }
@@ -2515,39 +2643,34 @@
         }
       }
     },
-    "Remove from favorites": {},
-    "Save changes": {},
-    "Search projects and tasks": {},
     "search.configureApi": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Einstellungen öffnen, um den Moco API-Key einzurichten."
+            "value": "Füge deinen Moco API-Schlüssel in den Einstellungen hinzu, um loszulegen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Settings to configure your Moco API key."
+            "value": "Add your Moco API key in Settings to get started."
           }
         }
       }
     },
     "search.failedToLoad": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Projekte konnten nicht geladen werden. Rechtsklick auf Menüleisten-Icon → Aktualisieren."
+            "value": "Projekte konnten nicht geladen werden. Rechtsklick auf das Menüleisten-Symbol → Aktualisieren."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Failed to load projects. Right-click menu bar icon → Refresh."
+            "value": "Could not load projects. Try right-clicking the menu bar icon → Refresh."
           }
         }
       }
@@ -2589,13 +2712,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keine passenden Projekte"
+            "value": "Keine passenden Projekte — versuche eine kürzere Suche"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No matching projects"
+            "value": "No matching projects — try a shorter query"
           }
         }
       }
@@ -2632,6 +2755,22 @@
         }
       }
     },
+    "settings.about": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
     "settings.account": {
       "localizations": {
         "de": {
@@ -2644,40 +2783,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account"
-          }
-        }
-      }
-    },
-    "settings.alertsAlwaysOn": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wichtige Benachrichtigungen sind immer aktiv und können nicht deaktiviert werden."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alert notifications are always active and cannot be turned off."
-          }
-        }
-      }
-    },
-    "settings.alwaysOn": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Immer aktiv"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Always on"
           }
         }
       }
@@ -2698,8 +2803,23 @@
         }
       }
     },
+    "settings.apiKeyHint": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du findest deinen API-Schlüssel in Moco unter Profil → Integration → Persönlicher API-Schlüssel."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can find your API key in Moco under Profile → Integration → Personal API Key."
+          }
+        }
+      }
+    },
     "settings.appearance": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -2716,12 +2836,11 @@
       }
     },
     "settings.appearance.auto": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Auto"
+            "value": "Automatisch"
           }
         },
         "en": {
@@ -2733,7 +2852,6 @@
       }
     },
     "settings.appearance.dark": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -2750,7 +2868,6 @@
       }
     },
     "settings.appearance.light": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -2767,12 +2884,11 @@
       }
     },
     "settings.autocomplete": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Beschreibungen vorschlagen"
+            "value": "Beschreibungen automatisch vervollständigen"
           }
         },
         "en": {
@@ -2831,6 +2947,22 @@
         }
       }
     },
+    "settings.dangerZone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurücksetzen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        }
+      }
+    },
     "settings.debug": {
       "localizations": {
         "de": {
@@ -2848,7 +2980,6 @@
       }
     },
     "settings.defaultTab": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -2865,35 +2996,33 @@
       }
     },
     "settings.defaultTab.search": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Suche"
+            "value": "Track"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search"
+            "value": "Track"
           }
         }
       }
     },
     "settings.defaultTab.today": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Heute"
+            "value": "Log"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Today"
+            "value": "Log"
           }
         }
       }
@@ -2915,7 +3044,6 @@
       }
     },
     "settings.end": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3044,7 +3172,6 @@
       }
     },
     "settings.launchAtLogin": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3108,6 +3235,102 @@
         }
       }
     },
+    "settings.panelReset": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel zurücksetzen nach"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset panel after"
+          }
+        }
+      }
+    },
+    "settings.panelReset.30s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 Sekunden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 seconds"
+          }
+        }
+      }
+    },
+    "settings.panelReset.60s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Minute"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 minute"
+          }
+        }
+      }
+    },
+    "settings.panelReset.120s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 Minuten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 minutes"
+          }
+        }
+      }
+    },
+    "settings.panelReset.300s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 Minuten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes"
+          }
+        }
+      }
+    },
+    "settings.panelReset.never": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        }
+      }
+    },
     "settings.projects": {
       "localizations": {
         "de": {
@@ -3156,6 +3379,102 @@
         }
       }
     },
+    "settings.resetButton": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurücksetzen …"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset…"
+          }
+        }
+      }
+    },
+    "settings.resetCancel": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "settings.resetConfirmButton": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles zurücksetzen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Everything"
+          }
+        }
+      }
+    },
+    "settings.resetConfirmMessage": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der API-Schlüssel, die Subdomain, Favoriten, Verlauf und alle Einstellungen werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your API key, subdomain, favorites, history, and all settings will be deleted. This action cannot be undone."
+          }
+        }
+      }
+    },
+    "settings.resetConfirmTitle": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle App-Daten zurücksetzen?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset All App Data?"
+          }
+        }
+      }
+    },
+    "settings.resetDescription": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt alle Einstellungen, Zugangsdaten, Favoriten und den Verlauf."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes all settings, credentials, favorites, and history."
+          }
+        }
+      }
+    },
     "settings.resetPosition": {
       "localizations": {
         "de": {
@@ -3168,6 +3487,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reset Window Position"
+          }
+        }
+      }
+    },
+    "settings.resetTitle": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Daten zurücksetzen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset App Data"
           }
         }
       }
@@ -3205,7 +3540,6 @@
       }
     },
     "settings.soundEffects": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3222,12 +3556,11 @@
       }
     },
     "settings.start": {
-      "extractionState": "stale",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Beginn"
+            "value": "Start"
           }
         },
         "en": {
@@ -3286,23 +3619,6 @@
         }
       }
     },
-    "settings.subdomainHint": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Moco-Subdomain, z.B. \"firma\" für firma.mocoapp.com"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your Moco subdomain, e.g. \"mycompany\" for mycompany.mocoapp.com"
-          }
-        }
-      }
-    },
     "settings.windowTitle": {
       "localizations": {
         "de": {
@@ -3351,10 +3667,135 @@
         }
       }
     },
-    "Sound Effects": {},
-    "Start": {},
+    "setup.apiKeyLink": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du findest ihn unter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can find it at"
+          }
+        }
+      }
+    },
+    "setup.apiKeyPrompt": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib deinen persönlichen API-Schlüssel ein"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your personal API key"
+          }
+        }
+      }
+    },
+    "setup.back": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "setup.connect": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "setup.domainPlaceholder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "meinfirma.mocoapp.com"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mycompany.mocoapp.com"
+          }
+        }
+      }
+    },
+    "setup.domainPrompt": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib deine Moco-Domain ein, um loszulegen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your Moco domain to get started."
+          }
+        }
+      }
+    },
+    "setup.next": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        }
+      }
+    },
+    "setup.welcome": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei MocoCompanion"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to MocoCompanion"
+          }
+        }
+      }
+    },
     "Start timer": {},
-    "Start timer for %@": {},
     "stats.billable": {
       "localizations": {
         "de": {
@@ -3403,8 +3844,24 @@
         }
       }
     },
-    "Stop timer for %@": {},
     "success.timerStarted": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer gestartet für %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer started for %@"
+          }
+        }
+      }
+    },
+    "success.timerStarted %@": {
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3454,7 +3911,6 @@
         }
       }
     },
-    "Timer running: %@": {},
     "Today: %@ hours": {},
     "today.noEntries": {
       "localizations": {
@@ -3520,23 +3976,6 @@
         }
       }
     },
-    "tomorrow.readOnly": {
-      "extractionState": "stale",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nur Ansicht — Planungsübersicht"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Read-only — planning view"
-          }
-        }
-      }
-    },
     "tomorrow.title": {
       "localizations": {
         "de": {
@@ -3553,21 +3992,44 @@
         }
       }
     },
-    "Track": {},
-    "Type to filter, arrow keys to navigate, Enter to select": {},
-    "validation.invalidHours": {
-      "extractionState": "stale",
+    "update.available": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bitte gültige Stunden eingeben (z.B. 1.5, 1h 30m)"
+            "value": "Update verfügbar"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter valid hours (e.g. 1.5, 1h 30m)"
+            "value": "Update Available"
+          }
+        }
+      }
+    },
+    "update.body %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ ist verfügbar. Klicke zum Herunterladen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ is available. Click to download."
+          }
+        }
+      }
+    },
+    "Version %@ (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Version %1$@ (%2$@)"
           }
         }
       }
@@ -3622,98 +4084,834 @@
     },
     "Your Moco subdomain, e.g. 'mycompany' for mycompany.mocoapp.com": {},
     "Your personal Moco API key from Profile → Integrations": {},
-    "settings.panelReset": {
+    "search.tip.shorter": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reset panel after"
+            "value": "Try fewer characters — even 2–3 letters often work"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Panel zurücksetzen nach"
+            "value": "Versuch weniger Zeichen — oft reichen 2–3 Buchstaben"
           }
         }
       }
     },
-    "settings.panelReset.30s": {
+    "search.tip.customer": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "30 seconds"
+            "value": "You can also search by customer name"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "30 Sekunden"
+            "value": "Du kannst auch nach Kundenname suchen"
           }
         }
       }
     },
-    "settings.panelReset.60s": {
+    "search.tip.acronym": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 minute"
+            "value": "First letters work too — e.g. \"cpm\" for Customer Project Management"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 Minute"
+            "value": "Anfangsbuchstaben funktionieren auch — z.B. \"kpm\" für Kunden Projekt Management"
           }
         }
       }
     },
-    "settings.panelReset.120s": {
+    "forgotten.message %@ %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 minutes"
+            "value": "Timer running for %1$@h on %2$@. Still at it?"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 Minuten"
+            "value": "Timer läuft seit %1$@h auf %2$@. Noch dabei?"
           }
         }
       }
     },
-    "settings.panelReset.300s": {
+    "eod.fullDay %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 minutes"
+            "value": "Great day! %@ hours tracked. Time to wrap up."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 Minuten"
+            "value": "Starker Tag! %@ Stunden erfasst. Feierabend!"
           }
         }
       }
     },
-    "settings.panelReset.never": {
+    "eod.solidDay %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Never"
+            "value": "%@ hours tracked today. Nice work."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nie"
+            "value": "%@ Stunden heute erfasst. Gut gemacht."
+          }
+        }
+      }
+    },
+    "eod.lightDay %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hours tracked today. Anything missing?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Stunden heute erfasst. Fehlt noch etwas?"
+          }
+        }
+      }
+    },
+    "eod.noEntries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hours tracked today. Forgot to start a timer?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Stunden heute erfasst. Timer vergessen?"
+          }
+        }
+      }
+    },
+    "idle.msg12": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick — what are you working on right now?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnell — woran arbeitest du gerade?"
+          }
+        }
+      }
+    },
+    "idle.msg13": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘⌃⌥M → 3 letters → Enter. That fast."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘⌃⌥M → 3 Buchstaben → Enter. So schnell."
+          }
+        }
+      }
+    },
+    "idle.msg14": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your colleagues are tracking. Just saying."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Kollegen erfassen. Nur so als Hinweis."
+          }
+        }
+      }
+    },
+    "idle.msg15": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes untracked. No big deal — unless it happens 20 times."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 Minuten unerfasst. Kein Drama — es sei denn, es passiert 20 Mal."
+          }
+        }
+      }
+    },
+    "idle.msg16": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The best time to start tracking was 5 minutes ago."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der beste Zeitpunkt zum Erfassen war vor 5 Minuten."
+          }
+        }
+      }
+    },
+    "idle.msg17": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somewhere, a project manager is wondering about your hours."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Irgendwo fragt sich ein Projektmanager nach deinen Stunden."
+          }
+        }
+      }
+    },
+    "idle.msg18": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even a quick 15-minute entry counts."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selbst ein kurzer 15-Minuten-Eintrag zählt."
+          }
+        }
+      }
+    },
+    "idle.msg19": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer off. Coffee break or just forgot?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer aus. Kaffeepause oder vergessen?"
+          }
+        }
+      }
+    },
+    "idle.msg20": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End-of-month you will thank past-you for tracking this."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Am Monatsende wirst du dir fürs Erfassen danken."
+          }
+        }
+      }
+    },
+    "idle.msg21": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbilled hours are just volunteering."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht erfasste Stunden sind ehrenamtlich."
+          }
+        }
+      }
+    },
+    "idle.msg22": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One click. That's all it takes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Klick. Mehr braucht es nicht."
+          }
+        }
+      }
+    },
+    "idle.msg23": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your timesheet called. It misses you."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Stundenzettel hat angerufen. Er vermisst dich."
+          }
+        }
+      }
+    },
+    "idle.msg24": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still thinking, or actually working? Either way — track it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch am Überlegen oder schon am Arbeiten? So oder so — erfassen."
+          }
+        }
+      }
+    },
+    "idle.msg25": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That meeting you just had? Worth tracking."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Meeting eben? Lohnt sich zu erfassen."
+          }
+        }
+      }
+    },
+    "idle.msg26": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every untracked hour is a mystery to accounting."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jede unerfasste Stunde ist ein Rätsel für die Buchhaltung."
+          }
+        }
+      }
+    },
+    "idle.msg27": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been idle for a bit. Timer awaits."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du bist schon eine Weile inaktiv. Der Timer wartet."
+          }
+        }
+      }
+    },
+    "idle.msg28": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track now, thank yourself on Friday."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt erfassen, am Freitag dankbar sein."
+          }
+        }
+      }
+    },
+    "idle.msg29": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fun fact: tracked time is easier to invoice."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fun Fact: Erfasste Zeit lässt sich leichter abrechnen."
+          }
+        }
+      }
+    },
+    "idle.msg30": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just a gentle nudge. Your timer is lonely."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur ein kleiner Hinweis. Dein Timer ist einsam."
+          }
+        }
+      }
+    },
+    "idle.msg31": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What if you started a timer right now?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was wäre, wenn du jetzt einen Timer startest?"
+          }
+        }
+      }
+    },
+    "idle.msg32": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slack, Email, or actual work? All worth tracking."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slack, E-Mail oder richtige Arbeit? Alles erfassenswert."
+          }
+        }
+      }
+    },
+    "idle.msg33": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The timer button is right there. Just saying."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Timer-Button ist genau da. Nur so."
+          }
+        }
+      }
+    },
+    "idle.msg34": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconstructing hours from memory: 0/10. Would not recommend."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stunden aus dem Gedächtnis rekonstruieren: 0/10. Nicht empfehlenswert."
+          }
+        }
+      }
+    },
+    "idle.msg35": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No timer running. On purpose?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Timer aktiv. Mit Absicht?"
+          }
+        }
+      }
+    },
+    "idle.msg36": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it takes more than 5 minutes, it's worth a timer."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn es länger als 5 Minuten dauert, lohnt sich ein Timer."
+          }
+        }
+      }
+    },
+    "idle.msg37": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your project budget will thank you for accurate tracking."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Projektbudget wird dir für genaues Erfassen danken."
+          }
+        }
+      }
+    },
+    "idle.msg38": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start tracking — you can always edit later."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einfach starten — bearbeiten geht später immer noch."
+          }
+        }
+      }
+    },
+    "idle.msg39": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A tracked day is a good day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein erfasster Tag ist ein guter Tag."
+          }
+        }
+      }
+    },
+    "idle.msg40": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘⌃⌥M. You know what to do."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘⌃⌥M. Du weißt, was zu tun ist."
+          }
+        }
+      }
+    },
+    "yesterday.warningMessage %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday only %1$@h of %2$@h were booked. Did you miss something?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestern wurden nur %1$@h von %2$@h erfasst. Fehlt noch etwas?"
+          }
+        }
+      }
+    },
+    "a11y.error %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fehler: %@"
+          }
+        }
+      }
+    },
+    "a11y.todayHours %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today: %@ hours"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute: %@ Stunden"
+          }
+        }
+      }
+    },
+    "a11y.billable %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Billable: %@ percent"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrechenbar: %@ Prozent"
+          }
+        }
+      }
+    },
+    "undo.deleted %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted \"%@\""
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" gelöscht"
+          }
+        }
+      }
+    },
+    "undo.action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rückgängig"
+          }
+        }
+      }
+    },
+    "a11y.undoDelete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo delete"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Löschen rückgängig machen"
+          }
+        }
+      }
+    },
+    "action.retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut versuchen"
+          }
+        }
+      }
+    },
+    "a11y.retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry loading projects"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Projekte erneut laden"
+          }
+        }
+      }
+    },
+    "settings.language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprache"
+          }
+        }
+      }
+    },
+    "settings.language.system": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        }
+      }
+    },
+    "setup.invalidSubdomain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only letters, numbers, and hyphens allowed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur Buchstaben, Zahlen und Bindestriche erlaubt"
+          }
+        }
+      }
+    },
+    "offline.banner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline — entries will sync when connected"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline — Einträge werden bei Verbindung synchronisiert"
+          }
+        }
+      }
+    },
+    "offline.withQueue %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld entries queued — will sync when connected"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Einträge in Warteschlange — werden bei Verbindung synchronisiert"
+          }
+        }
+      }
+    },
+    "offline.synced %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back online — %lld entries synced"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieder online — %lld Einträge synchronisiert"
           }
         }
       }

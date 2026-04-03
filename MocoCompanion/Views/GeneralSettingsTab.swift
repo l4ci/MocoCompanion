@@ -8,7 +8,7 @@ struct GeneralSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Launch at Login", isOn: Binding(
+                Toggle(String(localized: "settings.launchAtLogin"), isOn: Binding(
                     get: { settings.launchAtLogin },
                     set: { newValue in
                         settings.launchAtLogin = newValue
@@ -16,9 +16,9 @@ struct GeneralSettingsTab: View {
                     }
                 ))
 
-                Picker("Default Tab", selection: $settings.defaultTab) {
-                    Text("Track").tag("search")
-                    Text("Log").tag("today")
+                Picker(String(localized: "settings.defaultTab"), selection: $settings.defaultTab) {
+                    Text(String(localized: "settings.defaultTab.search")).tag("search")
+                    Text(String(localized: "settings.defaultTab.today")).tag("today")
                 }
 
                 Button(String(localized: "settings.resetPosition")) {
@@ -38,13 +38,13 @@ struct GeneralSettingsTab: View {
             }
 
             Section {
-                Picker("Start", selection: $settings.workingHoursStart) {
+                Picker(String(localized: "settings.start"), selection: $settings.workingHoursStart) {
                     ForEach(5..<13, id: \.self) { hour in
                         Text(formatHour(hour)).tag(hour)
                     }
                 }
 
-                Picker("End", selection: $settings.workingHoursEnd) {
+                Picker(String(localized: "settings.end"), selection: $settings.workingHoursEnd) {
                     ForEach(14..<23, id: \.self) { hour in
                         Text(formatHour(hour)).tag(hour)
                     }
@@ -58,16 +58,22 @@ struct GeneralSettingsTab: View {
             }
 
             Section {
-                Toggle("Sound Effects", isOn: $settings.soundEnabled)
+                Toggle(String(localized: "settings.soundEffects"), isOn: $settings.soundEnabled)
             } header: {
                 Text(String(localized: "settings.sound"))
             }
 
             Section {
-                Picker("Appearance", selection: $settings.appearance) {
-                    Text("Auto").tag("auto")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
+                Picker(String(localized: "settings.language"), selection: $settings.appLanguage) {
+                    Text(String(localized: "settings.language.system")).tag("system")
+                    Text("English").tag("en")
+                    Text("Deutsch").tag("de")
+                }
+
+                Picker(String(localized: "settings.appearance"), selection: $settings.appearance) {
+                    Text(String(localized: "settings.appearance.auto")).tag("auto")
+                    Text(String(localized: "settings.appearance.light")).tag("light")
+                    Text(String(localized: "settings.appearance.dark")).tag("dark")
                 }
                 .pickerStyle(.segmented)
 
@@ -99,7 +105,7 @@ struct GeneralSettingsTab: View {
                     }
                 }
 
-                Toggle("Autocomplete Descriptions", isOn: $settings.autoCompleteEnabled)
+                Toggle(String(localized: "settings.autocomplete"), isOn: $settings.autoCompleteEnabled)
             } header: {
                 Text(String(localized: "settings.display"))
             }

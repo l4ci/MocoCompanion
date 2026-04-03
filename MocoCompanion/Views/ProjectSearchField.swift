@@ -42,7 +42,7 @@ struct ProjectSearchField: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Cancel search")
+                .accessibilityLabel(String(localized: "a11y.cancelSearch"))
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)

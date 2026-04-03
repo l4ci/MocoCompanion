@@ -17,6 +17,7 @@ struct TodayView: View {
     @FocusState private var listFocused: Bool
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var bodySize: CGFloat { 14 + fontBoost }
     private var captionSize: CGFloat { 12 + fontBoost }
@@ -33,30 +34,15 @@ struct TodayView: View {
         ))
     }
 
-    enum DaySelection: CaseIterable {
-        case yesterday
-        case today
-        case tomorrow
-
-        var label: String {
-            switch self {
-            case .today: String(localized: "today.title")
-            case .yesterday: String(localized: "yesterday.title")
-            case .tomorrow: String(localized: "tomorrow.title")
-            }
-        }
-
-        var dateString: String {
-            switch self {
-            case .today: DateUtilities.todayString()
-            case .yesterday: DateUtilities.yesterdayString() ?? ""
-            case .tomorrow: DateUtilities.tomorrowString() ?? ""
-            }
-        }
-    }
+    // DaySelection extracted to DaySelection.swift for test target independence
 
     var body: some View {
         VStack(spacing: 0) {
+            // Yesterday under-booking warning — visible in Log view
+            if let warning = appState.yesterdayWarning {
+                YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayWarning = nil })
+            }
+
             dayToggle
 
             if let absence = vm.activityService.absence(for: vm.selectedDay.dateString) {
@@ -88,11 +74,27 @@ struct TodayView: View {
                     )
                 }
             }
+
+            // Undo toast — shown after deleting an entry
+            if let pending = vm.activityService.pendingDelete {
+                UndoToastView(
+                    projectName: pending.activity.project.name,
+                    onUndo: { vm.activityService.undoDelete() }
+                )
+            }
         }
         .focusable()
         .focused($listFocused)
         .focusEffectDisabled()
         .task(id: refreshId) {
+            // Wait for session to establish userId before fetching — prevents
+            // returning all-users data for accounts with elevated permissions.
+            if appState.currentUserId == nil {
+                for _ in 0..<50 { // up to 5 seconds
+                    try? await Task.sleep(for: .milliseconds(100))
+                    if appState.currentUserId != nil { break }
+                }
+            }
             await vm.activityService.refreshTodayStats()
             await vm.activityService.refreshYesterdayActivities()
             await vm.activityService.refreshAllPlanning()
@@ -117,6 +119,8 @@ struct TodayView: View {
         .onChange(of: vm.activityService.yesterdayActivities) {
             guard vm.isYesterday else { return }
             vm.syncSelectionAfterDataChange()
+            // Also recheck yesterday warning when yesterday data changes
+            appState.recheckYesterdayWarning()
         }
         .onKeyPress(phases: .down) { press in
             let action = vm.handleKeyPress(
@@ -191,30 +195,31 @@ struct TodayView: View {
     // MARK: - Absence Banner
 
     private func absenceBanner(_ schedule: MocoSchedule) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: schedule.assignment.name.contains("Feier") ? "calendar.badge.clock" : "airplane")
-                .font(.system(size: captionSize))
-                .foregroundStyle(.orange)
+        let info = AbsenceStyle.resolve(schedule)
 
-            Text(schedule.assignment.name)
-                .font(.system(size: bodySize, weight: .medium))
-                .foregroundStyle(theme.textPrimary)
+        return HStack(spacing: 10) {
+            Image(systemName: info.icon)
+                .font(.system(size: 18 + fontBoost, weight: .light))
+                .foregroundStyle(info.color)
+                .frame(width: 24)
 
-            if schedule.am && !schedule.pm {
-                Text("(vormittags)")
-                    .font(.system(size: captionSize))
-                    .foregroundStyle(theme.textSecondary)
-            } else if !schedule.am && schedule.pm {
-                Text("(nachmittags)")
-                    .font(.system(size: captionSize))
-                    .foregroundStyle(theme.textSecondary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(schedule.assignment.name)
+                    .font(.system(size: bodySize, weight: .medium))
+                    .foregroundStyle(theme.textPrimary)
+
+                if let detail = info.detail(schedule: schedule) {
+                    Text(detail)
+                        .font(.system(size: captionSize))
+                        .foregroundStyle(theme.textSecondary)
+                }
             }
 
             Spacer()
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.08))
+        .padding(.vertical, 10)
+        .background(info.color.opacity(0.08))
     }
 
     // MARK: - Tomorrow View
@@ -222,16 +227,17 @@ struct TodayView: View {
     private var tomorrowView: some View {
         VStack(spacing: 0) {
             if vm.activityService.tomorrowPlanningEntries.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 22 + fontBoost))
-                        .foregroundStyle(theme.textTertiary)
+                VStack(spacing: 12) {
+                    Image(systemName: "sun.horizon")
+                        .font(.system(size: 28 + fontBoost, weight: .light))
+                        .foregroundStyle(theme.textTertiary.opacity(0.7))
+                        .frame(height: 36)
                     Text(String(localized: "tomorrow.noPlanning"))
                         .font(.system(size: bodySize, weight: .medium))
                         .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
+                .padding(.vertical, 48)
             } else {
                 HStack {
                     Text(String(localized: "planned.header"))
@@ -273,7 +279,9 @@ struct TodayView: View {
     // MARK: - Activities List
 
     private var activitiesList: some View {
-        ScrollViewReader { proxy in
+        // Read dataVersion so @Observable triggers re-render on data changes
+        let _ = vm.dataVersion
+        return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
                     ForEach(Array(vm.sortedActivities.enumerated()), id: \.element.id) { index, activity in
@@ -317,7 +325,7 @@ struct TodayView: View {
             .frame(maxHeight: 350)
             .id(vm.selectedDay)
             .onChange(of: vm.selectedIndex) { _, newIndex in
-                withAnimation(.easeOut(duration: Theme.Motion.fast)) {
+                animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
                     proxy.scrollTo(newIndex, anchor: .center)
                 }
             }
@@ -358,7 +366,7 @@ private struct TomorrowPlanningRowView: View {
         HStack(spacing: 10) {
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: captionSize))
-                .foregroundStyle(.blue.opacity(0.7))
+                .foregroundStyle(theme.plannedIndicator)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
@@ -394,7 +402,7 @@ private struct TomorrowPlanningRowView: View {
 
             Text(String(format: "%.0fh", entry.hoursPerDay))
                 .font(.system(size: captionSize, weight: .medium, design: .monospaced))
-                .foregroundStyle(.blue.opacity(0.6))
+                .foregroundStyle(theme.plannedIndicatorSubtle)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -415,5 +423,58 @@ private struct TomorrowPlanningRowView: View {
             )
             onStartEntry?(searchEntry)
         }
+    }
+}
+
+// MARK: - Absence Visual Style
+
+/// Resolves icon, color, and detail text for different absence types.
+/// Matches against German Moco assignment names (Urlaub, Feiertag, Krankheit, etc.).
+private enum AbsenceStyle {
+    struct Info {
+        let icon: String
+        let color: Color
+
+        /// Returns an optional detail line (half-day indicator or comment).
+        func detail(schedule: MocoSchedule) -> String? {
+            if schedule.am && !schedule.pm {
+                return String(localized: "absence.morning")
+            } else if !schedule.am && schedule.pm {
+                return String(localized: "absence.afternoon")
+            }
+            return schedule.comment?.isEmpty == false ? schedule.comment : nil
+        }
+    }
+
+    static func resolve(_ schedule: MocoSchedule) -> Info {
+        let name = schedule.assignment.name.lowercased()
+
+        // Sick day
+        if name.contains("krank") || name.contains("sick") {
+            return Info(icon: "heart.circle", color: .red)
+        }
+
+        // Public holiday
+        if name.contains("feier") || name.contains("holiday") {
+            return Info(icon: "star.circle", color: .purple)
+        }
+
+        // Vacation / leave
+        if name.contains("urlaub") || name.contains("vacation") || name.contains("ferien") {
+            return Info(icon: "airplane.circle", color: .cyan)
+        }
+
+        // Compensation / overtime
+        if name.contains("ausgleich") || name.contains("comp") || name.contains("überstunden") {
+            return Info(icon: "clock.arrow.circlepath", color: .green)
+        }
+
+        // Training / education
+        if name.contains("bildung") || name.contains("training") || name.contains("weiterbildung") {
+            return Info(icon: "book.circle", color: .blue)
+        }
+
+        // Fallback — generic absence
+        return Info(icon: "calendar.circle", color: .orange)
     }
 }

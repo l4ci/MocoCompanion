@@ -12,6 +12,7 @@ struct ActivityDurationText: View {
     var stoppedOpacity: Double = 0.5
 
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.theme) private var theme
 
     /// Resolved font — uses the explicit font if provided, otherwise scales with the entry boost.
     private var resolvedFont: Font {
@@ -27,14 +28,14 @@ struct ActivityDurationText: View {
                 let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
                 Text(DateUtilities.formatElapsedCompact(liveSecs))
                     .font(resolvedFont)
-                    .foregroundStyle(isSelected ? .white : runningColor)
-                    .accessibilityLabel("Timer running: \(DateUtilities.formatElapsedCompact(liveSecs))")
+                    .foregroundStyle(isSelected ? theme.selectedTextPrimary : runningColor)
+                    .accessibilityLabel(String(localized: "a11y.timerRunningDuration \(DateUtilities.formatElapsedCompact(liveSecs))"))
             }
         } else {
             Text(DateUtilities.formatHoursCompact(activity.hours))
                 .font(resolvedFont)
-                .foregroundStyle(isSelected ? .white.opacity(0.7) : .primary.opacity(stoppedOpacity))
-                .accessibilityLabel("\(DateUtilities.formatHoursCompact(activity.hours)) tracked")
+                .foregroundStyle(isSelected ? theme.selectedTextSecondary : .primary.opacity(stoppedOpacity))
+                .accessibilityLabel(String(localized: "a11y.hoursTracked \(DateUtilities.formatHoursCompact(activity.hours))"))
         }
     }
 }

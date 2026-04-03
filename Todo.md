@@ -1,3 +1,0 @@
-# Todo
-
-*No open items.*

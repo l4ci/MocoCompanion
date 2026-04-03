@@ -59,7 +59,7 @@ struct ActivityEditOverlay: View {
                     .focused($focusedField, equals: .description)
                     .onSubmit { handleSave() }
                     .onExitCommand { onCancel() }
-                    .accessibilityLabel("Description")
+                    .accessibilityLabel(String(localized: "a11y.description"))
 
                 if showHours {
                     TextField("0.0h", text: $hoursDraft)
@@ -69,7 +69,7 @@ struct ActivityEditOverlay: View {
                         .focused($focusedField, equals: .hours)
                         .onSubmit { handleSave() }
                         .onExitCommand { onCancel() }
-                        .accessibilityLabel("Hours")
+                        .accessibilityLabel(String(localized: "a11y.hours"))
                 }
 
                 Button {
@@ -80,7 +80,7 @@ struct ActivityEditOverlay: View {
                         .font(.system(size: bodySize + 2))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Save changes")
+                .accessibilityLabel(String(localized: "a11y.saveChanges"))
             }
         }
         .onAppear {
@@ -122,7 +122,7 @@ struct ActivityEditOverlay: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Change project: \(currentProjectName)")
+                .accessibilityLabel(String(localized: "a11y.changeProject \(currentProjectName)"))
             }
 
             if !availableTasks.isEmpty {

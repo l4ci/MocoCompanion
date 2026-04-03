@@ -7,7 +7,7 @@ struct DebugSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                Picker("API Log Level", selection: $settings.apiLogLevel) {
+                Picker(String(localized: "debug.apiLogLevel"), selection: $settings.apiLogLevel) {
                     ForEach(AppLogger.LogLevel.allCases, id: \.self) { level in
                         Text(level.label).tag(level)
                     }
@@ -40,7 +40,7 @@ struct DebugSettingsTab: View {
             }
 
             Section {
-                Picker("App Log Level", selection: $settings.appLogLevel) {
+                Picker(String(localized: "debug.appLogLevel"), selection: $settings.appLogLevel) {
                     ForEach(AppLogger.LogLevel.allCases, id: \.self) { level in
                         Text(level.label).tag(level)
                     }

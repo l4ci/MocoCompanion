@@ -13,9 +13,10 @@ struct SearchResultsListView: View {
 
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let maxResultsHeight: CGFloat = showingShortcuts ? 400 : 210
+        let maxResultsHeight: CGFloat = 365
 
         VStack(spacing: 0) {
             theme.divider.frame(height: 1)
@@ -37,7 +38,7 @@ struct SearchResultsListView: View {
                 .frame(maxHeight: maxResultsHeight)
                 .onChange(of: selectedIndex) { _, newIndex in
                     guard newIndex >= 0 else { return }
-                    withAnimation(.easeOut(duration: Theme.Motion.fast)) {
+                    animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
                         proxy.scrollTo(newIndex, anchor: .center)
                     }
                 }
@@ -88,7 +89,6 @@ struct SearchResultsListView: View {
         .onHover { hover in
             if hover {
                 hoveredIndex = index
-                selectedIndex = index
             } else {
                 hoveredIndex = nil
             }

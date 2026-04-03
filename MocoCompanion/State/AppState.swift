@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import os
 
@@ -19,6 +20,8 @@ final class AppState {
     let notificationDispatcher: NotificationDispatcher
     let budgetService: BudgetService
     let monitorEngine: MonitorEngine
+    let networkMonitor: NetworkMonitor
+    let entryQueue: EntryQueue
     private let coordinator: TimerActivityCoordinator
 
     var projects: [MocoProject] = [] {
@@ -32,6 +35,8 @@ final class AppState {
     /// The authenticated user's Moco ID. Set on app launch via fetchSession().
     private(set) var currentUserId: Int?
     private(set) var currentUserProfile: MocoUserProfile?
+    /// Cached avatar image — downloaded once after profile fetch. Nil if no avatar URL or download failed.
+    private(set) var cachedAvatarImage: NSImage?
 
     // MARK: - Cached Search Entries
 
@@ -162,6 +167,14 @@ final class AppState {
         // Monitor engine — centralized polling, dedup, and dispatch for background monitors
         let engine = MonitorEngine(dispatcher: dispatcher)
         self.monitorEngine = engine
+        self.networkMonitor = NetworkMonitor()
+        self.entryQueue = EntryQueue()
+
+        // Load cached projects for offline use
+        let cached = ProjectCache.load()
+        if !cached.isEmpty {
+            projects = cached
+        }
 
         engine.register(BudgetDepletionMonitor(
             timerService: timerSvc,
@@ -181,18 +194,61 @@ final class AppState {
         self._rateGate = rateGate
 
         // Register yesterday check after all stored properties are initialized
-        engine.register(YesterdayCheckManager(
+        // Use a closure that doesn't capture self during init — wire it afterward.
+        var yesterdayWarningCallback: ((YesterdayWarning?) -> Void)?
+        let yesterdayChecker = YesterdayCheckManager(
             settings: settings,
             clientFactory: clientFactory,
-            setWarning: { [weak self] warning in self?.yesterdayWarning = warning }
-        ))
+            userIdProvider: userIdProvider,
+            setWarning: { warning in yesterdayWarningCallback?(warning) }
+        )
+        self._yesterdayChecker = yesterdayChecker
+
+        // All stored properties now initialized — safe to capture [weak self]
+        yesterdayWarningCallback = { [weak self] warning in self?.yesterdayWarning = warning }
+        engine.register(yesterdayChecker, immediateFirstCheck: true)
+
+        // Wire yesterday recheck: when local yesterday data changes (edit, delete),
+        // immediately recompute the warning without waiting for the 10-minute poll.
+        activitySvc.onYesterdayDataChanged = { [weak self] in
+            self?.recheckYesterdayWarning()
+        }
+
+        // Wire network reconnect: sync queued entries + refresh data
+        networkMonitor.onReconnect = { [weak self] in
+            guard let self else { return }
+            await self.fetchSession()
+            await self.fetchProjects()
+            await self.timerService.sync()
+            await self.syncQueuedEntries()
+        }
     }
+
+    /// Reference to yesterday checker for local recheck on activity edits.
+    private let _yesterdayChecker: YesterdayCheckManager
 
     // MARK: - Shared State Boxes
 
     /// Mutable box captured by service closures. Updated when currentUserId changes.
     private let _userIdBox: ValueBox<Int?>
     /// Mutable box captured by service closures. Updated when searchEntries changes.
+
+    // MARK: - Yesterday Warning Recheck
+
+    /// Recheck yesterday warning using local data. Called after activity edits/deletes
+    /// that change yesterday's hours — clears the banner immediately if the threshold is met,
+    /// without waiting for the 10-minute polling cycle.
+    func recheckYesterdayWarning() {
+        guard let warning = yesterdayWarning else { return }
+        let yesterdayHours = activityService.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
+        let ratio = yesterdayHours / warning.expectedHours
+        if ratio >= YesterdayCheckManager.threshold {
+            yesterdayWarning = nil
+        } else {
+            // Update the displayed hours in case they changed
+            yesterdayWarning = YesterdayWarning(bookedHours: yesterdayHours, expectedHours: warning.expectedHours)
+        }
+    }
     private let _searchEntriesBox: ValueBox<[SearchEntry]>
     /// Shared rate gate for all API calls.
     private let _rateGate: APIRateGate
@@ -212,6 +268,19 @@ final class AppState {
             let profile = try await client.fetchUserProfile(userId: session.id)
             currentUserProfile = profile
             logger.info("Profile: \(profile.firstname) \(profile.lastname)")
+
+            // Pre-download avatar so tab switches don't flash
+            if let urlStr = profile.avatarUrl, let url = URL(string: urlStr) {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    if let image = NSImage(data: data) {
+                        cachedAvatarImage = image
+                        logger.info("Avatar image cached")
+                    }
+                } catch {
+                    logger.warning("Avatar download failed: \(error.localizedDescription)")
+                }
+            }
         } catch {
             logger.error("fetchSession failed: \(error.localizedDescription)")
         }
@@ -231,6 +300,7 @@ final class AppState {
         do {
             let fetched = try await client.fetchAssignedProjects()
             projects = fetched
+            ProjectCache.save(fetched)
             logger.info("Fetched \(fetched.count) projects")
             notificationDispatcher.send(.projectsRefreshed, message: "\(fetched.count) projects synced")
         } catch {
@@ -242,5 +312,61 @@ final class AppState {
         }
 
         isLoading = false
+    }
+
+    // MARK: - Offline Sync
+
+    /// Sync queued entries after reconnecting. Deduplicates against existing activities.
+    func syncQueuedEntries() async {
+        guard !entryQueue.isEmpty else { return }
+        guard let client = makeClient() else { return }
+        guard let userId = currentUserId else { return }
+
+        logger.info("Syncing \(self.entryQueue.count) queued entries")
+
+        var syncedCount = 0
+
+        for entry in entryQueue.entries {
+            // Fetch existing activities for the entry's date to deduplicate
+            do {
+                let existing = try await client.fetchActivities(from: entry.date, to: entry.date, userId: userId)
+
+                // Check for duplicates: same project + task + description
+                let isDuplicate = existing.contains { activity in
+                    activity.project.id == entry.projectId
+                    && activity.task.id == entry.taskId
+                    && activity.description == entry.description
+                }
+
+                if isDuplicate {
+                    logger.info("Skipping duplicate queued entry for \(entry.projectName)")
+                    entryQueue.remove(id: entry.id)
+                    continue
+                }
+
+                // Create the entry
+                _ = try await client.createActivity(
+                    date: entry.date,
+                    projectId: entry.projectId,
+                    taskId: entry.taskId,
+                    description: entry.description,
+                    seconds: entry.seconds,
+                    tag: entry.tag
+                )
+                entryQueue.remove(id: entry.id)
+                syncedCount += 1
+                logger.info("Synced queued entry for \(entry.projectName)")
+            } catch {
+                logger.error("Failed to sync queued entry: \(error.localizedDescription)")
+                break // Stop on first error — don't burn API quota
+            }
+        }
+
+        if syncedCount > 0 {
+            let message = String(localized: "offline.synced \(syncedCount)")
+            notificationDispatcher.send(.projectsRefreshed, message: message)
+            // Refresh today's data to show synced entries
+            await activityService.refreshTodayStats()
+        }
     }
 }

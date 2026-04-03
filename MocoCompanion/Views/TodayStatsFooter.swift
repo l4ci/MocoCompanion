@@ -9,12 +9,19 @@ struct TodayStatsFooter: View {
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
 
+    /// Whether total hours indicate a full standard workday (8h+).
+    private var isFullDay: Bool { totalHours >= 8.0 }
+
     var body: some View {
         VStack(spacing: 0) {
             theme.divider.frame(height: 1)
 
             HStack(spacing: 8) {
-                statCard(label: String(localized: "stats.total"), value: String(format: "%.1fh", totalHours))
+                statCard(
+                    label: String(localized: "stats.total"),
+                    value: String(format: "%.1fh", totalHours),
+                    accent: isFullDay ? .green : nil
+                )
                 statCard(label: String(localized: "stats.billable"), value: String(format: "%.0f%%", billablePercentage))
                 statCard(label: String(localized: "stats.entries"), value: "\(entryCount)")
             }
@@ -23,7 +30,7 @@ struct TodayStatsFooter: View {
         }
     }
 
-    private func statCard(label: String, value: String) -> some View {
+    private func statCard(label: String, value: String, accent: Color? = nil) -> some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 12 + fontBoost, weight: .semibold))
@@ -32,7 +39,7 @@ struct TodayStatsFooter: View {
                 .tracking(0.3)
             Text(value)
                 .font(.system(size: 18 + fontBoost, weight: .semibold, design: .rounded))
-                .foregroundStyle(theme.textPrimary)
+                .foregroundStyle(accent ?? theme.textPrimary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)

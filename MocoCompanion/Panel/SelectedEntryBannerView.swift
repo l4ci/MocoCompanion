@@ -47,8 +47,8 @@ struct SelectedEntryBannerView: View {
                         .font(.system(size: 14 + fontBoost))
                 }
                 .buttonStyle(.plain)
-                .help(isFav ? "Remove from favorites" : "Add to favorites")
-                .accessibilityLabel(isFav ? "Remove from favorites" : "Add to favorites")
+                .help(isFav ? String(localized: "a11y.removeFavorite") : String(localized: "a11y.addFavorite"))
+                .accessibilityLabel(isFav ? String(localized: "a11y.removeFavorite") : String(localized: "a11y.addFavorite"))
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)

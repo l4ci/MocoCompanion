@@ -112,6 +112,10 @@ final class PanelController {
             panel.dismissedExplicitly = false
         }
 
+        // Sync NSPanel appearance with the user's color scheme setting
+        // so the AppKit layer matches the SwiftUI preferredColorScheme.
+        updatePanelAppearance(panel)
+
         positionPanel(panel)
 
         // Hide cursor until the user moves the mouse — prevents hover conflicts
@@ -214,6 +218,22 @@ final class PanelController {
         let hostingView = WindowTrackingHostingView(rootView: view)
         hostingView.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hostingView
+    }
+
+    /// Sync the NSPanel's AppKit appearance with the user's appearance setting.
+    /// Without this, NSHostingView inherits the system appearance, making
+    /// `.preferredColorScheme(.dark)` ineffective for the window chrome and
+    /// underlying AppKit rendering context.
+    private func updatePanelAppearance(_ panel: FloatingPanel) {
+        guard let setting = appState?.settings.appearance else { return }
+        switch setting {
+        case "dark":
+            panel.appearance = NSAppearance(named: .darkAqua)
+        case "light":
+            panel.appearance = NSAppearance(named: .aqua)
+        default:
+            panel.appearance = nil  // follow system
+        }
     }
 
     private func positionPanel(_ panel: FloatingPanel) {

@@ -40,3 +40,15 @@ coverage/
 .cache/
 tmp/
 appicon.png
+
+# ── GSD baseline (auto-generated) ──
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+vendor/

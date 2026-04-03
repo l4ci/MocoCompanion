@@ -15,6 +15,7 @@ final class YesterdayCheckManager: PollingMonitor {
     private let logger = Logger(category: "YesterdayCheck")
     private let settings: SettingsStore
     private let clientFactory: () -> (any YesterdayAPI)?
+    private let userIdProvider: () -> Int?
     private let setWarning: (YesterdayWarning?) -> Void
 
     static let threshold = 0.85
@@ -22,10 +23,12 @@ final class YesterdayCheckManager: PollingMonitor {
     init(
         settings: SettingsStore,
         clientFactory: @escaping () -> (any YesterdayAPI)?,
+        userIdProvider: @escaping () -> Int? = { nil },
         setWarning: @escaping (YesterdayWarning?) -> Void
     ) {
         self.settings = settings
         self.clientFactory = clientFactory
+        self.userIdProvider = userIdProvider
         self.setWarning = setWarning
     }
 
@@ -51,15 +54,17 @@ final class YesterdayCheckManager: PollingMonitor {
             let expectedHours = employment.pattern.expectedHours(weekdayIndex: patternIndex)
             guard expectedHours > 0 else { return [] }
 
-            // Check for absences
+            // Check for absences — filter to current user
             let schedules = try await client.fetchSchedules(from: yesterdayStr, to: yesterdayStr)
-            if schedules.contains(where: { $0.date == yesterdayStr }) {
+            let userId = userIdProvider()
+            let userSchedules = schedules.filter { userId == nil || $0.user.id == userId }
+            if userSchedules.contains(where: { $0.date == yesterdayStr }) {
                 logger.info("Yesterday had an absence — skipping check")
                 setWarning(nil)
                 return []
             }
 
-            let activities = try await client.fetchActivities(from: yesterdayStr, to: yesterdayStr)
+            let activities = try await client.fetchActivities(from: yesterdayStr, to: yesterdayStr, userId: userId)
             let bookedHours = activities.reduce(0.0) { $0 + $1.hours }
             let ratio = bookedHours / expectedHours
 
@@ -67,9 +72,10 @@ final class YesterdayCheckManager: PollingMonitor {
 
             if ratio < Self.threshold {
                 setWarning(YesterdayWarning(bookedHours: bookedHours, expectedHours: expectedHours))
+                let warning = YesterdayWarning(bookedHours: bookedHours, expectedHours: expectedHours)
                 return [MonitorAlert(
                     type: .yesterdayUnderBooked,
-                    message: String(format: "Yesterday: %.1fh of %.1fh booked", bookedHours, expectedHours),
+                    message: warning.message,
                     dedupKey: "YesterdayCheck:underbooked",
                     dedupStrategy: .perDay
                 )]
@@ -90,6 +96,8 @@ struct YesterdayWarning {
     let expectedHours: Double
 
     var message: String {
-        String(format: "Yesterday: %.1fh of %.1fh booked", bookedHours, expectedHours)
+        let booked = String(format: "%.1f", bookedHours)
+        let expected = String(format: "%.1f", expectedHours)
+        return String(localized: "yesterday.warningMessage \(booked) \(expected)")
     }
 }

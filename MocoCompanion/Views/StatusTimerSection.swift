@@ -3,7 +3,7 @@ import SwiftUI
 /// Timer status section for the status popover.
 /// Shows idle, running (with stop button), or paused state.
 struct StatusTimerSection: View {
-    let timerState: TimerService.TimerState
+    let timerState: TimerState
     let currentActivity: MocoActivity?
     var onStop: () -> Void
 
@@ -39,7 +39,7 @@ struct StatusTimerSection: View {
                 .buttonStyle(.bordered)
                 .tint(.red)
                 .controlSize(.small)
-                .accessibilityLabel("Stop timer for \(projectName)")
+                .accessibilityLabel(String(localized: "a11y.stopTimer \(projectName)"))
             }
             .padding(.vertical, 8)
 

@@ -67,7 +67,7 @@ struct QuickEntryView: View {
                     hasActiveTimer: sm.hasActiveTimer,
                     hasMinSearchChars: sm.hasMinSearchChars,
                     displayItemCount: sm.displayItems.count,
-                    avatarUrl: appState.currentUserProfile?.avatarUrl,
+                    avatarImage: appState.cachedAvatarImage,
                     userFirstname: appState.currentUserProfile?.firstname,
                     onSubmit: handleSearchSubmit,
                     onMoveSelection: { sm.moveSelection(by: $0) },
@@ -87,7 +87,12 @@ struct QuickEntryView: View {
                 if appState.isLoading && appState.projects.isEmpty {
                     QuickEntryLoadingView()
                 } else if appState.projects.isEmpty && !appState.isLoading {
-                    QuickEntryNotConfiguredView(isConfigured: appState.settings.isConfigured)
+                    QuickEntryNotConfiguredView(
+                        isConfigured: appState.settings.isConfigured,
+                        onRetry: {
+                            Task { await appState.fetchProjects() }
+                        }
+                    )
                 } else if sm.phase.isSearching && !sm.searchResults.isEmpty {
                     SearchResultsListView(
                         items: sm.displayItems,

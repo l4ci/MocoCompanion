@@ -45,6 +45,8 @@ final class ActivityService {
 
     /// Called by coordinator to stop timer before deleting a timed activity.
     var onNeedTimerStop: ((Int) async -> Void)?
+    /// Called when yesterday's activities change locally (edit, delete, refresh).
+    var onYesterdayDataChanged: (() -> Void)?
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
@@ -80,10 +82,14 @@ final class ActivityService {
 
     func refreshTodayStats() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshTodayStats skipped — userId not available yet")
+            return
+        }
         let today = DateUtilities.todayString()
 
         do {
-            let activities = try await client.fetchActivities(from: today, to: today, userId: userIdProvider())
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
             applyFetchedTodayActivities(activities)
         } catch {
             logger.error("refreshTodayStats failed: \(error.localizedDescription)")
@@ -101,12 +107,17 @@ final class ActivityService {
 
     func refreshYesterdayActivities() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshYesterdayActivities skipped — userId not available yet")
+            return
+        }
         guard let yesterday = DateUtilities.yesterdayString() else { return }
 
         do {
-            let activities = try await client.fetchActivities(from: yesterday, to: yesterday, userId: userIdProvider())
+            let activities = try await client.fetchActivities(from: yesterday, to: yesterday, userId: userId)
             yesterdayActivities = activities
             _sortedYesterday = nil
+            onYesterdayDataChanged?()
             logger.info("Yesterday sync: \(activities.count) entries")
         } catch {
             logger.error("refreshYesterdayActivities failed: \(error.localizedDescription)")
@@ -117,11 +128,15 @@ final class ActivityService {
 
     func refreshTodayPlanning() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshTodayPlanning skipped — userId not available yet")
+            return
+        }
         let today = DateUtilities.todayString()
         let period = "\(today):\(today)"
 
         do {
-            let entries = try await client.fetchPlanningEntries(period: period, userId: userIdProvider())
+            let entries = try await client.fetchPlanningEntries(period: period, userId: userId)
             todayPlanningEntries = entries
             logger.info("Planning: \(entries.count) entries for today")
         } catch {
@@ -132,11 +147,15 @@ final class ActivityService {
     /// Fetch tomorrow's planning entries.
     func refreshTomorrowPlanning() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshTomorrowPlanning skipped — userId not available yet")
+            return
+        }
         guard let tomorrow = DateUtilities.tomorrowString() else { return }
         let period = "\(tomorrow):\(tomorrow)"
 
         do {
-            let entries = try await client.fetchPlanningEntries(period: period, userId: userIdProvider())
+            let entries = try await client.fetchPlanningEntries(period: period, userId: userId)
             tomorrowPlanningEntries = entries
             logger.info("Tomorrow planning: \(entries.count) entries")
         } catch {
@@ -147,6 +166,10 @@ final class ActivityService {
     /// Fetch today + tomorrow planning entries in a single API call.
     func refreshAllPlanning() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshAllPlanning skipped — userId not available yet")
+            return
+        }
         let today = DateUtilities.todayString()
         guard let tomorrow = DateUtilities.tomorrowString() else {
             // Fallback: just fetch today
@@ -156,7 +179,7 @@ final class ActivityService {
         let period = "\(today):\(tomorrow)"
 
         do {
-            let allEntries = try await client.fetchPlanningEntries(period: period, userId: userIdProvider())
+            let allEntries = try await client.fetchPlanningEntries(period: period, userId: userId)
             let todayEntries = allEntries.filter { $0.startsOn <= today && $0.endsOn >= today }
             let tomorrowEntries = allEntries.filter { $0.startsOn <= tomorrow && $0.endsOn >= tomorrow }
             todayPlanningEntries = todayEntries
@@ -170,16 +193,19 @@ final class ActivityService {
     /// Fetch absences (schedules) for yesterday, today, and tomorrow.
     func refreshAbsences() async {
         guard let client = clientFactory() else { return }
+        guard let userId = userIdProvider() else {
+            logger.warning("refreshAbsences skipped — userId not available yet")
+            return
+        }
         guard let yesterday = DateUtilities.yesterdayString(),
               let tomorrow = DateUtilities.tomorrowString() else { return }
 
         do {
             let schedules = try await client.fetchSchedules(from: yesterday, to: tomorrow)
             // Filter to current user and index by date
-            let userId = userIdProvider()
             var result: [String: MocoSchedule] = [:]
             for schedule in schedules {
-                if userId == nil || schedule.user.id == userId {
+                if schedule.user.id == userId {
                     result[schedule.date] = schedule
                 }
             }
@@ -227,18 +253,91 @@ final class ActivityService {
         }
     }
 
+    // MARK: - Undo Delete
+
+    /// A pending delete that can be undone within the grace period.
+    struct PendingDelete {
+        let activity: MocoActivity
+        let isYesterday: Bool
+        let task: Task<Void, Never>
+    }
+
+    /// The currently pending delete, if any. Observable so the UI can show the undo toast.
+    private(set) var pendingDelete: PendingDelete?
+
     func deleteActivity(activityId: Int) async {
         guard let client = clientFactory() else { return }
 
         // Stop timer if this activity is being timed (via coordinator callback)
         await onNeedTimerStop?(activityId)
 
+        // Capture the activity before removing it locally
+        let activity = todayActivities.first(where: { $0.id == activityId })
+            ?? yesterdayActivities.first(where: { $0.id == activityId })
+        let wasYesterday = yesterdayActivities.contains { $0.id == activityId }
+
+        // Cancel any existing pending delete (execute it immediately)
+        await commitPendingDelete()
+
+        // Remove locally for instant visual feedback
+        removeLocal(activityId: activityId)
+        sideEffects.onActivityDeleted()
+
+        guard let activity else {
+            // Activity wasn't in local arrays — just delete server-side
+            do { try await client.deleteActivity(activityId: activityId) } catch { handleError(error, label: "deleteActivity") }
+            return
+        }
+
+        // Start a delayed delete — can be undone within 5 seconds
+        let deleteTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            await self?.executeDelete(activityId: activityId)
+        }
+
+        pendingDelete = PendingDelete(activity: activity, isYesterday: wasYesterday, task: deleteTask)
+    }
+
+    /// Undo the pending delete — restore the activity to the local array.
+    func undoDelete() {
+        guard let pending = pendingDelete else { return }
+        pending.task.cancel()
+
+        if pending.isYesterday {
+            yesterdayActivities.append(pending.activity)
+            _sortedYesterday = nil
+            onYesterdayDataChanged?()
+        } else {
+            todayActivities.append(pending.activity)
+            recomputeTodayStats()
+            invalidateSortedCaches()
+        }
+
+        pendingDelete = nil
+        logger.info("Undo delete: restored activity \(pending.activity.id)")
+    }
+
+    /// Immediately commit the pending delete (called on timeout or before a new delete).
+    func commitPendingDelete() async {
+        guard let pending = pendingDelete else { return }
+        pending.task.cancel()
+        pendingDelete = nil
+        await executeDelete(activityId: pending.activity.id)
+    }
+
+    /// Execute the actual API delete.
+    private func executeDelete(activityId: Int) async {
+        guard let client = clientFactory() else { return }
         do {
             try await client.deleteActivity(activityId: activityId)
-            removeLocal(activityId: activityId)
-            sideEffects.onActivityDeleted()
+            logger.info("Deleted activity \(activityId) from server")
         } catch {
             handleError(error, label: "deleteActivity")
+        }
+        // Clear pending if this was the one
+        if pendingDelete?.activity.id == activityId {
+            pendingDelete = nil
         }
     }
 
@@ -342,6 +441,7 @@ final class ActivityService {
         if let idx = yesterdayActivities.firstIndex(where: { $0.id == activity.id }) {
             yesterdayActivities[idx] = activity
             _sortedYesterday = nil
+            onYesterdayDataChanged?()
         }
     }
 
@@ -354,11 +454,13 @@ final class ActivityService {
 
     /// Remove an activity from both today and yesterday arrays.
     private func removeLocal(activityId: Int) {
+        let hadYesterday = yesterdayActivities.contains { $0.id == activityId }
         todayActivities.removeAll { $0.id == activityId }
         yesterdayActivities.removeAll { $0.id == activityId }
         recomputeTodayStats()
         invalidateSortedCaches()
         _sortedYesterday = nil
+        if hadYesterday { onYesterdayDataChanged?() }
     }
 
     /// Recompute today's stats from the local activities array.

@@ -26,6 +26,8 @@ struct SettingsView: View {
                 .tabItem { Label(String(localized: "settings.projects"), systemImage: "list.bullet") }
             DebugSettingsTab(settings: settings)
                 .tabItem { Label(String(localized: "settings.debug"), systemImage: "ladybug") }
+            AboutSettingsTab()
+                .tabItem { Label(String(localized: "settings.about"), systemImage: "info.circle") }
         }
         .frame(width: 780, height: 580)
         .padding()

@@ -16,6 +16,7 @@ struct DescriptionFieldView: View {
     @FocusState.Binding var focusedField: QuickEntryStateMachine.FocusField?
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var bodySize: CGFloat { 15 + fontBoost }
     private var captionSize: CGFloat { 12 + fontBoost }
@@ -33,7 +34,7 @@ struct DescriptionFieldView: View {
 
                     // Timer / Manual toggle
                     Button {
-                        withAnimation(.easeInOut(duration: Theme.Motion.standard)) {
+                        animateAccessibly(reduceMotion) {
                             isManualMode.toggle()
                         }
                     } label: {
@@ -69,7 +70,7 @@ struct DescriptionFieldView: View {
                         .font(.system(size: bodySize))
                         .lineLimit(2...4)
                         .focused($focusedField, equals: .description)
-                        .accessibilityLabel("Activity description")
+                        .accessibilityLabel(String(localized: "a11y.activityDescription"))
                         .onSubmit { onSubmit() }
                         .onChange(of: descriptionText) {
                             onTextChanged()
@@ -79,7 +80,7 @@ struct DescriptionFieldView: View {
                                 return .handled
                             }
                             // Tab toggles manual mode and focuses hours
-                            withAnimation(.easeInOut(duration: Theme.Motion.standard)) {
+                            animateAccessibly(reduceMotion) {
                                 isManualMode = true
                             }
                             focusedField = .hours
@@ -99,7 +100,7 @@ struct DescriptionFieldView: View {
                             .font(.system(size: bodySize, design: .monospaced))
                             .frame(width: 110)
                             .focused($focusedField, equals: .hours)
-                            .accessibilityLabel("Hours to book")
+                            .accessibilityLabel(String(localized: "a11y.hoursToBook"))
                             .onSubmit { onSubmit() }
                             .onKeyPress(.tab) {
                                 // Tab from hours goes back to description

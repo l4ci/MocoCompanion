@@ -31,6 +31,8 @@ final class SettingsStore {
         static let panelPositionY = "panelPositionY"
         static let hasSavedPanelPosition = "hasSavedPanelPosition"
         static let panelResetSeconds = "panelResetSeconds"
+        static let hasSeenFirstUseHint = "hasSeenFirstUseHint"
+        static let appLanguage = "appLanguage"
     }
 
     // MARK: - Defaults Helper
@@ -126,6 +128,25 @@ final class SettingsStore {
         didSet { Self.save(Key.panelResetSeconds, panelResetSeconds) }
     }
 
+    /// Whether the user has seen the first-use keyboard hint overlay.
+    var hasSeenFirstUseHint: Bool {
+        didSet { Self.save(Key.hasSeenFirstUseHint, hasSeenFirstUseHint) }
+    }
+
+    /// App language: "system" (follow macOS), "en", or "de".
+    var appLanguage: String {
+        didSet { Self.save(Key.appLanguage, appLanguage) }
+    }
+
+    /// The resolved Locale for formatting dates, numbers, and greetings.
+    var resolvedLocale: Locale {
+        switch appLanguage {
+        case "en": Locale(identifier: "en")
+        case "de": Locale(identifier: "de_DE")
+        default: .current
+        }
+    }
+
     func resetPanelPosition() {
         hasSavedPanelPosition = false
     }
@@ -198,6 +219,8 @@ final class SettingsStore {
         self.panelPositionY = Self.read(Key.panelPositionY, default: 0.0)
         self.hasSavedPanelPosition = Self.read(Key.hasSavedPanelPosition, default: false)
         self.panelResetSeconds = Self.read(Key.panelResetSeconds, default: 60)
+        self.hasSeenFirstUseHint = Self.read(Key.hasSeenFirstUseHint, default: false)
+        self.appLanguage = Self.read(Key.appLanguage, default: "system")
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
@@ -214,6 +237,47 @@ final class SettingsStore {
         if !loadedKey.isEmpty {
             KeychainHelper.save(value: loadedKey, service: Self.keychainService, account: Self.keychainAccount)
         }
+    }
+
+    // MARK: - Reset
+
+    /// Nuke all persisted data: Keychain API key, all UserDefaults entries for this app.
+    /// After calling this, the app is in a fresh-install state.
+    func resetAllData() {
+        // 1. Delete API key from Keychain
+        KeychainHelper.save(value: "", service: Self.keychainService, account: Self.keychainAccount)
+        apiKey = ""
+
+        // 2. Clear subdomain
+        subdomain = ""
+
+        // 3. Remove the entire UserDefaults domain for this app
+        if let bundleId = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleId)
+            UserDefaults.standard.synchronize()
+        }
+
+        // 4. Reset in-memory properties to defaults
+        launchAtLogin = false
+        soundEnabled = true
+        appearance = "auto"
+        favoritesEnabled = true
+        autoCompleteEnabled = true
+        defaultTab = "today"
+        entryFontSizeBoost = 0
+        hasSavedPanelPosition = false
+        panelResetSeconds = 60
+        hasSeenFirstUseHint = false
+        appLanguage = "system"
+        workingHoursStart = 8
+        workingHoursEnd = 17
+        workingDays = [2, 3, 4, 5, 6]
+        customShortcutKeyCode = 0
+        customShortcutModifiers = 0
+        apiLogLevel = .info
+        appLogLevel = .info
+
+        Self.logger.info("All app data has been reset")
     }
 
     // MARK: - Notification Preferences

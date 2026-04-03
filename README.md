@@ -18,19 +18,19 @@ A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.
 ### Homebrew (recommended)
 
 ```bash
-brew tap hellovolker/mococompanion
+brew tap l4ci/mococompanion
 brew install --cask mococompanion
 ```
 
 ### Manual
 
-Download the latest release from [GitHub Releases](https://github.com/hellovolker/MocoCompanion/releases) and drag `MocoCompanion.app` to your Applications folder.
+Download the latest release from [GitHub Releases](https://github.com/l4ci/MocoCompanion/releases) and drag `MocoCompanion.app` to your Applications folder.
 
 ## Setup
 
 1. Open MocoCompanion — it appears as a menu bar icon
-2. Enter your MOCO subdomain and API key in Settings
-3. Press `⌃⌥⌘M` (or your custom shortcut) to open the quick-entry panel
+2. Enter your MOCO subdomain and API key in Settings (Get it from [here](https://{MOCO Subdomain}.mocoapp.com/profile/integrations))
+3. Press `⌃⌥⌘M` (or your custom shortcut) to open the quick-entry panel or click on the menu bar icon
 
 Your API key is stored securely in the macOS Keychain.
 

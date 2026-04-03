@@ -45,7 +45,7 @@ final class TimerSideEffects {
     func onTimerStarted(projectId: Int, taskId: Int, description: String, projectName: String) {
         recordUsage(projectId: projectId, taskId: taskId, description: description)
         playSound(.start)
-        notificationDispatcher.send(.timerStarted, message: String(localized: "notification.timerStarted") + " " + projectName)
+        notificationDispatcher.timerStarted(projectName: projectName)
         Task {
             await budgetRefresh(projectId)
             dispatchBudgetWarning(projectId: projectId, taskId: taskId, projectName: projectName)
@@ -55,13 +55,13 @@ final class TimerSideEffects {
     /// Timer was paused (API stop, but state stays tracked).
     func onTimerPaused(projectName: String) {
         playSound(.stop)
-        notificationDispatcher.send(.timerStopped, message: String(localized: "notification.timerStopped") + " " + projectName)
+        notificationDispatcher.timerPaused(projectName: projectName)
     }
 
     /// Timer was resumed.
     func onTimerResumed(projectName: String) {
         playSound(.start)
-        notificationDispatcher.send(.timerResumed, message: String(localized: "notification.timerResumed") + " " + projectName)
+        notificationDispatcher.timerResumed(projectName: projectName)
     }
 
     /// Timer was stopped completely.
@@ -70,7 +70,7 @@ final class TimerSideEffects {
         if suppressNextStopNotification {
             suppressNextStopNotification = false
         } else {
-            notificationDispatcher.send(.timerStopped, message: String(localized: "notification.timerStopped"))
+            notificationDispatcher.timerStopped()
         }
     }
 
@@ -82,7 +82,7 @@ final class TimerSideEffects {
     /// An existing timer was continued (started on a previous entry).
     func onTimerContinued(projectId: Int, taskId: Int, projectName: String) {
         playSound(.start)
-        notificationDispatcher.send(.timerContinued, message: String(localized: "notification.timerContinued") + " " + projectName)
+        notificationDispatcher.timerContinued(projectName: projectName)
         Task {
             await budgetRefresh(projectId)
             dispatchBudgetWarning(projectId: projectId, taskId: taskId, projectName: projectName)
@@ -91,30 +91,28 @@ final class TimerSideEffects {
 
     /// An activity's description or hours were edited.
     func onActivityEdited() {
-        notificationDispatcher.send(.descriptionUpdated, message: String(localized: "notification.entryUpdated"))
+        notificationDispatcher.entryUpdated()
     }
 
     /// A description was updated (no hours change).
     func onDescriptionUpdated() {
-        notificationDispatcher.send(.descriptionUpdated, message: String(localized: "notification.descriptionUpdated"))
+        notificationDispatcher.descriptionUpdated()
     }
 
     /// An activity was deleted.
     func onActivityDeleted() {
-        notificationDispatcher.send(.activityDeleted, message: String(localized: "notification.entryDeleted"))
+        notificationDispatcher.entryDeleted()
     }
 
     /// A manual time entry was booked (no timer).
     func onManualEntry(projectId: Int, taskId: Int, description: String, projectName: String, hours: Double) {
         recordUsage(projectId: projectId, taskId: taskId, description: description)
-        let formatted = String(format: "%.1fh", hours)
-        notificationDispatcher.send(.manualEntry, message: "Booked \(formatted) for \(projectName)")
+        notificationDispatcher.manualEntry(projectName: projectName, hours: hours)
     }
 
     /// An entry was duplicated to today.
     func onDuplicated(projectName: String, hours: Double) {
-        let formatted = String(format: "%.1fh", hours)
-        notificationDispatcher.send(.activityDuplicated, message: "Duplicated \(formatted) for \(projectName)")
+        notificationDispatcher.entryDuplicated(projectName: projectName, hours: hours)
     }
 
     /// An externally running timer was stopped (during startTimer flow).
@@ -124,7 +122,7 @@ final class TimerSideEffects {
 
     /// An API error occurred. Dispatches error notification.
     func onError(_ error: MocoError) {
-        notificationDispatcher.send(.apiError, message: error.errorDescription ?? "Unknown error")
+        notificationDispatcher.apiError(error)
     }
 
     // MARK: - Private
@@ -134,16 +132,7 @@ final class TimerSideEffects {
     /// Check budget status and dispatch a warning notification if warranted.
     private func dispatchBudgetWarning(projectId: Int, taskId: Int, projectName: String) {
         let status = budgetStatusProvider(projectId, taskId)
-        switch status.effectiveBadge {
-        case .taskCritical:
-            let msg = String(localized: "notification.budgetTaskWarning") + " " + projectName
-            notificationDispatcher.send(.budgetTaskWarning, message: msg)
-        case .projectCritical, .projectWarning:
-            let msg = String(localized: "notification.budgetProjectWarning") + " " + projectName
-            notificationDispatcher.send(.budgetProjectWarning, message: msg)
-        case .none:
-            break
-        }
+        notificationDispatcher.budgetWarning(projectName: projectName, badge: status.effectiveBadge)
     }
 
     private func playSound(_ type: SoundType) {

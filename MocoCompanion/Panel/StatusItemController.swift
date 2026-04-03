@@ -47,6 +47,7 @@ final class StatusItemController {
         setupPopover()
         setupMenu()
         startObservingTimerState()
+        startObservingAppearance()
 
         Self.logger.info("Status item created")
     }
@@ -54,6 +55,8 @@ final class StatusItemController {
     func teardown() {
         observationTask?.cancel()
         elapsedTimerTask?.cancel()
+        appearanceObservation?.invalidate()
+        appearanceObservation = nil
     }
 
     // MARK: - Popover & Menu
@@ -149,6 +152,10 @@ final class StatusItemController {
     private var lastIconName: String?
     /// Cached dot color to avoid re-compositing when unchanged.
     private var lastDotColor: NSColor?
+    /// Cached appearance to detect light/dark transitions.
+    private var lastIsDark: Bool?
+    /// KVO observation for menubar appearance changes.
+    private var appearanceObservation: NSKeyValueObservation?
 
     private func startObservingTimerState() {
         observationTask = Task { [weak self] in
@@ -184,9 +191,10 @@ final class StatusItemController {
     private func applyDisplayState(_ state: MenuBarDisplayState) {
         guard let button = statusItem?.button else { return }
 
-        // Only recreate NSImage when icon name or dot color changes
-        if state.iconName != lastIconName || state.dotColor != lastDotColor {
-            let isDark = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let isDark = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+
+        // Recreate NSImage when icon name, dot color, or appearance changes
+        if state.iconName != lastIconName || state.dotColor != lastDotColor || isDark != lastIsDark {
             button.image = MenuBarIconRenderer.makeIconWithDot(
                 symbolName: state.iconName,
                 dotColor: state.dotColor,
@@ -195,11 +203,29 @@ final class StatusItemController {
             )
             lastIconName = state.iconName
             lastDotColor = state.dotColor
+            lastIsDark = isDark
         }
         button.title = state.title
     }
 
-    private func updateElapsedTimer(for state: TimerService.TimerState) {
+    /// Observe system appearance changes and re-render the icon.
+    private func startObservingAppearance() {
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                // Force re-render by clearing the cache
+                self.lastIsDark = nil
+                let state = MenuBarDisplayState.from(
+                    timerState: self.timerService.timerState,
+                    currentActivity: self.timerService.currentActivity,
+                    hasError: self.timerService.lastError != nil
+                )
+                self.applyDisplayState(state)
+            }
+        }
+    }
+
+    private func updateElapsedTimer(for state: TimerState) {
         switch state {
         case .running:
             guard elapsedTimerTask == nil else { return }

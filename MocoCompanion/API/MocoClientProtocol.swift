@@ -60,27 +60,13 @@ extension SessionAPI {
 }
 
 extension TimerAPI {
-    func fetchActivities(from: String, to: String) async throws -> [MocoActivity] {
-        try await fetchActivities(from: from, to: to, userId: nil)
-    }
-
     func createActivity(date: String, projectId: Int, taskId: Int, description: String, seconds: Int = 0, tag: String? = nil) async throws -> MocoActivity {
         try await createActivity(date: date, projectId: projectId, taskId: taskId, description: description, seconds: seconds, tag: tag)
     }
 }
 
 extension ActivityAPI {
-    func fetchActivities(from: String, to: String) async throws -> [MocoActivity] {
-        try await fetchActivities(from: from, to: to, userId: nil)
-    }
-
     func createActivity(date: String, projectId: Int, taskId: Int, description: String, seconds: Int = 0, tag: String? = nil) async throws -> MocoActivity {
         try await createActivity(date: date, projectId: projectId, taskId: taskId, description: description, seconds: seconds, tag: tag)
-    }
-}
-
-extension YesterdayAPI {
-    func fetchActivities(from: String, to: String) async throws -> [MocoActivity] {
-        try await fetchActivities(from: from, to: to, userId: nil)
     }
 }

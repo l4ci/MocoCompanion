@@ -55,13 +55,13 @@ struct StatusActivityRow: View {
                     descriptionDraft: $descriptionDraft,
                     onSave: { saveDescription() },
                     onCancel: { editingActivityId = nil },
-                    placeholder: "Description (#TICKET-123)…",
+                    placeholder: String(localized: "edit.descriptionPlaceholder"),
                     showHeader: false
                 )
                 .padding(.top, 2)
             } else {
                 HStack(spacing: 6) {
-                    Text(activity.description.isEmpty ? "No description" : activity.description)
+                    Text(activity.description.isEmpty ? String(localized: "popover.noDescription") : activity.description)
                         .font(.system(size: 12))
                         .foregroundStyle(activity.description.isEmpty ? .quaternary : .tertiary)
                         .lineLimit(1)
@@ -79,7 +79,7 @@ struct StatusActivityRow: View {
                         }
                         .buttonStyle(.plain)
                         .help("Edit description")
-                        .accessibilityLabel("Edit description")
+                        .accessibilityLabel(String(localized: "a11y.editDescription"))
                     }
 
                     Spacer()

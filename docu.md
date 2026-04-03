@@ -216,7 +216,7 @@ Tomorrow shows a read-only planning view:
 
 Open via **right-click menubar → Settings** or `⌘,`.
 
-Settings window (520×480) has 7 tabs:
+Settings window (780×580) has 8 tabs:
 
 ### Account
 - **Subdomain** — your Moco instance name
@@ -242,13 +242,14 @@ All instructions are localized (German/English).
 - Remove individual favorites (✕ button)
 
 ### Notifications
-4 groups with per-type toggles:
+5 groups with per-type toggles:
 
 | Group | Types |
 |-------|-------|
 | **Timer** | Started, Resumed, Stopped, Continued |
 | **Activity** | Manual Entry, Duplicated, Deleted, Description Updated, Projects Synced |
 | **Reminders** | Idle (5min no timer), Forgotten Timer (3h+), End of Day Summary |
+| **Budget** | Project Budget Warning, Task Budget Warning |
 | **Alerts** | Yesterday Incomplete, API Errors (always on) |
 
 ### Projects
@@ -258,6 +259,12 @@ All instructions are localized (German/English).
 ### Debug
 - Log levels (API, App) — adjustable verbosity
 - Open/reveal/clear log files
+
+### About
+- App icon, name, and version number
+- Author name (Volker Otto)
+- License (MIT)
+- Link to GitHub repository
 
 ---
 
@@ -326,7 +333,7 @@ All instructions are localized (German/English).
 | **Fastest pause/resume** | `⌘⌃⌥M` → `Enter` — under 1 second |
 | **Continue yesterday's work** | Log → Yesterday → `Enter` on entry — starts new timer with same details |
 | **Quick-start from Log** | `⌘1` in Log tab — instantly starts timer on first entry |
-| **Check your day** | Left-click menubar icon → popover shows timer + entries + stats |
+| **Check your day** | Left-click menubar icon → panel opens with Log tab showing entries + stats |
 | **Fix yesterday's hours** | `←` in Log → navigate → `E` → edit hours → `Enter` |
 | **Book past time** | Track → select → `Tab` (manual mode) → type hours → `Enter` |
 | **Flexible hours input** | All equivalent: `1.5`, `1h 30m`, `1h30m`, `90m`, `1,5` |

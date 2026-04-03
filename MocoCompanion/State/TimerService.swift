@@ -23,9 +23,6 @@ final class TimerService {
         }
     }
 
-    /// Alias for backward compatibility — TimerState is now a standalone type.
-    typealias TimerState = MocoCompanion.TimerState
-
     // MARK: - Dependencies
 
     private let clientFactory: () -> (any TimerAPI)?
@@ -229,9 +226,14 @@ final class TimerService {
             return
         }
 
+        guard let userId = userIdProvider() else {
+            logger.warning("stopRunningTimer skipped server check — userId not available")
+            return
+        }
+
         let today = DateUtilities.todayString()
         do {
-            let activities = try await client.fetchActivities(from: today, to: today, userId: userIdProvider())
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
             if let running = activities.first(where: { $0.isTimerRunning }) {
                 logger.info("Found externally running timer: activityId=\(running.id) — stopping it")
                 _ = try await client.stopTimer(activityId: running.id)
@@ -244,10 +246,14 @@ final class TimerService {
 
     private func syncCurrentTimer() async -> [MocoActivity]? {
         guard let client = clientFactory() else { return nil }
+        guard let userId = userIdProvider() else {
+            logger.warning("syncCurrentTimer skipped — userId not available yet")
+            return nil
+        }
         let today = DateUtilities.todayString()
 
         do {
-            let activities = try await client.fetchActivities(from: today, to: today, userId: userIdProvider())
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
             if let running = activities.first(where: { $0.isTimerRunning }) {
                 if case .running(let currentId, _) = timerState, currentId == running.id { return activities }
                 currentActivity = running

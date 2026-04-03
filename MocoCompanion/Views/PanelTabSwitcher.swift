@@ -6,12 +6,13 @@ struct PanelTabSwitcher: View {
     @Binding var activeTab: PanelContentView.PanelTab
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 2) {
             ForEach(PanelContentView.PanelTab.allCases, id: \.self) { tab in
                 Button {
-                    withAnimation(.easeInOut(duration: Theme.Motion.standard)) {
+                    animateAccessibly(reduceMotion) {
                         activeTab = tab
                     }
                 } label: {

@@ -1,0 +1,46 @@
+# CLAUDE.md — Project Instructions for MocoCompanion
+
+## Design Context
+
+### Users
+Professionals who track their hours in Moco daily — developers, designers, consultants, project managers at agencies and consultancies. They're in the middle of work when they use this: switching tasks, starting meetings, ending their day. The app must never break their flow. Context is "I need to track this in under 3 seconds and get back to what I was doing." German and English speakers, macOS power users comfortable with keyboard shortcuts.
+
+### Brand Personality
+**Friendly, polished, reliable.** A warm companion you trust through your workday — not a cold tool, not a toy. It should feel like a well-made watch: you glance at it, it tells you what you need, you move on. Approachable but never cute. Confident but never loud.
+
+### Aesthetic Direction
+
+**Visual tone:** Neutral and minimal. The UI is content-forward — color serves state (green=running, orange=paused, red=error/idle) not decoration. The vibrant app icon is the brand moment; the interface itself is calm, quiet, and fast. Think Raycast or Alfred: keyboard-first launcher aesthetic where density and speed are the design.
+
+**References:** Raycast, Alfred — fast launchers with dense, efficient UIs that feel native to macOS. The panel floats like Spotlight, responds to keyboard instantly, and disappears when done.
+
+**Anti-references:** Electron-style bloat — nothing heavy, slow, or over-animated. No gratuitous transitions, no loading spinners that could be avoided, no UI that makes you wait. If it feels like a web app pretending to be native, it's wrong.
+
+**Theme:** Both light and dark, user-selectable plus system-follow. The existing `Theme.swift` color system is the source of truth — warm-tinted backgrounds (slight blue in dark, slight cool in light), three-tier text hierarchy, semantic state colors.
+
+**Typography:** System font (SF Pro) throughout. No custom fonts. Monospaced for durations/timers. Rounded design for avatar initials and numeric display. Seven-step size scale defined in `Theme.FontSize` (caption 10 through largeTitle 22). User-adjustable font size boost (0–3pt) for entry rows.
+
+**Spacing:** Compact but breathable. Panel horizontal padding 18pt, vertical 16pt. Entry rows: horizontal 12pt, vertical 8–10pt. HStack spacing 6–12pt depending on density. No rigid 4pt/8pt grid — spacing serves the content.
+
+**Radius:** Three-tier: small (4pt badges/pills), medium (8pt cards/rows), large (14pt panel). All use `.continuous` style.
+
+**Motion:** Minimal and purposeful. Three durations: fast 0.12s (exits, micro-feedback), standard 0.18s (state transitions), slow 0.30s (complex). `@Environment(\.accessibilityReduceMotion)` respected. `animationBehavior = .utilityWindow` on the panel. No decorative animations.
+
+**Color palette:**
+- Accent: System accent color (blue by default) — used for selection, CTAs, avatar backgrounds
+- State: Green (running), orange (paused/warning), red (error/idle dot), yellow (favorites)
+- Surfaces: Warm-tinted neutrals via opacity on white/black (not gray)
+- Text: Three tiers at 0.92/0.72/0.55 opacity (dark) and 0.10-0.14/0.55/0.45 opacity-on-black (light)
+- Never: Gradients in UI (reserved for icon only), saturated backgrounds, decorative color
+
+### Design Principles
+
+1. **Speed is the feature.** Every interaction path is optimized for minimum keystrokes. The UI exists to get out of the way. If a design choice makes the app feel slower — visually or mechanically — reject it.
+
+2. **Native or nothing.** SwiftUI + AppKit, system font, system accent color, Keychain, Notification Center, NSPanel, SF Symbols. It should feel like it ships with macOS. No custom chrome that fights the platform.
+
+3. **State over decoration.** Color communicates state (running, paused, error, favorite), not personality. When nothing is happening, the UI is quiet. Visual noise is a bug.
+
+4. **Keyboard-first, mouse-welcome.** Every action is reachable via keyboard. Mouse/trackpad works everywhere but is never required. Focus states are always visible. The keyboard user and the mouse user see the same UI.
+
+5. **Density with clarity.** Pack information tight — this is a utility panel, not a canvas app. But never sacrifice readability. Three-tier text hierarchy, consistent spacing, and selective bold weight keep dense layouts scannable.

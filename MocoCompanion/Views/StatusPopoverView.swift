@@ -86,11 +86,11 @@ struct StatusPopoverView: View {
         HStack(spacing: 10) {
             statPill(label: String(localized: "today.title"), value: String(format: "%.1fh", activityService.todayTotalHours))
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Today: \(String(format: "%.1f", activityService.todayTotalHours)) hours")
+                .accessibilityLabel(String(localized: "a11y.todayHours \(String(format: "%.1f", activityService.todayTotalHours))"))
 
             statPill(label: String(localized: "stats.billable"), value: String(format: "%.0f%%", activityService.todayBillablePercentage))
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Billable: \(String(format: "%.0f", activityService.todayBillablePercentage)) percent")
+                .accessibilityLabel(String(localized: "a11y.billable \(String(format: "%.0f", activityService.todayBillablePercentage))"))
         }
     }
 

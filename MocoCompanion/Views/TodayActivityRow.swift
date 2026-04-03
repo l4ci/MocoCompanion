@@ -33,6 +33,7 @@ struct TodayActivityRow: View {
     var onFocusList: () -> Void
 
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.theme) private var theme
 
     /// Caption-sized font for secondary elements (icons, planned hours).
     private var captionSize: CGFloat { 12 + fontBoost }
@@ -78,20 +79,6 @@ struct TodayActivityRow: View {
                     budgetBadge: badge
                 ) {
                     HStack(spacing: 6) {
-                        // Duplicate button (visible on hover/select for today entries)
-                        if (isSelected || isHovered) && !isRunning && !isYesterday {
-                            Button {
-                                Task { _ = await activityService.duplicateToToday(activity: activity) }
-                            } label: {
-                                Image(systemName: "doc.on.doc")
-                                    .font(.system(size: captionSize))
-                                    .foregroundStyle(isSelected ? .white.opacity(0.5) : .secondary)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Duplicate")
-                            .accessibilityLabel("Duplicate entry")
-                        }
-
                         ActivityDurationText(
                             activity: activity,
                             isSelected: isSelected
@@ -100,14 +87,13 @@ struct TodayActivityRow: View {
                         if let planned = plannedHours {
                             Text("of \(String(format: "%.0fh", planned))")
                                 .font(.system(size: captionSize, weight: .medium))
-                                .foregroundStyle(isSelected ? .white.opacity(0.4) : .secondary)
+                                .foregroundStyle(isSelected ? theme.selectedTextTertiary : .secondary)
                         }
                     }
                 }
                 .onHover { hover in
                     if hover {
                         hoveredActivityId = activity.id
-                        onSelect()
                     } else {
                         hoveredActivityId = nil
                     }
@@ -131,7 +117,7 @@ struct TodayActivityRow: View {
 
     private var deleteConfirmation: some View {
         HStack(spacing: 8) {
-            Text(String(localized: "action.deleteConfirm").replacingOccurrences(of: "%@", with: activity.project.name))
+            Text(String(localized: "action.deleteConfirm \(activity.project.name)"))
                 .font(.system(size: 15 + fontBoost, weight: .medium))
                 .foregroundStyle(.red)
                 .lineLimit(1)
@@ -151,7 +137,7 @@ struct TodayActivityRow: View {
             .buttonStyle(.bordered)
             .controlSize(.mini)
             .keyboardShortcut(.cancelAction)
-            .accessibilityLabel("Cancel delete")
+            .accessibilityLabel(String(localized: "a11y.cancelDelete"))
 
             Button {
                 confirmDelete()
@@ -166,7 +152,7 @@ struct TodayActivityRow: View {
             .tint(.red)
             .controlSize(.mini)
             .keyboardShortcut(.defaultAction)
-            .accessibilityLabel("Confirm delete")
+            .accessibilityLabel(String(localized: "a11y.confirmDelete"))
         }
         .focusable()
         .onExitCommand { cancelDelete() }

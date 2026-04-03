@@ -67,7 +67,8 @@ final class MonitorEngine {
     }
 
     /// Register and start polling a monitor.
-    func register(_ monitor: PollingMonitor) {
+    /// - Parameter immediateFirstCheck: If true, run the first check immediately instead of waiting for the poll interval.
+    func register(_ monitor: PollingMonitor, immediateFirstCheck: Bool = false) {
         let id = ObjectIdentifier(monitor)
         tasks[id]?.cancel()
         monitors[id] = monitor
@@ -75,6 +76,18 @@ final class MonitorEngine {
         tasks[id] = Task { [weak self] in
             guard let self else { return }
             self.logger.info("\(monitor.monitorName): started")
+
+            // Optional immediate first check before entering the polling loop
+            if immediateFirstCheck && monitor.isActive {
+                let alerts = await monitor.check()
+                for alert in alerts {
+                    if self.dedupLedger.shouldFire(alert) {
+                        self.dispatcher.send(alert.type, message: alert.message)
+                        self.dedupLedger.markFired(alert)
+                        self.logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
+                    }
+                }
+            }
 
             while !Task.isCancelled {
                 try? await Task.sleep(for: monitor.pollInterval)
