@@ -7,15 +7,17 @@ import os
 /// Uses deferred, coalesced updates to avoid layout feedback loops.
 final class WindowTrackingHostingView<Content: View>: NSHostingView<Content> {
     private var resizePending = false
+    private var isUpdatingConstraints = false
 
     override func invalidateIntrinsicContentSize() {
         super.invalidateIntrinsicContentSize()
         scheduleWindowResize()
     }
 
-    override func layout() {
-        super.layout()
-        scheduleWindowResize()
+    override func updateConstraints() {
+        isUpdatingConstraints = true
+        super.updateConstraints()
+        isUpdatingConstraints = false
     }
 
     private func scheduleWindowResize() {
@@ -27,6 +29,15 @@ final class WindowTrackingHostingView<Content: View>: NSHostingView<Content> {
                 self?.resizePending = false
                 return
             }
+
+            // If this fires during a constraint pass (possible on macOS 26+),
+            // re-defer to avoid re-entrant setNeedsUpdateConstraints crash.
+            if self.isUpdatingConstraints {
+                self.resizePending = false
+                self.scheduleWindowResize()
+                return
+            }
+
             self.resizePending = false
 
             let ideal = self.fittingSize
