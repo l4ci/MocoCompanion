@@ -3,12 +3,15 @@ import Foundation
 import os
 
 /// Central app state observable by SwiftUI views.
-/// Owns project catalog, search, settings, and in-app notifications.
-/// Timer lifecycle delegated to TimerService.
+/// Thin composition root that wires services together and forwards to
+/// ProjectCatalog (project list, search index) and SessionManager (user identity, sync).
 @Observable
 @MainActor
 final class AppState {
     private let logger = Logger(category: "AppState")
+
+    let catalog: ProjectCatalog
+    let session: SessionManager
 
     let settings: SettingsStore
     let favoritesManager: FavoritesManager
@@ -17,42 +20,28 @@ final class AppState {
     let descriptionStore: DescriptionStore
     let timerService: TimerService
     let activityService: ActivityService
+    let planningStore: PlanningStore
+    let deleteUndoManager: DeleteUndoManager
     let notificationDispatcher: NotificationDispatcher
     let budgetService: BudgetService
     let monitorEngine: MonitorEngine
     let networkMonitor: NetworkMonitor
     let entryQueue: EntryQueue
-    private let coordinator: TimerActivityCoordinator
 
-    var projects: [MocoProject] = [] {
-        didSet {
-            _searchEntries = nil
-            _searchEntriesBox.value = searchEntries
-        }
+    // MARK: - Forwarding Properties
+
+    var projects: [MocoProject] { catalog.projects }
+    var isLoading: Bool { catalog.isLoading }
+    var searchEntries: [SearchEntry] { catalog.searchEntries }
+    var assignedProjectIds: [Int] { catalog.assignedProjectIds }
+    var currentUserId: Int? { session.currentUserId }
+    var currentUserProfile: MocoUserProfile? { session.currentUserProfile }
+    var cachedAvatarImage: NSImage? { session.cachedAvatarImage }
+
+    var yesterdayWarning: YesterdayWarning? {
+        get { session.yesterdayWarning }
+        set { session.yesterdayWarning = newValue }
     }
-    var isLoading = false
-    var yesterdayWarning: YesterdayWarning?
-    /// The authenticated user's Moco ID. Set on app launch via fetchSession().
-    private(set) var currentUserId: Int?
-    private(set) var currentUserProfile: MocoUserProfile?
-    /// Cached avatar image — downloaded once after profile fetch. Nil if no avatar URL or download failed.
-    private(set) var cachedAvatarImage: NSImage?
-
-    // MARK: - Cached Search Entries
-
-    /// Cache invalidated when `projects` changes.
-    private var _searchEntries: [SearchEntry]?
-
-    /// Flattened search entries built from current projects. Cached until projects change.
-    var searchEntries: [SearchEntry] {
-        if let cached = _searchEntries { return cached }
-        let entries = SearchEntry.from(projects: projects)
-        _searchEntries = entries
-        return entries
-    }
-
-    /// IDs of currently assigned projects. Used to drive budget refresh.
-    var assignedProjectIds: [Int] { projects.map(\.id) }
 
     /// Project IDs that are relevant for budget monitoring: today's tracked activities,
     /// today's planned entries, favorites, and recent entries. Much smaller than all
@@ -148,15 +137,7 @@ final class AppState {
             }
         )
 
-        // Create TimerService (no cross-service dependencies at init)
-        let timerSvc = TimerService(
-            clientFactory: clientFactory,
-            sideEffects: sideEffects,
-            userIdProvider: userIdProvider
-        )
-        self.timerService = timerSvc
-
-        // Create ActivityService (no cross-service dependencies at init)
+        // Create ActivityService first (TimerService needs it for sync target)
         let activitySvc = ActivityService(
             clientFactory: clientFactory,
             sideEffects: sideEffects,
@@ -164,17 +145,58 @@ final class AppState {
         )
         self.activityService = activitySvc
 
+        // Create TimerService with activity sync target (replaces TimerActivityCoordinator)
+        let timerSvc = TimerService(
+            clientFactory: clientFactory,
+            sideEffects: sideEffects,
+            userIdProvider: userIdProvider,
+            activitySync: ActivitySyncTarget(
+                upsertActivity: { [weak activitySvc] activity in
+                    activitySvc?.upsertActivity(activity)
+                },
+                applyFetchedActivities: { [weak activitySvc] activities in
+                    activitySvc?.applyFetchedTodayActivities(activities)
+                },
+                refreshTodayStats: { [weak activitySvc] in
+                    await activitySvc?.refreshTodayStats()
+                }
+            )
+        )
+        self.timerService = timerSvc
+
+        // Create PlanningStore — owns planning entries, absences, unplanned tasks
+        let planningSvc = PlanningStore(
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider,
+            todayActivitiesProvider: { [weak activitySvc] in activitySvc?.todayActivities ?? [] }
+        )
+        self.planningStore = planningSvc
+        activitySvc.planningStore = planningSvc
+
+        // Create DeleteUndoManager — owns delete lifecycle with undo support
+        let deleteUndo = DeleteUndoManager(
+            clientFactory: clientFactory,
+            activityService: activitySvc,
+            sideEffects: sideEffects
+        )
+        self.deleteUndoManager = deleteUndo
+        activitySvc.deleteUndoManager = deleteUndo
+
         // Monitor engine — centralized polling, dedup, and dispatch for background monitors
         let engine = MonitorEngine(dispatcher: dispatcher)
         self.monitorEngine = engine
         self.networkMonitor = NetworkMonitor()
         self.entryQueue = EntryQueue()
 
-        // Load cached projects for offline use
-        let cached = ProjectCache.load()
-        if !cached.isEmpty {
-            projects = cached
-        }
+        // Create extracted submodules
+        let projectCatalog = ProjectCatalog()
+        self.catalog = projectCatalog
+
+        let sessionMgr = SessionManager(userIdBox: userIdBox)
+        self.session = sessionMgr
+
+        // Keep the search entries box in sync when catalog projects change
+        searchEntriesBox.value = projectCatalog.searchEntries
 
         engine.register(BudgetDepletionMonitor(
             timerService: timerSvc,
@@ -187,9 +209,17 @@ final class AppState {
             settings: settings
         ))
 
-        // Coordinator wires the cross-boundary callbacks between timer and activity services
-        self.coordinator = TimerActivityCoordinator(timer: timerSvc, activities: activitySvc)
-        self._userIdBox = userIdBox
+        // Wire delete → timer: stop timer before deleting a timed activity
+        deleteUndo.onNeedTimerStop = { [weak timerSvc] activityId in
+            guard let timerSvc else { return }
+            switch timerSvc.timerState {
+            case .running(let id, _) where id == activityId,
+                 .paused(let id, _) where id == activityId:
+                await timerSvc.stopTimer()
+            default: break
+            }
+        }
+
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate
 
@@ -205,7 +235,7 @@ final class AppState {
         self._yesterdayChecker = yesterdayChecker
 
         // All stored properties now initialized — safe to capture [weak self]
-        yesterdayWarningCallback = { [weak self] warning in self?.yesterdayWarning = warning }
+        yesterdayWarningCallback = { [weak sessionMgr] warning in sessionMgr?.yesterdayWarning = warning }
         engine.register(yesterdayChecker, immediateFirstCheck: true)
 
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
@@ -226,147 +256,44 @@ final class AppState {
 
     /// Reference to yesterday checker for local recheck on activity edits.
     private let _yesterdayChecker: YesterdayCheckManager
-
-    // MARK: - Shared State Boxes
-
-    /// Mutable box captured by service closures. Updated when currentUserId changes.
-    private let _userIdBox: ValueBox<Int?>
     /// Mutable box captured by service closures. Updated when searchEntries changes.
+    private let _searchEntriesBox: ValueBox<[SearchEntry]>
+    /// Shared rate gate for all API calls.
+    private let _rateGate: APIRateGate
 
-    // MARK: - Yesterday Warning Recheck
+    // MARK: - Delegated Methods
+
+    /// Fetch the current user's ID from the Moco session endpoint.
+    func fetchSession() async {
+        await session.fetchSession(client: makeClient())
+    }
+
+    func fetchProjects() async {
+        await catalog.fetchProjects(
+            client: makeClient(),
+            onError: { [weak self] error in self?.timerService.lastError = error },
+            dispatcher: notificationDispatcher
+        )
+        _searchEntriesBox.value = catalog.searchEntries
+    }
 
     /// Recheck yesterday warning using local data. Called after activity edits/deletes
     /// that change yesterday's hours — clears the banner immediately if the threshold is met,
     /// without waiting for the 10-minute polling cycle.
     func recheckYesterdayWarning() {
-        guard let warning = yesterdayWarning else { return }
-        let yesterdayHours = activityService.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
-        let ratio = yesterdayHours / warning.expectedHours
-        if ratio >= YesterdayCheckManager.threshold {
-            yesterdayWarning = nil
-        } else {
-            // Update the displayed hours in case they changed
-            yesterdayWarning = YesterdayWarning(bookedHours: yesterdayHours, expectedHours: warning.expectedHours)
-        }
+        session.recheckYesterdayWarning(yesterdayActivities: activityService.yesterdayActivities)
     }
-    private let _searchEntriesBox: ValueBox<[SearchEntry]>
-    /// Shared rate gate for all API calls.
-    private let _rateGate: APIRateGate
-
-    // MARK: - Session
-
-    /// Fetch the current user's ID from the Moco session endpoint.
-    func fetchSession() async {
-        guard let client = makeClient() else { return }
-        do {
-            let session = try await client.fetchSession()
-            currentUserId = session.id
-            _userIdBox.value = session.id
-            logger.info("Session: userId=\(session.id)")
-
-            // Fetch user profile for greeting + avatar
-            let profile = try await client.fetchUserProfile(userId: session.id)
-            currentUserProfile = profile
-            logger.info("Profile: \(profile.firstname) \(profile.lastname)")
-
-            // Pre-download avatar so tab switches don't flash
-            if let urlStr = profile.avatarUrl, let url = URL(string: urlStr) {
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: url)
-                    if let image = NSImage(data: data) {
-                        cachedAvatarImage = image
-                        logger.info("Avatar image cached")
-                    }
-                } catch {
-                    logger.warning("Avatar download failed: \(error.localizedDescription)")
-                }
-            }
-        } catch {
-            logger.error("fetchSession failed: \(error.localizedDescription)")
-        }
-    }
-
-    // MARK: - Projects
-
-    func fetchProjects() async {
-        guard let client = makeClient() else {
-            logger.warning("Cannot fetch projects — API not configured")
-            timerService.lastError = .invalidConfiguration
-            return
-        }
-
-        isLoading = true
-
-        do {
-            let fetched = try await client.fetchAssignedProjects()
-            projects = fetched
-            ProjectCache.save(fetched)
-            logger.info("Fetched \(fetched.count) projects")
-            notificationDispatcher.send(.projectsRefreshed, message: "\(fetched.count) projects synced")
-        } catch {
-            let mocoError = MocoError.from(error)
-            timerService.lastError = mocoError
-            notificationDispatcher.send(.apiError, message: mocoError.errorDescription ?? "Unknown error")
-            logger.error("fetchProjects failed: \(error.localizedDescription)")
-            Task { await AppLogger.shared.app("fetchProjects failed: \(error.localizedDescription)", level: .error, context: "AppState") }
-        }
-
-        isLoading = false
-    }
-
-    // MARK: - Offline Sync
 
     /// Sync queued entries after reconnecting. Deduplicates against existing activities.
     func syncQueuedEntries() async {
-        guard !entryQueue.isEmpty else { return }
-        guard let client = makeClient() else { return }
-        guard let userId = currentUserId else { return }
-
-        logger.info("Syncing \(self.entryQueue.count) queued entries")
-
-        var syncedCount = 0
-
-        for entry in entryQueue.entries {
-            // Fetch existing activities for the entry's date to deduplicate
-            do {
-                let existing = try await client.fetchActivities(from: entry.date, to: entry.date, userId: userId)
-
-                // Check for duplicates: same project + task + description
-                let isDuplicate = existing.contains { activity in
-                    activity.project.id == entry.projectId
-                    && activity.task.id == entry.taskId
-                    && activity.description == entry.description
-                }
-
-                if isDuplicate {
-                    logger.info("Skipping duplicate queued entry for \(entry.projectName)")
-                    entryQueue.remove(id: entry.id)
-                    continue
-                }
-
-                // Create the entry
-                _ = try await client.createActivity(
-                    date: entry.date,
-                    projectId: entry.projectId,
-                    taskId: entry.taskId,
-                    description: entry.description,
-                    seconds: entry.seconds,
-                    tag: entry.tag
-                )
-                entryQueue.remove(id: entry.id)
-                syncedCount += 1
-                logger.info("Synced queued entry for \(entry.projectName)")
-            } catch {
-                logger.error("Failed to sync queued entry: \(error.localizedDescription)")
-                break // Stop on first error — don't burn API quota
+        await session.syncQueuedEntries(
+            queue: entryQueue,
+            client: makeClient(),
+            userId: session.currentUserId,
+            dispatcher: notificationDispatcher,
+            onSynced: { [weak self] in
+                await self?.activityService.refreshTodayStats()
             }
-        }
-
-        if syncedCount > 0 {
-            let message = String(localized: "offline.synced \(syncedCount)")
-            notificationDispatcher.send(.projectsRefreshed, message: message)
-            // Refresh today's data to show synced entries
-            await activityService.refreshTodayStats()
-        }
+        )
     }
 }

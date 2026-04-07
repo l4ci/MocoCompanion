@@ -17,6 +17,20 @@ struct ActivityServiceTests {
             sideEffects: sideEffects,
             userIdProvider: { 42 }
         )
+        // Wire PlanningStore for planning-related forwarding
+        let planningStore = PlanningStore(
+            clientFactory: { capturedAPI },
+            userIdProvider: { 42 },
+            todayActivitiesProvider: { [weak service] in service?.todayActivities ?? [] }
+        )
+        service.planningStore = planningStore
+        // Wire DeleteUndoManager for delete-related forwarding
+        let deleteUndo = DeleteUndoManager(
+            clientFactory: { capturedAPI },
+            activityService: service,
+            sideEffects: sideEffects
+        )
+        service.deleteUndoManager = deleteUndo
         return (service, capturedAPI)
     }
 
@@ -93,7 +107,7 @@ struct ActivityServiceTests {
         #expect(service.todayActivities.count == 2)
 
         var timerStopCalledWith: Int?
-        service.onNeedTimerStop = { activityId in
+        service.deleteUndoManager?.onNeedTimerStop = { activityId in
             timerStopCalledWith = activityId
         }
 

@@ -7,14 +7,16 @@ import os
 @MainActor
 final class FavoritesManager {
     private static let logger = Logger(category: "Favorites")
-    private static let storageKey = "favoriteEntries"
     static let maxFavorites = 5
+
+    private let store: PersistedValue<[FavoriteEntry]>
 
     /// Persisted favorite entries.
     private(set) var favorites: [FavoriteEntry] = []
 
-    init() {
-        favorites = Self.load()
+    init(backend: StorageBackend = DefaultsBackend()) {
+        self.store = PersistedValue(key: "favoriteEntries", default: [], backend: backend)
+        favorites = store.load()
     }
 
     // MARK: - Model
@@ -91,10 +93,6 @@ final class FavoritesManager {
     // MARK: - Persistence
 
     private func save() {
-        JSONStore.save(favorites, key: Self.storageKey)
-    }
-
-    private static func load() -> [FavoriteEntry] {
-        JSONStore.load([FavoriteEntry].self, key: storageKey, fallback: [])
+        store.save(favorites)
     }
 }

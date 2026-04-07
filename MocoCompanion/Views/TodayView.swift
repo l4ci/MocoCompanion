@@ -13,6 +13,8 @@ struct TodayView: View {
     @State private var descriptionDraft = ""
     @State private var hoursDraft = ""
     @State private var refreshId = UUID()
+    /// Ticks every second to update the relative "Xm ago" label.
+    @State private var syncLabelTick = Date()
 
     @FocusState private var listFocused: Bool
     @Environment(\.theme) private var theme
@@ -99,9 +101,17 @@ struct TodayView: View {
             await vm.activityService.refreshYesterdayActivities()
             await vm.activityService.refreshAllPlanning()
             await vm.activityService.refreshAbsences()
+            vm.lastSyncedAt = Date()
             if let idx = vm.activeEntryIndex {
                 vm.selectedIndex = idx
                 vm.trackSelectedId()
+            }
+        }
+        .task {
+            // Tick once per second to keep the relative time label fresh
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                syncLabelTick = Date()
             }
         }
         .onAppear {
@@ -123,6 +133,10 @@ struct TodayView: View {
             appState.recheckYesterdayWarning()
         }
         .onKeyPress(phases: .down) { press in
+            // Clear hover on any key press — prevents two rows being highlighted
+            // when the mouse cursor is hidden during typing.
+            vm.hoveredActivityId = nil
+
             let action = vm.handleKeyPress(
                 key: press.key,
                 characters: press.characters,
@@ -186,10 +200,48 @@ struct TodayView: View {
             )
 
             Spacer()
+
+            syncIndicator
         }
         .padding(.horizontal, 14)
         .padding(.top, 6)
         .padding(.bottom, 2)
+    }
+
+    private var syncIndicator: some View {
+        HStack(spacing: 4) {
+            // Use syncLabelTick to force re-evaluation every second
+            let _ = syncLabelTick
+            if let lastSync = vm.lastSyncedAt {
+                Text(relativeTimeString(since: lastSync))
+                    .font(.system(size: 10 + fontBoost))
+                    .foregroundStyle(theme.textTertiary)
+            }
+
+            Button {
+                Task { await vm.refreshCurrentDay() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 10 + fontBoost, weight: .medium))
+                    .foregroundStyle(theme.textTertiary)
+                    .rotationEffect(vm.isRefreshing ? .degrees(360) : .zero)
+                    .animation(vm.isRefreshing ? .linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: vm.isRefreshing)
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.isRefreshing)
+            .accessibilityLabel(String(localized: "sync.refresh"))
+        }
+    }
+
+    /// Format a Date into a compact relative string: "now", "30s", "2m", "1h".
+    private func relativeTimeString(since date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 5 { return String(localized: "sync.now") }
+        if seconds < 60 { return "\(seconds)s" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let hours = minutes / 60
+        return "\(hours)h"
     }
 
     // MARK: - Absence Banner

@@ -1,8 +1,26 @@
 import Foundation
 import os
 
+/// Callback target for syncing timer state changes to the activity list.
+/// Replaces the TimerActivityCoordinator — closures wired by AppState at init.
+struct ActivitySyncTarget: @unchecked Sendable {
+    let upsertActivity: (MocoActivity) -> Void
+    let applyFetchedActivities: (([MocoActivity]) -> Void)?
+    let refreshTodayStats: (() async -> Void)?
+
+    static let noop = ActivitySyncTarget(
+        upsertActivity: { _ in },
+        applyFetchedActivities: nil,
+        refreshTodayStats: nil
+    )
+}
+
 /// Owns the timer lifecycle: start, pause, resume, stop, continue, toggle.
 /// Pure timer state machine — activity CRUD is delegated to ActivityService.
+///
+/// The `suppressNextStopNotification` flag is eliminated: `stopRunningTimerQuietly`
+/// calls the API without triggering user-facing side effects, used only during
+/// the internal stop-then-start sequence.
 @Observable
 @MainActor
 final class TimerService {
@@ -28,21 +46,18 @@ final class TimerService {
     private let clientFactory: () -> (any TimerAPI)?
     private let sideEffects: TimerSideEffects
     private let userIdProvider: () -> Int?
-
-    /// Called by coordinator when an activity is updated (pause/resume/continue).
-    var onActivityChanged: ((MocoActivity) -> Void)?
-    /// Called by coordinator after sync completes to refresh today stats.
-    /// Receives the activities already fetched during sync to avoid a duplicate API call.
-    var onSyncCompleted: (([MocoActivity]?) async -> Void)?
+    private let activitySync: ActivitySyncTarget
 
     init(
         clientFactory: @escaping () -> (any TimerAPI)?,
         sideEffects: TimerSideEffects,
-        userIdProvider: @escaping () -> Int? = { nil }
+        userIdProvider: @escaping () -> Int? = { nil },
+        activitySync: ActivitySyncTarget = .noop
     ) {
         self.clientFactory = clientFactory
         self.sideEffects = sideEffects
         self.userIdProvider = userIdProvider
+        self.activitySync = activitySync
     }
 
     // MARK: - Public API
@@ -59,8 +74,8 @@ final class TimerService {
         let tag = TagExtractor.extract(from: description)
         logger.info("startTimer: projectId=\(projectId) taskId=\(taskId) tag=\(tag ?? "nil")")
 
-        sideEffects.suppressStopNotification()
-        await stopRunningTimer(client: client)
+        // Stop any running timer quietly — no user-facing stop notification
+        await stopRunningTimerQuietly(client: client)
 
         let today = DateUtilities.todayString()
 
@@ -119,7 +134,7 @@ final class TimerService {
             timerState = .paused(activityId: activityId, projectName: projectName)
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
             sideEffects.onTimerPaused(projectName: projectName)
-            onActivityChanged?(stopped)
+            activitySync.upsertActivity(stopped)
         } catch {
             handleError(error, label: "pauseTimer")
         }
@@ -139,7 +154,7 @@ final class TimerService {
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
             sideEffects.onTimerResumed(projectName: projectName)
-            onActivityChanged?(started)
+            activitySync.upsertActivity(started)
         } catch {
             handleError(error, label: "resumeTimer")
         }
@@ -176,7 +191,12 @@ final class TimerService {
     /// Sync timer state from the server.
     func sync() async {
         let activities = await syncCurrentTimer()
-        await onSyncCompleted?(activities)
+        // Push fetched activities to activity service
+        if let activities {
+            activitySync.applyFetchedActivities?(activities)
+        } else {
+            await activitySync.refreshTodayStats?()
+        }
     }
 
     /// Whether an activity is the currently paused timer.
@@ -203,8 +223,8 @@ final class TimerService {
     private func continueTimer(activityId: Int, projectName: String) async {
         guard let client = clientFactory() else { return }
 
-        sideEffects.suppressStopNotification()
-        await stopRunningTimer(client: client)
+        // Stop any running timer quietly — no user-facing stop notification
+        await stopRunningTimerQuietly(client: client)
 
         do {
             let started = try await client.startTimer(activityId: activityId)
@@ -213,21 +233,31 @@ final class TimerService {
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
             sideEffects.onTimerContinued(projectId: started.project.id, taskId: started.task.id, projectName: projectName)
-            onActivityChanged?(started)
+            activitySync.upsertActivity(started)
         } catch {
             handleError(error, label: "continueTimer")
             await syncCurrentTimer()
         }
     }
 
-    private func stopRunningTimer(client: any TimerAPI) async {
-        if case .running = timerState {
-            await stopTimer()
+    /// Stop any running timer without firing user-facing side effects.
+    /// Used during the internal stop-then-start sequence (startTimer, continueTimer).
+    /// This eliminates the old `suppressNextStopNotification` flag.
+    private func stopRunningTimerQuietly(client: any TimerAPI) async {
+        if case .running(let activityId, _) = timerState {
+            do {
+                _ = try await client.stopTimer(activityId: activityId)
+                logger.info("Quietly stopped running timer: activityId=\(activityId)")
+            } catch {
+                logger.error("stopRunningTimerQuietly failed: \(error.localizedDescription)")
+            }
+            clearTimerState()
             return
         }
 
+        // Check server for externally running timers
         guard let userId = userIdProvider() else {
-            logger.warning("stopRunningTimer skipped server check — userId not available")
+            logger.warning("stopRunningTimerQuietly skipped server check — userId not available")
             return
         }
 
@@ -240,7 +270,7 @@ final class TimerService {
                 sideEffects.onExternalTimerStopped()
             }
         } catch {
-            logger.error("stopRunningTimer server check failed: \(error.localizedDescription)")
+            logger.error("stopRunningTimerQuietly server check failed: \(error.localizedDescription)")
         }
     }
 

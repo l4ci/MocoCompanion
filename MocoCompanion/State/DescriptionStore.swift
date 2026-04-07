@@ -8,8 +8,9 @@ import os
 @MainActor
 final class DescriptionStore {
     private static let logger = Logger(category: "DescriptionStore")
-    private static let storageKey = "descriptionHistory"
     static let maxEntries = 100
+
+    private let store: PersistedValue<[Entry]>
 
     /// Description text → usage count, sorted by count descending.
     private(set) var entries: [Entry] = []
@@ -19,8 +20,9 @@ final class DescriptionStore {
         var count: Int
     }
 
-    init() {
-        entries = Self.load()
+    init(backend: StorageBackend = DefaultsBackend()) {
+        self.store = PersistedValue(key: "descriptionHistory", default: [], backend: backend)
+        entries = store.load()
     }
 
     // MARK: - Public API
@@ -49,10 +51,6 @@ final class DescriptionStore {
     // MARK: - Private
 
     private func save() {
-        JSONStore.save(entries, key: Self.storageKey)
-    }
-
-    private static func load() -> [Entry] {
-        JSONStore.load([Entry].self, key: storageKey, fallback: [])
+        store.save(entries)
     }
 }

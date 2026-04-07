@@ -4,6 +4,9 @@ import os
 /// Manages activity data: CRUD operations, today/yesterday stats, and data refresh.
 /// Uses optimistic local updates after mutations (upserts API responses into local arrays)
 /// instead of full refetches. Full refresh reserved for periodic sync only.
+///
+/// Planning data is managed by PlanningStore; delete/undo by DeleteUndoManager.
+/// Forwarding properties maintain backward compatibility for callers.
 @Observable
 @MainActor
 final class ActivityService {
@@ -15,11 +18,6 @@ final class ActivityService {
     private(set) var todayTotalHours: Double = 0
     private(set) var todayBillablePercentage: Double = 0
     private(set) var yesterdayActivities: [MocoActivity] = []
-    private(set) var todayPlanningEntries: [MocoPlanningEntry] = []
-    private(set) var tomorrowPlanningEntries: [MocoPlanningEntry] = []
-
-    /// Absences keyed by date string "YYYY-MM-DD".
-    private(set) var absences: [String: MocoSchedule] = [:]
 
     /// Cached sorted arrays — invalidated when activities change.
     private var _sortedToday: [MocoActivity]?
@@ -43,10 +41,34 @@ final class ActivityService {
     private let sideEffects: TimerSideEffects
     private let userIdProvider: () -> Int?
 
-    /// Called by coordinator to stop timer before deleting a timed activity.
-    var onNeedTimerStop: ((Int) async -> Void)?
     /// Called when yesterday's activities change locally (edit, delete, refresh).
     var onYesterdayDataChanged: (() -> Void)?
+
+    // MARK: - Forwarding to PlanningStore (set by AppState after init)
+
+    var planningStore: PlanningStore?
+
+    var todayPlanningEntries: [MocoPlanningEntry] { planningStore?.todayPlanningEntries ?? [] }
+    var tomorrowPlanningEntries: [MocoPlanningEntry] { planningStore?.tomorrowPlanningEntries ?? [] }
+    var absences: [String: MocoSchedule] { planningStore?.absences ?? [:] }
+    var unplannedTasks: [UnplannedTask] { planningStore?.unplannedTasks ?? [] }
+
+    func refreshTodayPlanning() async { await planningStore?.refreshTodayPlanning() }
+    func refreshTomorrowPlanning() async { await planningStore?.refreshTomorrowPlanning() }
+    func refreshAllPlanning() async { await planningStore?.refreshAllPlanning() }
+    func refreshAbsences() async { await planningStore?.refreshAbsences() }
+    func absence(for date: String) -> MocoSchedule? { planningStore?.absence(for: date) }
+    func plannedHours(projectId: Int, taskId: Int) -> Double? { planningStore?.plannedHours(projectId: projectId, taskId: taskId) }
+
+    // MARK: - Forwarding to DeleteUndoManager (set by AppState after init)
+
+    var deleteUndoManager: DeleteUndoManager?
+
+    var pendingDelete: DeleteUndoManager.PendingDelete? { deleteUndoManager?.pendingDelete }
+
+    func deleteActivity(activityId: Int) async { await deleteUndoManager?.deleteActivity(activityId: activityId) }
+    func undoDelete() { deleteUndoManager?.undoDelete() }
+    func commitPendingDelete() async { await deleteUndoManager?.commitPendingDelete() }
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
@@ -124,119 +146,6 @@ final class ActivityService {
         }
     }
 
-    // MARK: - Planning
-
-    func refreshTodayPlanning() async {
-        guard let client = clientFactory() else { return }
-        guard let userId = userIdProvider() else {
-            logger.warning("refreshTodayPlanning skipped — userId not available yet")
-            return
-        }
-        let today = DateUtilities.todayString()
-        let period = "\(today):\(today)"
-
-        do {
-            let entries = try await client.fetchPlanningEntries(period: period, userId: userId)
-            todayPlanningEntries = entries
-            logger.info("Planning: \(entries.count) entries for today")
-        } catch {
-            logger.error("refreshTodayPlanning failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Fetch tomorrow's planning entries.
-    func refreshTomorrowPlanning() async {
-        guard let client = clientFactory() else { return }
-        guard let userId = userIdProvider() else {
-            logger.warning("refreshTomorrowPlanning skipped — userId not available yet")
-            return
-        }
-        guard let tomorrow = DateUtilities.tomorrowString() else { return }
-        let period = "\(tomorrow):\(tomorrow)"
-
-        do {
-            let entries = try await client.fetchPlanningEntries(period: period, userId: userId)
-            tomorrowPlanningEntries = entries
-            logger.info("Tomorrow planning: \(entries.count) entries")
-        } catch {
-            logger.error("refreshTomorrowPlanning failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Fetch today + tomorrow planning entries in a single API call.
-    func refreshAllPlanning() async {
-        guard let client = clientFactory() else { return }
-        guard let userId = userIdProvider() else {
-            logger.warning("refreshAllPlanning skipped — userId not available yet")
-            return
-        }
-        let today = DateUtilities.todayString()
-        guard let tomorrow = DateUtilities.tomorrowString() else {
-            // Fallback: just fetch today
-            await refreshTodayPlanning()
-            return
-        }
-        let period = "\(today):\(tomorrow)"
-
-        do {
-            let allEntries = try await client.fetchPlanningEntries(period: period, userId: userId)
-            let todayEntries = allEntries.filter { $0.startsOn <= today && $0.endsOn >= today }
-            let tomorrowEntries = allEntries.filter { $0.startsOn <= tomorrow && $0.endsOn >= tomorrow }
-            todayPlanningEntries = todayEntries
-            tomorrowPlanningEntries = tomorrowEntries
-            logger.info("Planning: \(todayEntries.count) today, \(tomorrowEntries.count) tomorrow (1 API call)")
-        } catch {
-            logger.error("refreshAllPlanning failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Fetch absences (schedules) for yesterday, today, and tomorrow.
-    func refreshAbsences() async {
-        guard let client = clientFactory() else { return }
-        guard let userId = userIdProvider() else {
-            logger.warning("refreshAbsences skipped — userId not available yet")
-            return
-        }
-        guard let yesterday = DateUtilities.yesterdayString(),
-              let tomorrow = DateUtilities.tomorrowString() else { return }
-
-        do {
-            let schedules = try await client.fetchSchedules(from: yesterday, to: tomorrow)
-            // Filter to current user and index by date
-            var result: [String: MocoSchedule] = [:]
-            for schedule in schedules {
-                if schedule.user.id == userId {
-                    result[schedule.date] = schedule
-                }
-            }
-            absences = result
-            logger.info("Absences: \(result.count) days")
-        } catch {
-            logger.error("refreshAbsences failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Get absence info for a specific date, if any.
-    func absence(for date: String) -> MocoSchedule? {
-        absences[date]
-    }
-
-    func plannedHours(projectId: Int, taskId: Int) -> Double? {
-        let matching = todayPlanningEntries.filter { $0.project?.id == projectId && $0.task?.id == taskId }
-        guard !matching.isEmpty else { return nil }
-        return matching.reduce(0) { $0 + $1.hoursPerDay }
-    }
-
-    var unplannedTasks: [UnplannedTask] {
-        let trackedKeys = Set(todayActivities.map { "\($0.project.id)-\($0.task.id)" })
-        return todayPlanningEntries.compactMap { entry in
-            guard let project = entry.project, let task = entry.task else { return nil }
-            let key = "\(project.id)-\(task.id)"
-            if trackedKeys.contains(key) { return nil }
-            return UnplannedTask(planningEntry: entry)
-        }
-    }
-
     // MARK: - CRUD (optimistic local updates)
 
     func updateDescription(activityId: Int, description: String) async {
@@ -250,94 +159,6 @@ final class ActivityService {
             sideEffects.onDescriptionUpdated()
         } catch {
             handleError(error, label: "updateDescription")
-        }
-    }
-
-    // MARK: - Undo Delete
-
-    /// A pending delete that can be undone within the grace period.
-    struct PendingDelete {
-        let activity: MocoActivity
-        let isYesterday: Bool
-        let task: Task<Void, Never>
-    }
-
-    /// The currently pending delete, if any. Observable so the UI can show the undo toast.
-    private(set) var pendingDelete: PendingDelete?
-
-    func deleteActivity(activityId: Int) async {
-        guard let client = clientFactory() else { return }
-
-        // Stop timer if this activity is being timed (via coordinator callback)
-        await onNeedTimerStop?(activityId)
-
-        // Capture the activity before removing it locally
-        let activity = todayActivities.first(where: { $0.id == activityId })
-            ?? yesterdayActivities.first(where: { $0.id == activityId })
-        let wasYesterday = yesterdayActivities.contains { $0.id == activityId }
-
-        // Cancel any existing pending delete (execute it immediately)
-        await commitPendingDelete()
-
-        // Remove locally for instant visual feedback
-        removeLocal(activityId: activityId)
-        sideEffects.onActivityDeleted()
-
-        guard let activity else {
-            // Activity wasn't in local arrays — just delete server-side
-            do { try await client.deleteActivity(activityId: activityId) } catch { handleError(error, label: "deleteActivity") }
-            return
-        }
-
-        // Start a delayed delete — can be undone within 5 seconds
-        let deleteTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(5))
-            guard !Task.isCancelled else { return }
-            await self?.executeDelete(activityId: activityId)
-        }
-
-        pendingDelete = PendingDelete(activity: activity, isYesterday: wasYesterday, task: deleteTask)
-    }
-
-    /// Undo the pending delete — restore the activity to the local array.
-    func undoDelete() {
-        guard let pending = pendingDelete else { return }
-        pending.task.cancel()
-
-        if pending.isYesterday {
-            yesterdayActivities.append(pending.activity)
-            _sortedYesterday = nil
-            onYesterdayDataChanged?()
-        } else {
-            todayActivities.append(pending.activity)
-            recomputeTodayStats()
-            invalidateSortedCaches()
-        }
-
-        pendingDelete = nil
-        logger.info("Undo delete: restored activity \(pending.activity.id)")
-    }
-
-    /// Immediately commit the pending delete (called on timeout or before a new delete).
-    func commitPendingDelete() async {
-        guard let pending = pendingDelete else { return }
-        pending.task.cancel()
-        pendingDelete = nil
-        await executeDelete(activityId: pending.activity.id)
-    }
-
-    /// Execute the actual API delete.
-    private func executeDelete(activityId: Int) async {
-        guard let client = clientFactory() else { return }
-        do {
-            try await client.deleteActivity(activityId: activityId)
-            logger.info("Deleted activity \(activityId) from server")
-        } catch {
-            handleError(error, label: "deleteActivity")
-        }
-        // Clear pending if this was the one
-        if pendingDelete?.activity.id == activityId {
-            pendingDelete = nil
         }
     }
 
@@ -423,6 +244,32 @@ final class ActivityService {
         upsertToday(activity)
     }
 
+    /// Remove an activity from both today and yesterday arrays.
+    /// Called by DeleteUndoManager for instant visual feedback on delete.
+    func removeLocal(activityId: Int) {
+        let hadYesterday = yesterdayActivities.contains { $0.id == activityId }
+        todayActivities.removeAll { $0.id == activityId }
+        yesterdayActivities.removeAll { $0.id == activityId }
+        recomputeTodayStats()
+        invalidateSortedCaches()
+        _sortedYesterday = nil
+        if hadYesterday { onYesterdayDataChanged?() }
+    }
+
+    /// Restore a today activity after undo. Called by DeleteUndoManager.
+    func restoreToday(_ activity: MocoActivity) {
+        todayActivities.append(activity)
+        recomputeTodayStats()
+        invalidateSortedCaches()
+    }
+
+    /// Restore a yesterday activity after undo. Called by DeleteUndoManager.
+    func restoreYesterday(_ activity: MocoActivity) {
+        yesterdayActivities.append(activity)
+        _sortedYesterday = nil
+        onYesterdayDataChanged?()
+    }
+
     /// Insert or update an activity in the today array.
     private func upsertToday(_ activity: MocoActivity) {
         if let idx = todayActivities.firstIndex(where: { $0.id == activity.id }) {
@@ -450,17 +297,6 @@ final class ActivityService {
         todayActivities.append(activity)
         recomputeTodayStats()
         invalidateSortedCaches()
-    }
-
-    /// Remove an activity from both today and yesterday arrays.
-    private func removeLocal(activityId: Int) {
-        let hadYesterday = yesterdayActivities.contains { $0.id == activityId }
-        todayActivities.removeAll { $0.id == activityId }
-        yesterdayActivities.removeAll { $0.id == activityId }
-        recomputeTodayStats()
-        invalidateSortedCaches()
-        _sortedYesterday = nil
-        if hadYesterday { onYesterdayDataChanged?() }
     }
 
     /// Recompute today's stats from the local activities array.

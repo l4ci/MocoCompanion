@@ -29,7 +29,21 @@ struct TodayViewModelTests {
             userIdProvider: { 42 }
         )
 
-        let favoritesManager = FavoritesManager()
+        // Wire extracted stores for forwarding
+        let planningStore = PlanningStore(
+            clientFactory: { activityAPI },
+            userIdProvider: { 42 },
+            todayActivitiesProvider: { [weak activityService] in activityService?.todayActivities ?? [] }
+        )
+        activityService.planningStore = planningStore
+        let deleteUndo = DeleteUndoManager(
+            clientFactory: { activityAPI },
+            activityService: activityService,
+            sideEffects: sideEffects
+        )
+        activityService.deleteUndoManager = deleteUndo
+
+        let favoritesManager = FavoritesManager(backend: InMemoryBackend())
 
         let viewModel = TodayViewModel(
             timerService: timerService,

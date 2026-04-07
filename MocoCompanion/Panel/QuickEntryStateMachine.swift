@@ -51,6 +51,7 @@ final class QuickEntryStateMachine {
         didSet {
             _cachedDisplayItems = nil
             _cachedSearchResults = nil
+            hoveredIndex = nil
             scheduleSearchDebounce()
         }
     }
@@ -207,6 +208,13 @@ final class QuickEntryStateMachine {
     }
 
     func moveSelection(by delta: Int) {
+        // Snap to hovered row so keyboard continues from mouse position
+        if let hovered = hoveredIndex {
+            selectedIndex = hovered
+            hoveredIndex = nil
+        } else {
+            hoveredIndex = nil
+        }
         let count = searchResults.count
         let minIndex = (isSearchEmpty && hasActiveTimer) ? -1 : 0
         let maxIndex = count - 1

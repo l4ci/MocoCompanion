@@ -7,16 +7,22 @@ import os
 @MainActor
 final class RecencyTracker {
     private static let logger = Logger(category: "Recency")
-    private static let storageKey = "projectRecency"
-
     /// Number of days after which recency score decays to zero.
     private static let decayDays: Double = 14
+
+    private let store: PersistedValue<[String: TimeInterval]>
 
     /// projectId → last used date
     private(set) var usageMap: [Int: Date] = [:]
 
-    init() {
-        usageMap = Self.load()
+    init(backend: StorageBackend = DefaultsBackend()) {
+        self.store = PersistedValue(key: "projectRecency", default: [:], backend: backend)
+        let decoded = store.load()
+        usageMap = decoded.reduce(into: [Int: Date]()) { dict, pair in
+            if let id = Int(pair.key) {
+                dict[id] = Date(timeIntervalSince1970: pair.value)
+            }
+        }
     }
 
     // MARK: - Public API
@@ -64,15 +70,6 @@ final class RecencyTracker {
         let encoded = usageMap.reduce(into: [String: TimeInterval]()) { dict, pair in
             dict[String(pair.key)] = pair.value.timeIntervalSince1970
         }
-        JSONStore.save(encoded, key: Self.storageKey)
-    }
-
-    private static func load() -> [Int: Date] {
-        let decoded = JSONStore.load([String: TimeInterval].self, key: storageKey, fallback: [:])
-        return decoded.reduce(into: [Int: Date]()) { dict, pair in
-            if let id = Int(pair.key) {
-                dict[id] = Date(timeIntervalSince1970: pair.value)
-            }
-        }
+        store.save(encoded)
     }
 }

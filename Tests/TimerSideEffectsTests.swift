@@ -56,29 +56,6 @@ struct TimerSideEffectsTests {
         #expect(box.types.contains(.timerStopped))
     }
 
-    @Test("onTimerStopped suppressed when suppressStopNotification was called")
-    @MainActor func timerStoppedSuppressed() {
-        let (fx, box) = makeSideEffects()
-
-        fx.suppressStopNotification()
-        fx.onTimerStopped()
-
-        // The suppressed stop should not dispatch timerStopped
-        #expect(!box.types.contains(.timerStopped))
-    }
-
-    @Test("suppressStopNotification is one-shot — second stop dispatches normally")
-    @MainActor func suppressIsOneShot() {
-        let (fx, box) = makeSideEffects()
-
-        fx.suppressStopNotification()
-        fx.onTimerStopped()  // suppressed
-        fx.onTimerStopped()  // should dispatch
-
-        // First stop suppressed, second should go through
-        #expect(box.types.contains(.timerStopped))
-    }
-
     // MARK: - Manual Entry
 
     @Test("onManualEntry dispatches .manualEntry notification")

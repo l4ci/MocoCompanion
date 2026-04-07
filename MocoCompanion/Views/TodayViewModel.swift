@@ -31,10 +31,32 @@ final class TodayViewModel {
     /// doesn't change (e.g., deleting the last item clamps to the same index).
     var dataVersion = 0
 
+    /// When the last successful data sync completed. Drives the "Xm ago" label.
+    var lastSyncedAt: Date?
+
+    /// Whether a manual refresh is in progress.
+    var isRefreshing = false
+
     init(timerService: TimerService, activityService: ActivityService, favoritesManager: FavoritesManager) {
         self.timerService = timerService
         self.activityService = activityService
         self.favoritesManager = favoritesManager
+    }
+
+    /// Refresh data for the currently selected day. Updates lastSyncedAt on completion.
+    func refreshCurrentDay() async {
+        isRefreshing = true
+        switch selectedDay {
+        case .today:
+            await activityService.refreshTodayStats()
+            await activityService.refreshAllPlanning()
+        case .yesterday:
+            await activityService.refreshYesterdayActivities()
+        case .tomorrow:
+            await activityService.refreshAllPlanning()
+        }
+        lastSyncedAt = Date()
+        isRefreshing = false
     }
 
     // MARK: - Derived State
@@ -87,6 +109,14 @@ final class TodayViewModel {
     // MARK: - Navigation
 
     func moveSelection(by delta: Int) {
+        // If the mouse was hovering a row, snap selection there first
+        // so keyboard navigation continues from where the mouse was.
+        if let hoverId = hoveredActivityId,
+           let hoverIdx = sortedActivities.firstIndex(where: { $0.id == hoverId }) {
+            selectedIndex = hoverIdx
+            hoveredActivityId = nil
+        }
+
         let count = totalNavigableCount
         guard count > 0 else { return }
         selectedIndex = max(0, min(count - 1, selectedIndex + delta))

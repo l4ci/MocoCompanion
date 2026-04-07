@@ -22,11 +22,21 @@ final class EntryQueue {
         let createdAt: Date
     }
 
+    private let store: PersistedValue<[QueuedEntry]>
+
     /// Entries waiting to be synced.
     private(set) var entries: [QueuedEntry] = []
 
-    init() {
-        entries = Self.loadFromDisk()
+    init(backend: StorageBackend? = nil) {
+        let resolvedBackend = backend ?? FileBackend(directory: Self.appSupportDir)
+        self.store = PersistedValue(key: "entry-queue", default: [], backend: resolvedBackend)
+        entries = store.load()
+    }
+
+    private static var appSupportDir: URL {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("MocoCompanion", isDirectory: true)
+        return dir
     }
 
     /// Queue an entry for later sync.
@@ -65,30 +75,7 @@ final class EntryQueue {
 
     // MARK: - Persistence
 
-    private static var queueURL: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("MocoCompanion", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("entry-queue.json")
-    }
-
     private func saveToDisk() {
-        do {
-            let data = try JSONEncoder().encode(entries)
-            try data.write(to: Self.queueURL, options: .atomic)
-        } catch {
-            Self.logger.error("Failed to save entry queue: \(error.localizedDescription)")
-        }
-    }
-
-    private static func loadFromDisk() -> [QueuedEntry] {
-        guard FileManager.default.fileExists(atPath: queueURL.path) else { return [] }
-        do {
-            let data = try Data(contentsOf: queueURL)
-            return try JSONDecoder().decode([QueuedEntry].self, from: data)
-        } catch {
-            logger.error("Failed to load entry queue: \(error.localizedDescription)")
-            return []
-        }
+        store.save(entries)
     }
 }

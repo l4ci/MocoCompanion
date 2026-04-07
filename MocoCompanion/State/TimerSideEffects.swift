@@ -15,9 +15,6 @@ final class TimerSideEffects {
     private let budgetRefresh: (Int) async -> Void
     private let budgetStatusProvider: (Int, Int?) -> BudgetStatus
 
-    /// When true, the next `onTimerStopped` call skips its notification.
-    /// Set before an internal stop-then-start (timer switch) to avoid noise.
-    private var suppressNextStopNotification = false
 
     init(
         recencyTracker: RecencyTracker,
@@ -67,16 +64,7 @@ final class TimerSideEffects {
     /// Timer was stopped completely.
     func onTimerStopped() {
         playSound(.stop)
-        if suppressNextStopNotification {
-            suppressNextStopNotification = false
-        } else {
-            notificationDispatcher.timerStopped()
-        }
-    }
-
-    /// Mark that the next stop is part of a switch — suppress its notification.
-    func suppressStopNotification() {
-        suppressNextStopNotification = true
+        notificationDispatcher.timerStopped()
     }
 
     /// An existing timer was continued (started on a previous entry).

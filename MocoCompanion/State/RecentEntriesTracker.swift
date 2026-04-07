@@ -7,14 +7,16 @@ import os
 @MainActor
 final class RecentEntriesTracker {
     private static let logger = Logger(category: "Recents")
-    private static let storageKey = "recentEntries"
     static let maxEntries = 5
+
+    private let store: PersistedValue<[RecentEntry]>
 
     /// Most-recent-first list of recent entries.
     private(set) var entries: [RecentEntry] = []
 
-    init() {
-        entries = Self.load()
+    init(backend: StorageBackend = DefaultsBackend()) {
+        self.store = PersistedValue(key: "recentEntries", default: [], backend: backend)
+        entries = store.load()
     }
 
     // MARK: - Model
@@ -67,10 +69,6 @@ final class RecentEntriesTracker {
     // MARK: - Persistence
 
     private func save() {
-        JSONStore.save(entries, key: Self.storageKey)
-    }
-
-    private static func load() -> [RecentEntry] {
-        JSONStore.load([RecentEntry].self, key: storageKey, fallback: [])
+        store.save(entries)
     }
 }
