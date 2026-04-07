@@ -18,8 +18,7 @@ A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.
 ### Homebrew (recommended)
 
 ```bash
-brew tap l4ci/mococompanion
-brew install --cask mococompanion
+brew install --cask l4ci/tap/mococompanion
 ```
 
 ### Manual
