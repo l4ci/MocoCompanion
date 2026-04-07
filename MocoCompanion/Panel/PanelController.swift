@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 import os
 
@@ -7,14 +8,19 @@ import os
 /// Uses deferred, coalesced updates to avoid layout feedback loops.
 final class WindowTrackingHostingView<Content: View>: NSHostingView<Content> {
     private var resizePending = false
+    private var isInsideLayout = false
 
     override func invalidateIntrinsicContentSize() {
         super.invalidateIntrinsicContentSize()
-        scheduleWindowResize()
+        if !isInsideLayout {
+            scheduleWindowResize()
+        }
     }
 
     override func layout() {
+        isInsideLayout = true
         super.layout()
+        isInsideLayout = false
         scheduleWindowResize()
     }
 
@@ -22,7 +28,12 @@ final class WindowTrackingHostingView<Content: View>: NSHostingView<Content> {
         guard !resizePending else { return }
         resizePending = true
 
-        DispatchQueue.main.async { [weak self] in
+        // Defer to the NEXT display cycle via CATransaction completion to avoid
+        // re-entrant constraint updates that crash AppKit (rdar://FB…).
+        // DispatchQueue.main.async can still land inside the current display
+        // cycle's constraint pass; completion handlers run strictly after commit.
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { [weak self] in
             guard let self, let window = self.window else {
                 self?.resizePending = false
                 return
@@ -44,6 +55,7 @@ final class WindowTrackingHostingView<Content: View>: NSHostingView<Content> {
             )
             window.setFrame(newFrame, display: true, animate: false)
         }
+        CATransaction.commit()
     }
 }
 
