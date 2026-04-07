@@ -1,5 +1,6 @@
 #if !targetEnvironment(macCatalyst) && canImport(Carbon)
 import Carbon
+import os
 
 final class HotKeysController {
 
@@ -68,6 +69,7 @@ final class HotKeysController {
 
 		// Ensure registration worked
 		guard registerError == noErr, eventHotKey != nil else {
+			os_log(.error, "HotKey: RegisterEventHotKey failed with error %d", registerError)
 			return
 		}
 

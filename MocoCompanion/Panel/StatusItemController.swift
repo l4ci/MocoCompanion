@@ -29,6 +29,30 @@ final class StatusItemController {
     }
 
     func setup() {
+        configureStatusItem()
+        setupPopover()
+        setupMenu()
+        startObservingTimerState()
+        startObservingAppearance()
+        Self.logger.info("Status item created")
+    }
+
+    /// Verify the status item is functional; recreate if a menubar manager
+    /// (e.g. Bartender) captured or hid it during startup.
+    func verifyOrRecreate() {
+        if statusItem?.button?.window != nil {
+            Self.logger.debug("Status item health check passed")
+            return
+        }
+        Self.logger.warning("Status item not visible — recreating")
+        configureStatusItem()
+    }
+
+    private func configureStatusItem() {
+        if let existing = statusItem {
+            NSStatusBar.system.removeStatusItem(existing)
+        }
+
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem = item
 
@@ -43,13 +67,6 @@ final class StatusItemController {
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
-
-        setupPopover()
-        setupMenu()
-        startObservingTimerState()
-        startObservingAppearance()
-
-        Self.logger.info("Status item created")
     }
 
     func teardown() {

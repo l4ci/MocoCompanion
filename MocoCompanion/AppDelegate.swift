@@ -71,6 +71,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             showSetupWizard()
         }
 
+        // Delayed health check — handles menubar managers (e.g. Bartender) that
+        // can hide the status item or interfere with hotkey registration at startup.
+        Task { [weak self] in
+            for delay: Duration in [.seconds(2), .seconds(5), .seconds(10)] {
+                try? await Task.sleep(for: delay)
+                guard let self, !Task.isCancelled else { return }
+                self.statusItemController?.verifyOrRecreate()
+            }
+        }
+
         Task {
             await appState.fetchSession()
             await appState.fetchProjects()
