@@ -38,9 +38,11 @@ final class AppState {
     var currentUserProfile: MocoUserProfile? { session.currentUserProfile }
     var cachedAvatarImage: NSImage? { session.cachedAvatarImage }
 
+    let yesterdayService: YesterdayService
+
     var yesterdayWarning: YesterdayWarning? {
-        get { session.yesterdayWarning }
-        set { session.yesterdayWarning = newValue }
+        get { yesterdayService.warning }
+        set { yesterdayService.warning = newValue }
     }
 
     /// Project IDs that are relevant for budget monitoring: today's tracked activities,
@@ -215,25 +217,20 @@ final class AppState {
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate
 
-        // Register yesterday check after all stored properties are initialized
-        // Use a closure that doesn't capture self during init — wire it afterward.
-        var yesterdayWarningCallback: ((YesterdayWarning?) -> Void)?
-        let yesterdayChecker = YesterdayCheckManager(
+        // Yesterday service — owns warning state and threshold logic
+        let yesterdaySvc = YesterdayService(
             settings: settings,
             clientFactory: clientFactory,
-            userIdProvider: userIdProvider,
-            setWarning: { warning in yesterdayWarningCallback?(warning) }
+            userIdProvider: userIdProvider
         )
-        self._yesterdayChecker = yesterdayChecker
-
-        // All stored properties now initialized — safe to capture [weak self]
-        yesterdayWarningCallback = { [weak sessionMgr] warning in sessionMgr?.yesterdayWarning = warning }
-        engine.register(yesterdayChecker, immediateFirstCheck: true)
+        self.yesterdayService = yesterdaySvc
+        engine.register(yesterdaySvc, immediateFirstCheck: true)
 
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
         // immediately recompute the warning without waiting for the 10-minute poll.
-        activitySvc.onYesterdayDataChanged = { [weak self] in
-            self?.recheckYesterdayWarning()
+        activitySvc.onYesterdayDataChanged = { [weak yesterdaySvc, weak activitySvc] in
+            guard let yesterdaySvc, let activitySvc else { return }
+            yesterdaySvc.recheckLocally(yesterdayActivities: activitySvc.yesterdayActivities)
         }
 
         // Wire network reconnect: sync queued entries + refresh data
@@ -246,8 +243,6 @@ final class AppState {
         }
     }
 
-    /// Reference to yesterday checker for local recheck on activity edits.
-    private let _yesterdayChecker: YesterdayCheckManager
     /// Mutable box captured by service closures. Updated when searchEntries changes.
     private let _searchEntriesBox: ValueBox<[SearchEntry]>
     /// Shared rate gate for all API calls.
@@ -267,13 +262,6 @@ final class AppState {
             dispatcher: notificationDispatcher
         )
         _searchEntriesBox.value = catalog.searchEntries
-    }
-
-    /// Recheck yesterday warning using local data. Called after activity edits/deletes
-    /// that change yesterday's hours — clears the banner immediately if the threshold is met,
-    /// without waiting for the 10-minute polling cycle.
-    func recheckYesterdayWarning() {
-        session.recheckYesterdayWarning(yesterdayActivities: activityService.yesterdayActivities)
     }
 
     /// Sync queued entries after reconnecting. Deduplicates against existing activities.

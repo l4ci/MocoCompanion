@@ -1,8 +1,8 @@
 import Testing
 import Foundation
 
-@Suite("YesterdayCheckManager")
-struct YesterdayCheckManagerTests {
+@Suite("YesterdayService")
+struct YesterdayServiceTests {
 
     // MARK: - Helpers
 
@@ -23,23 +23,20 @@ struct YesterdayCheckManagerTests {
     }
 
     @MainActor
-    private func makeManager(
+    private func makeService(
         api: MockYesterdayAPI? = MockYesterdayAPI(),
         isConfigured: Bool = true,
-        userIdProvider: @escaping () -> Int? = { 42 },
-        warningCapture: @escaping (YesterdayWarning?) -> Void = { _ in }
-    ) -> YesterdayCheckManager {
+        userIdProvider: @escaping () -> Int? = { 42 }
+    ) -> YesterdayService {
         let settings = SettingsStore()
-        // SettingsStore.isConfigured depends on subdomain + apiKey being non-empty.
         if isConfigured {
             settings.subdomain = "test"
             settings.apiKey = "test-key"
         }
-        return YesterdayCheckManager(
+        return YesterdayService(
             settings: settings,
             clientFactory: { api },
-            userIdProvider: userIdProvider,
-            setWarning: warningCapture
+            userIdProvider: userIdProvider
         )
     }
 
@@ -47,8 +44,8 @@ struct YesterdayCheckManagerTests {
 
     @Test("check returns empty when clientFactory returns nil")
     @MainActor func nilClientReturnsEmpty() async {
-        let manager = makeManager(api: nil)
-        let alerts = await manager.check()
+        let service = makeService(api: nil)
+        let alerts = await service.check()
         #expect(alerts.isEmpty)
     }
 
@@ -58,99 +55,84 @@ struct YesterdayCheckManagerTests {
     @MainActor func noEmploymentsReturnsEmpty() async {
         var api = MockYesterdayAPI()
         api.fetchEmploymentsHandler = { _ in [] }
-        let manager = makeManager(api: api)
-        let alerts = await manager.check()
+        let service = makeService(api: api)
+        let alerts = await service.check()
         #expect(alerts.isEmpty)
     }
 
     // MARK: - Under-booked (alert path)
 
-    @Test("check returns alert when booked hours below 85% threshold")
+    @Test("check returns alert and sets warning when booked hours below 85% threshold")
     @MainActor func underBookedReturnsAlert() async {
-        // This test only produces an alert if yesterday was a weekday.
         guard Self.yesterdayIsWeekday else { return }
 
         let yStr = Self.yesterday.dateString
-        var capturedWarning: YesterdayWarning?
 
         var api = MockYesterdayAPI()
-        // 8h expected (4+4)
         api.fetchEmploymentsHandler = { _ in
             [TestFactories.makeEmployment()]
         }
-        // No absences
         api.fetchSchedulesHandler = { _, _ in [] }
-        // Only 3h booked → 3/8 = 37.5% < 85%
         api.fetchActivitiesHandler = { from, to, userId in
             [TestFactories.makeActivity(date: yStr, seconds: 10800, hours: 3.0)]
         }
 
-        let manager = makeManager(api: api, warningCapture: { capturedWarning = $0 })
-        let alerts = await manager.check()
+        let service = makeService(api: api)
+        let alerts = await service.check()
 
         #expect(alerts.count == 1)
         #expect(alerts.first?.type == .yesterdayUnderBooked)
-        #expect(capturedWarning != nil)
-        #expect(capturedWarning?.bookedHours == 3.0)
+        #expect(service.warning != nil)
+        #expect(service.warning?.bookedHours == 3.0)
     }
 
     // MARK: - Sufficiently booked (no alert)
 
-    @Test("check returns empty when booked hours meet 85% threshold")
+    @Test("check returns empty and clears warning when booked hours meet 85% threshold")
     @MainActor func sufficientlyBookedReturnsEmpty() async {
         guard Self.yesterdayIsWeekday else { return }
 
         let yStr = Self.yesterday.dateString
-        var capturedWarning: YesterdayWarning?
 
         var api = MockYesterdayAPI()
         api.fetchEmploymentsHandler = { _ in
             [TestFactories.makeEmployment()]
         }
         api.fetchSchedulesHandler = { _, _ in [] }
-        // 7h booked → 7/8 = 87.5% >= 85%
         api.fetchActivitiesHandler = { _, _, _ in
             [TestFactories.makeActivity(date: yStr, seconds: 25200, hours: 7.0)]
         }
 
-        let manager = makeManager(api: api, warningCapture: { capturedWarning = $0 })
-        let alerts = await manager.check()
+        let service = makeService(api: api)
+        let alerts = await service.check()
 
         #expect(alerts.isEmpty)
-        // Warning should be cleared (set to nil)
-        #expect(capturedWarning == nil)
+        #expect(service.warning == nil)
     }
 
     // MARK: - Weekend Skip
 
     @Test("check skips weekends — returns empty regardless of employment data")
     @MainActor func weekendSkipReturnsEmpty() async {
-        // If yesterday is a weekend, this tests the guard naturally.
-        // If yesterday is a weekday, this documents that the weekend guard
-        // can't be triggered today and tests the non-skip path instead.
         guard !Self.yesterdayIsWeekday else {
-            // On weekdays, verify that the test for "no employments" still works
-            // (we can't trigger the weekend guard when yesterday is a weekday)
             var api = MockYesterdayAPI()
             api.fetchEmploymentsHandler = { _ in [] }
-            let manager = makeManager(api: api)
-            let alerts = await manager.check()
+            let service = makeService(api: api)
+            let alerts = await service.check()
             #expect(alerts.isEmpty)
             return
         }
 
-        // Yesterday IS a weekend day — the guard should skip before any API call
         var fetchEmploymentsCalled = false
         var api = MockYesterdayAPI()
         api.fetchEmploymentsHandler = { _ in
             fetchEmploymentsCalled = true
             return [TestFactories.makeEmployment()]
         }
-        let manager = makeManager(api: api)
-        let alerts = await manager.check()
+        let service = makeService(api: api)
+        let alerts = await service.check()
 
         #expect(alerts.isEmpty)
-        // On a weekend, employments should never be fetched
         #expect(!fetchEmploymentsCalled)
     }
 
@@ -161,22 +143,59 @@ struct YesterdayCheckManagerTests {
         guard Self.yesterdayIsWeekday else { return }
 
         let yStr = Self.yesterday.dateString
-        var capturedWarning: YesterdayWarning? = YesterdayWarning(bookedHours: 0, expectedHours: 8)
 
         var api = MockYesterdayAPI()
         api.fetchEmploymentsHandler = { _ in
             [TestFactories.makeEmployment()]
         }
-        // Return an absence for yesterday
         api.fetchSchedulesHandler = { _, _ in
             [TestFactories.makeSchedule(date: yStr, userId: 42)]
         }
 
-        let manager = makeManager(api: api, warningCapture: { capturedWarning = $0 })
-        let alerts = await manager.check()
+        let service = makeService(api: api)
+        // Pre-set a warning to verify it gets cleared
+        service.warning = YesterdayWarning(bookedHours: 0, expectedHours: 8)
+        let alerts = await service.check()
 
         #expect(alerts.isEmpty)
-        // Warning should be cleared on absence
-        #expect(capturedWarning == nil)
+        #expect(service.warning == nil)
+    }
+
+    // MARK: - Local recheck
+
+    @Test("recheckLocally clears warning when hours cross threshold")
+    @MainActor func localRecheckClearsWarning() {
+        let service = makeService()
+        service.warning = YesterdayWarning(bookedHours: 3.0, expectedHours: 8.0)
+
+        let activities = [TestFactories.makeActivity(hours: 7.0)]
+        service.recheckLocally(yesterdayActivities: activities)
+
+        // 7/8 = 87.5% >= 85% → warning cleared
+        #expect(service.warning == nil)
+    }
+
+    @Test("recheckLocally updates warning when still below threshold")
+    @MainActor func localRecheckUpdatesWarning() {
+        let service = makeService()
+        service.warning = YesterdayWarning(bookedHours: 3.0, expectedHours: 8.0)
+
+        let activities = [TestFactories.makeActivity(hours: 4.0)]
+        service.recheckLocally(yesterdayActivities: activities)
+
+        // 4/8 = 50% < 85% → warning updated with new hours
+        #expect(service.warning != nil)
+        #expect(service.warning?.bookedHours == 4.0)
+    }
+
+    @Test("recheckLocally is no-op when no warning exists")
+    @MainActor func localRecheckNoOpWithoutWarning() {
+        let service = makeService()
+        #expect(service.warning == nil)
+
+        let activities = [TestFactories.makeActivity(hours: 1.0)]
+        service.recheckLocally(yesterdayActivities: activities)
+
+        #expect(service.warning == nil)
     }
 }

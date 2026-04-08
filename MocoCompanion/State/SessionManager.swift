@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import os
 
-/// Owns user session, profile, avatar, yesterday warning, and offline queue sync.
+/// Owns user session, profile, avatar, and offline queue sync.
 /// Extracted from AppState to separate session concerns from service wiring.
 @Observable
 @MainActor
@@ -12,7 +12,6 @@ final class SessionManager {
     private(set) var currentUserId: Int?
     private(set) var currentUserProfile: MocoUserProfile?
     private(set) var cachedAvatarImage: NSImage?
-    var yesterdayWarning: YesterdayWarning?
 
     /// Mutable box captured by service closures. Updated when currentUserId changes.
     let userIdBox: ValueBox<Int?>
@@ -46,18 +45,6 @@ final class SessionManager {
             }
         } catch {
             logger.error("fetchSession failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Recheck yesterday warning using local data. Called after activity edits/deletes.
-    func recheckYesterdayWarning(yesterdayActivities: [MocoActivity]) {
-        guard let warning = yesterdayWarning else { return }
-        let yesterdayHours = yesterdayActivities.reduce(0.0) { $0 + $1.hours }
-        let ratio = yesterdayHours / warning.expectedHours
-        if ratio >= YesterdayCheckManager.threshold {
-            yesterdayWarning = nil
-        } else {
-            yesterdayWarning = YesterdayWarning(bookedHours: yesterdayHours, expectedHours: warning.expectedHours)
         }
     }
 
