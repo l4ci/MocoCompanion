@@ -207,9 +207,8 @@ struct TodayViewModelTests {
         vm.moveSelection(by: 1)
         #expect(vm.selectedIndex == 1)
 
-        // Simulate removing entry 2 — replace activities with just a1
-        api.fetchActivitiesHandler = { _, _, _ in [a1] }
-        await activityService.refreshTodayStats()
+        // Simulate removing entry 2 — apply directly (mock is a struct, can't mutate after capture)
+        activityService.applyFetchedTodayActivities([a1])
 
         // Now sortedActivities has only 1 item, selectedActivityId=2 won't be found
         vm.syncSelectionAfterDataChange()

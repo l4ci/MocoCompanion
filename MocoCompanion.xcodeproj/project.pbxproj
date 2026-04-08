@@ -119,7 +119,6 @@
 		BB02BB02BB02BB02BB02BB02 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */; };
 		BB03BB03BB03BB03BB03BB03 /* MockBudgetAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */; };
 		BB04BB04BB04BB04BB04BB04 /* MockYesterdayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */; };
-		BB05BB05BB05BB05BB05BB05 /* MockSessionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA05AA05AA05AA05AA05AA05 /* MockSessionAPI.swift */; };
 		BB06BB06BB06BB06BB06BB06 /* TestFactories.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA06AA06AA06AA06AA06AA06 /* TestFactories.swift */; };
 		BB07BB07BB07BB07BB07BB07 /* TimerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA07AA07AA07AA07AA07AA07 /* TimerServiceTests.swift */; };
 		BB08BB08BB08BB08BB08BB08 /* ActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA08BB08AA08BB08AA08BB08 /* ActivityServiceTests.swift */; };
@@ -276,7 +275,6 @@
 		AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockActivityAPI.swift; sourceTree = "<group>"; };
 		AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBudgetAPI.swift; sourceTree = "<group>"; };
 		AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockYesterdayAPI.swift; sourceTree = "<group>"; };
-		AA05AA05AA05AA05AA05AA05 /* MockSessionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSessionAPI.swift; sourceTree = "<group>"; };
 		AA06AA06AA06AA06AA06AA06 /* TestFactories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFactories.swift; sourceTree = "<group>"; };
 		AA07AA07AA07AA07AA07AA07 /* TimerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerServiceTests.swift; sourceTree = "<group>"; };
 		AA08BB08AA08BB08AA08BB08 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
@@ -496,7 +494,6 @@
 			children = (
 				AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */,
 				AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */,
-				AA05AA05AA05AA05AA05AA05 /* MockSessionAPI.swift */,
 				AA01AA01AA01AA01AA01AA01 /* MockTimerAPI.swift */,
 				AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */,
 			);
@@ -844,7 +841,6 @@
 				BB02BB02BB02BB02BB02BB02 /* MockActivityAPI.swift in Sources */,
 				BB03BB03BB03BB03BB03BB03 /* MockBudgetAPI.swift in Sources */,
 				BB04BB04BB04BB04BB04BB04 /* MockYesterdayAPI.swift in Sources */,
-				BB05BB05BB05BB05BB05BB05 /* MockSessionAPI.swift in Sources */,
 				BB06BB06BB06BB06BB06BB06 /* TestFactories.swift in Sources */,
 				BB07BB07BB07BB07BB07BB07 /* TimerServiceTests.swift in Sources */,
 				BB08BB08BB08BB08BB08BB08 /* ActivityServiceTests.swift in Sources */,

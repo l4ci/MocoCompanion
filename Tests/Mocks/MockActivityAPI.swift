@@ -13,9 +13,6 @@ struct MockActivityAPI: ActivityAPI, @unchecked Sendable {
     var updateActivityFull: (Int, String?, String?, Int?) async throws -> MocoActivity = { _, _, _, _ in
         throw MocoError.serverError(statusCode: 500, message: "updateActivity(full) not stubbed")
     }
-    var updateActivityReassign: (Int, Int?, Int?, String?, String?, Int?) async throws -> MocoActivity = { _, _, _, _, _, _ in
-        throw MocoError.serverError(statusCode: 500, message: "updateActivity(reassign) not stubbed")
-    }
     var deleteActivityHandler: (Int) async throws -> Void = { _ in
         throw MocoError.serverError(statusCode: 500, message: "deleteActivity not stubbed")
     }
@@ -39,7 +36,7 @@ struct MockActivityAPI: ActivityAPI, @unchecked Sendable {
     }
 
     func updateActivity(activityId: Int, projectId: Int?, taskId: Int?, description: String?, tag: String?, seconds: Int?) async throws -> MocoActivity {
-        try await updateActivityReassign(activityId, projectId, taskId, description, tag, seconds)
+        throw MocoError.serverError(statusCode: 500, message: "updateActivity(reassign) not stubbed")
     }
 
     func deleteActivity(activityId: Int) async throws {

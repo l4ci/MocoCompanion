@@ -293,7 +293,6 @@ final class TimerService {
                 clearTimerState()
                 logger.info("Timer stopped externally — cleared local state")
             }
-            lastError = nil
             return activities
         } catch {
             logger.error("syncCurrentTimer failed: \(error.localizedDescription)")

@@ -1,30 +1,37 @@
-import XCTest
+import Testing
 
-final class TagExtractorTests: XCTestCase {
+@Suite("TagExtractor")
+struct TagExtractorTests {
 
-    func testExtractHashtag() {
-        XCTAssertEqual(TagExtractor.extract(from: "Fix login #PRJ-456 edge case"), "PRJ-456")
+    @Test("extract finds hashtag in text")
+    func extractHashtag() {
+        #expect(TagExtractor.extract(from: "Fix login #PRJ-456 edge case") == "PRJ-456")
     }
 
-    func testExtractFirstHashtag() {
-        XCTAssertEqual(TagExtractor.extract(from: "#FIRST then #SECOND"), "FIRST")
+    @Test("extract returns first hashtag when multiple exist")
+    func extractFirstHashtag() {
+        #expect(TagExtractor.extract(from: "#FIRST then #SECOND") == "FIRST")
     }
 
-    func testNoHashtag() {
-        XCTAssertNil(TagExtractor.extract(from: "No tags here"))
+    @Test("extract returns nil when no hashtag")
+    func noHashtag() {
+        #expect(TagExtractor.extract(from: "No tags here") == nil)
     }
 
-    func testEmptyString() {
-        XCTAssertNil(TagExtractor.extract(from: ""))
+    @Test("extract returns nil for empty string")
+    func emptyString() {
+        #expect(TagExtractor.extract(from: "") == nil)
     }
 
-    func testStripTags() {
+    @Test("stripTags removes hashtag from text")
+    func stripTags() {
         let result = TagExtractor.stripTags(from: "Fix login #PRJ-456 edge case")
-        XCTAssertEqual(result.trimmingCharacters(in: .whitespaces), "Fix login edge case")
+        #expect(result.trimmingCharacters(in: .whitespaces) == "Fix login edge case")
     }
 
-    func testStripMultipleTags() {
+    @Test("stripTags removes multiple hashtags")
+    func stripMultipleTags() {
         let result = TagExtractor.stripTags(from: "#TAG1 work #TAG2 more")
-        XCTAssertFalse(result.contains("#"))
+        #expect(!result.contains("#"))
     }
 }

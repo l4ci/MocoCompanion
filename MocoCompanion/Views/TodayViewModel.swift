@@ -129,10 +129,9 @@ final class TodayViewModel {
         if activeIdx >= 0 && mapped >= activeIdx {
             mapped += 1
         }
-        if sortedActivities.indices.contains(mapped) {
-            selectedIndex = mapped
-            trackSelectedId()
-        }
+        guard mapped >= 0 && mapped < totalNavigableCount else { return }
+        selectedIndex = mapped
+        trackSelectedId()
     }
 
     func shortcutIndex(for listIndex: Int) -> Int {

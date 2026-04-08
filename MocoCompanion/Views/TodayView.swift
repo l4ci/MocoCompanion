@@ -129,8 +129,6 @@ struct TodayView: View {
         .onChange(of: vm.activityService.yesterdayActivities) {
             guard vm.isYesterday else { return }
             vm.syncSelectionAfterDataChange()
-            // Also recheck yesterday warning when yesterday data changes
-            appState.recheckYesterdayWarning()
         }
         .onKeyPress(phases: .down) { press in
             // Clear hover on any key press — prevents two rows being highlighted
@@ -368,7 +366,7 @@ struct TodayView: View {
                             },
                             onFocusList: { listFocused = true }
                         )
-                        .id(index)
+                        .id(activity.id)
                     }
                 }
                 .padding(.vertical, 4)
@@ -376,9 +374,11 @@ struct TodayView: View {
             }
             .frame(maxHeight: 350)
             .id(vm.selectedDay)
-            .onChange(of: vm.selectedIndex) { _, newIndex in
-                animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
-                    proxy.scrollTo(newIndex, anchor: .center)
+            .onChange(of: vm.selectedActivityId) { _, newId in
+                if let newId {
+                    animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
+                        proxy.scrollTo(newId, anchor: .center)
+                    }
                 }
             }
         }

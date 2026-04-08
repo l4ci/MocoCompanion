@@ -1,62 +1,68 @@
-import XCTest
+import Testing
 
-final class MenuBarDisplayStateTests: XCTestCase {
+@Suite("MenuBarDisplayState")
+struct MenuBarDisplayStateTests {
 
-    func testIdleState() {
+    @Test("Idle state shows timer icon with empty title")
+    func idleState() {
         let state = MenuBarDisplayState.from(timerState: .idle, currentActivity: nil, hasError: false)
-        XCTAssertEqual(state.iconName, "timer")
-        XCTAssertEqual(state.title, "")
-        XCTAssertEqual(state.accessibilityDescription, "Moco Timer")
+        #expect(state.iconName == "timer")
+        #expect(state.title == "")
+        #expect(state.accessibilityDescription == "Moco Timer")
     }
 
-    func testErrorOverridesIdle() {
+    @Test("Error overrides idle state")
+    func errorOverridesIdle() {
         let state = MenuBarDisplayState.from(timerState: .idle, currentActivity: nil, hasError: true)
-        XCTAssertEqual(state.iconName, "exclamationmark.triangle.fill")
-        XCTAssertEqual(state.title, "")
+        #expect(state.iconName == "exclamationmark.triangle.fill")
+        #expect(state.title == "")
     }
 
-    func testErrorOverridesRunning() {
+    @Test("Error overrides running state")
+    func errorOverridesRunning() {
         let state = MenuBarDisplayState.from(timerState: .running(activityId: 1, projectName: "Test"), currentActivity: nil, hasError: true)
-        XCTAssertEqual(state.iconName, "exclamationmark.triangle.fill")
-        XCTAssertEqual(state.title, "")
+        #expect(state.iconName == "exclamationmark.triangle.fill")
+        #expect(state.title == "")
     }
 
-    func testPausedStateShowsIdleLike() {
+    @Test("Paused state shows idle-like appearance")
+    func pausedStateShowsIdleLike() {
         let state = MenuBarDisplayState.from(timerState: .paused(activityId: 1, projectName: "Marketing"), currentActivity: nil, hasError: false)
-        XCTAssertEqual(state.iconName, "timer")
-        XCTAssertEqual(state.title, "")
-        XCTAssertEqual(state.accessibilityDescription, "Timer Paused")
+        #expect(state.iconName == "timer")
+        #expect(state.title == "")
+        #expect(state.accessibilityDescription == "Timer Paused")
     }
 
-    func testRunningStateShowsTimerIcon() {
+    @Test("Running state shows timer icon")
+    func runningStateShowsTimerIcon() {
         let state = MenuBarDisplayState.from(timerState: .running(activityId: 1, projectName: "Test"), currentActivity: nil, hasError: false)
-        XCTAssertEqual(state.iconName, "timer")
-        XCTAssertEqual(state.accessibilityDescription, "Timer Running")
+        #expect(state.iconName == "timer")
+        #expect(state.accessibilityDescription == "Timer Running")
     }
 
-    func testEquatable() {
+    @Test("Equatable conformance works")
+    func equatable() {
         let a = MenuBarDisplayState.from(timerState: .idle, currentActivity: nil, hasError: false)
         let b = MenuBarDisplayState.from(timerState: .idle, currentActivity: nil, hasError: false)
-        XCTAssertEqual(a, b)
+        #expect(a == b)
     }
 
-    func testPausedAccessibility() {
+    @Test("Paused accessibility description")
+    func pausedAccessibility() {
         let state = MenuBarDisplayState.from(timerState: .paused(activityId: 42, projectName: "Acme"), currentActivity: nil, hasError: false)
-        XCTAssertEqual(state.accessibilityDescription, "Timer Paused")
+        #expect(state.accessibilityDescription == "Timer Paused")
     }
 
-    // MARK: - Truncation
-
-    func testTruncateMiddle() {
-        // Short text — no truncation
+    @Test("Short project name is not truncated")
+    func truncateMiddle() {
         let short = MenuBarDisplayState.from(timerState: .running(activityId: 1, projectName: "Hi"), currentActivity: nil, hasError: false)
-        XCTAssertTrue(short.title.contains("Hi"))
-        XCTAssertFalse(short.title.contains("…") && short.title.contains("·"))
+        #expect(short.title.contains("Hi"))
+        #expect(!(short.title.contains("…") && short.title.contains("·")))
     }
 
-    func testLongProjectAndTaskTruncated() {
-        // With a very long project name and no activity, should still fit
+    @Test("Long project name is truncated")
+    func longProjectAndTaskTruncated() {
         let state = MenuBarDisplayState.from(timerState: .running(activityId: 1, projectName: "This Is A Very Long Project Name That Should Be Truncated"), currentActivity: nil, hasError: false)
-        XCTAssertTrue(state.title.contains("…"))
+        #expect(state.title.contains("…"))
     }
 }
