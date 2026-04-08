@@ -1,5 +1,8 @@
 import Foundation
 
+// MARK: - UsageRecording conformance
+extension TimerSideEffects: UsageRecording {}
+
 /// Handles all side-effects triggered by timer operations.
 /// Owns recency tracking, recent entries, description autocomplete, sound feedback,
 /// and notification dispatch. TimerService calls a single method per event instead
@@ -14,7 +17,6 @@ final class TimerSideEffects {
     private let searchEntriesProvider: () -> [SearchEntry]
     private let budgetRefresh: (Int) async -> Void
     private let budgetStatusProvider: (Int, Int?) -> BudgetStatus
-
 
     init(
         recencyTracker: RecencyTracker,
@@ -77,32 +79,6 @@ final class TimerSideEffects {
         }
     }
 
-    /// An activity's description or hours were edited.
-    func onActivityEdited() {
-        notificationDispatcher.entryUpdated()
-    }
-
-    /// A description was updated (no hours change).
-    func onDescriptionUpdated() {
-        notificationDispatcher.descriptionUpdated()
-    }
-
-    /// An activity was deleted.
-    func onActivityDeleted() {
-        notificationDispatcher.entryDeleted()
-    }
-
-    /// A manual time entry was booked (no timer).
-    func onManualEntry(projectId: Int, taskId: Int, description: String, projectName: String, hours: Double) {
-        recordUsage(projectId: projectId, taskId: taskId, description: description)
-        notificationDispatcher.manualEntry(projectName: projectName, hours: hours)
-    }
-
-    /// An entry was duplicated to today.
-    func onDuplicated(projectName: String, hours: Double) {
-        notificationDispatcher.entryDuplicated(projectName: projectName, hours: hours)
-    }
-
     /// An externally running timer was stopped (during startTimer flow).
     func onExternalTimerStopped() {
         playSound(.stop)
@@ -135,23 +111,7 @@ final class TimerSideEffects {
         }
     }
 
-    // MARK: - Private
-
-    private enum SoundType { case start, stop }
-
-    /// Check budget status and dispatch a warning notification if warranted.
-    private func dispatchBudgetWarning(projectId: Int, taskId: Int, projectName: String) {
-        let status = budgetStatusProvider(projectId, taskId)
-        notificationDispatcher.budgetWarning(projectName: projectName, badge: status.effectiveBadge)
-    }
-
-    private func playSound(_ type: SoundType) {
-        guard settings.sound.enabled else { return }
-        switch type {
-        case .start: SoundFeedback.playStart()
-        case .stop: SoundFeedback.playStop()
-        }
-    }
+    // MARK: - UsageRecording
 
     func recordUsage(projectId: Int, taskId: Int, description: String) {
         recencyTracker.recordUsage(projectId: projectId)
@@ -164,5 +124,22 @@ final class TimerSideEffects {
             )
         }
         descriptionStore.record(description)
+    }
+
+    // MARK: - Private
+
+    private enum SoundType { case start, stop }
+
+    private func dispatchBudgetWarning(projectId: Int, taskId: Int, projectName: String) {
+        let status = budgetStatusProvider(projectId, taskId)
+        notificationDispatcher.budgetWarning(projectName: projectName, badge: status.effectiveBadge)
+    }
+
+    private func playSound(_ type: SoundType) {
+        guard settings.sound.enabled else { return }
+        switch type {
+        case .start: SoundFeedback.playStart()
+        case .stop: SoundFeedback.playStop()
+        }
     }
 }

@@ -56,17 +56,6 @@ struct TimerSideEffectsTests {
         #expect(box.types.contains(.timerStopped))
     }
 
-    // MARK: - Manual Entry
-
-    @Test("onManualEntry dispatches .manualEntry notification")
-    @MainActor func manualEntryNotification() {
-        let (fx, box) = makeSideEffects()
-
-        fx.onManualEntry(projectId: 1, taskId: 2, description: "task", projectName: "Acme", hours: 2.5)
-
-        #expect(box.types.contains(.manualEntry))
-    }
-
     // MARK: - Error
 
     @Test("onError dispatches .apiError notification")

@@ -4,15 +4,23 @@ import SwiftUI
 /// Extracted business logic for the Today/Yesterday/Tomorrow views.
 /// Owns navigation state, action decisions, and timer dispatch.
 /// TodayView binds to this and handles only rendering + focus.
+///
+/// Services are internal — the view accesses state through ViewModel-level
+/// computed properties. Only `activityService`, `timerService`, and
+/// `deleteUndoManager` remain accessible for subview injection where
+/// @Observable reactivity on the concrete type is required.
 @Observable
 @MainActor
 final class TodayViewModel {
     // MARK: - Dependencies
+    // These are intentionally internal, not private, because TodayView passes
+    // them to subviews (TodayActivityRow, UnplannedTasksSection) that need
+    // @Observable reactivity on the concrete types.
 
-    let timerService: TimerService
     let activityService: ActivityService
-    let planningStore: PlanningStore
+    let timerService: TimerService
     let deleteUndoManager: DeleteUndoManager
+    let planningStore: PlanningStore
     let favoritesManager: FavoritesManager
 
     // MARK: - Navigation State
@@ -39,13 +47,21 @@ final class TodayViewModel {
     /// Whether a manual refresh is in progress.
     var isRefreshing = false
 
-    init(timerService: TimerService, activityService: ActivityService, planningStore: PlanningStore, deleteUndoManager: DeleteUndoManager, favoritesManager: FavoritesManager) {
+    init(
+        timerService: TimerService,
+        activityService: ActivityService,
+        planningStore: PlanningStore,
+        deleteUndoManager: DeleteUndoManager,
+        favoritesManager: FavoritesManager
+    ) {
         self.timerService = timerService
         self.activityService = activityService
         self.planningStore = planningStore
         self.deleteUndoManager = deleteUndoManager
         self.favoritesManager = favoritesManager
     }
+
+    // MARK: - Data Refresh
 
     /// Refresh data for the currently selected day. Updates lastSyncedAt on completion.
     func refreshCurrentDay() async {
@@ -61,6 +77,75 @@ final class TodayViewModel {
         }
         lastSyncedAt = Date()
         isRefreshing = false
+    }
+
+    func refreshTodayStats() async {
+        await activityService.refreshTodayStats()
+    }
+
+    func refreshYesterdayActivities() async {
+        await activityService.refreshYesterdayActivities()
+    }
+
+    func refreshAllPlanning() async {
+        await planningStore.refreshAllPlanning()
+    }
+
+    func refreshAbsences() async {
+        await planningStore.refreshAbsences()
+    }
+
+    // MARK: - Forwarded State (ActivityService)
+
+    /// Opaque version token — changes whenever todayActivities changes.
+    /// Lets the view observe activity list changes through the ViewModel boundary
+    /// without exposing activityService directly.
+    var todayActivitiesVersion: Int { activityService.todayActivities.count ^ (activityService.todayActivities.first?.id ?? 0) }
+
+    /// Opaque version token for yesterdayActivities.
+    var yesterdayActivitiesVersion: Int { activityService.yesterdayActivities.count ^ (activityService.yesterdayActivities.first?.id ?? 0) }
+
+    /// Today's total tracked hours.
+    var todayTotalHours: Double { activityService.todayTotalHours }
+
+    /// Today's billable percentage (0–100).
+    var todayBillablePercentage: Double { activityService.todayBillablePercentage }
+
+    /// Yesterday's activities — used by stats footer when isYesterday is true.
+    var yesterdayActivities: [MocoActivity] { activityService.yesterdayActivities }
+
+    // MARK: - Forwarded State (DeleteUndoManager)
+
+    /// The currently pending delete, if any. Drives the undo toast.
+    var pendingDelete: DeleteUndoManager.PendingDelete? { deleteUndoManager.pendingDelete }
+
+    func undoDelete() {
+        deleteUndoManager.undoDelete()
+    }
+
+    // MARK: - Forwarded State (PlanningStore)
+
+    /// Absence (if any) for a specific date string.
+    func absence(for dateString: String) -> MocoSchedule? {
+        planningStore.absence(for: dateString)
+    }
+
+    /// Unplanned tasks for today.
+    var unplannedTasks: [PlanningStore.UnplannedTask] { planningStore.unplannedTasks }
+
+    /// Tomorrow's planning entries.
+    var tomorrowPlanningEntries: [MocoPlanningEntry] { planningStore.tomorrowPlanningEntries }
+
+    /// Planned hours for a project+task today, or nil if not planned.
+    func plannedHours(projectId: Int, taskId: Int) -> Double? {
+        planningStore.plannedHours(projectId: projectId, taskId: taskId)
+    }
+
+    // MARK: - Forwarded State (TimerService)
+
+    /// Whether the given activity is currently paused.
+    func isPausedActivity(_ activity: MocoActivity) -> Bool {
+        timerService.isPausedActivity(activity)
     }
 
     // MARK: - Derived State
@@ -167,7 +252,7 @@ final class TodayViewModel {
         }
     }
 
-    // MARK: - Actions (return what happened, let the View handle dismiss)
+    // MARK: - Actions
 
     /// Primary Enter action — unified logic for all days and selection types.
     /// Returns the action result so the caller can decide on panel dismiss.
@@ -191,7 +276,6 @@ final class TodayViewModel {
         selectedActivityId = activity.id
 
         if isYesterday {
-            // Yesterday: start a new timer with the same project/task/description
             Task {
                 _ = await timerService.startTimer(
                     projectId: activity.project.id,
@@ -202,7 +286,6 @@ final class TodayViewModel {
             return .startedTimer(projectId: activity.project.id, taskId: activity.task.id, description: activity.description)
         }
 
-        // Today: context-aware toggle
         return toggleTimerForActivity(activity)
     }
 
@@ -247,7 +330,6 @@ final class TodayViewModel {
     // MARK: - Private
 
     private func toggleTimerForActivity(_ activity: MocoActivity) -> TimerActionResult {
-        // Determine what toggleTimer will do
         switch timerService.timerState {
         case .running(let runningId, _) where runningId == activity.id:
             Task { await timerService.pauseTimer() }
@@ -267,28 +349,17 @@ final class TodayViewModel {
 
     // MARK: - Keyboard Dispatch
 
-    /// Result of keyboard dispatch — the view maps these to SwiftUI actions.
     enum KeyAction {
-        /// Key was handled, no view-layer action needed.
         case handled
-        /// Key was not handled — let SwiftUI propagate it.
         case ignored
-        /// Switch to the Track tab.
         case switchTab
-        /// Start tracking a planned entry — view should switch to Track tab with entry.
         case startEntry(SearchEntry)
-        /// Dismiss the panel.
         case dismiss
-        /// Start editing the selected entry — view provides the drafts.
         case startEdit(description: String, hours: String)
-        /// Forward typed characters to search.
         case typeToSearch(String)
     }
 
-    /// Unified keyboard dispatch. Replaces 12 individual onKeyPress handlers in the view.
-    /// Returns a KeyAction that the view maps to SwiftUI side effects.
     func handleKeyPress(key: KeyEquivalent, characters: String, modifiers: NSEvent.ModifierFlags) -> KeyAction {
-        // Handle Escape during edit/delete mode — cancel without closing panel
         if editingActivityId != nil && key == .escape {
             editingActivityId = nil
             return .handled
@@ -298,7 +369,6 @@ final class TodayViewModel {
             return .handled
         }
 
-        // Block all other keys during edit/delete mode
         guard editingActivityId == nil && deletingActivityId == nil else { return .ignored }
 
         switch key {
@@ -347,7 +417,6 @@ final class TodayViewModel {
             break
         }
 
-        // ⌘1–⌘9 shortcuts
         if modifiers == .command, let char = characters.first,
            let num = Int(String(char)), num >= 1 && num <= 9 {
             let result = performShortcutAction(num - 1)
@@ -360,7 +429,6 @@ final class TodayViewModel {
             return .handled
         }
 
-        // Single character shortcuts
         let lower = characters.lowercased()
         if lower == "e" {
             if let payload = editPayload() {
@@ -377,7 +445,6 @@ final class TodayViewModel {
             return .handled
         }
 
-        // Type-to-search: forward printable characters
         if modifiers.isEmpty || modifiers == .shift,
            let char = characters.first, char.isLetter || char.isNumber {
             return .typeToSearch(characters)

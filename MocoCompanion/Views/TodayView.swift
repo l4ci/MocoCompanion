@@ -49,22 +49,22 @@ struct TodayView: View {
 
             dayToggle
 
-            if let absence = vm.planningStore.absence(for: vm.selectedDay.dateString) {
+            if let absence = vm.absence(for: vm.selectedDay.dateString) {
                 absenceBanner(absence)
             }
 
             if vm.isTomorrow {
                 tomorrowView
-            } else if vm.sortedActivities.isEmpty && (vm.selectedDay != .today || vm.planningStore.unplannedTasks.isEmpty) {
+            } else if vm.sortedActivities.isEmpty && (vm.selectedDay != .today || vm.unplannedTasks.isEmpty) {
                 TodayEmptyState(isYesterday: vm.isYesterday)
             } else {
                 if !vm.sortedActivities.isEmpty {
                     activitiesList
                 }
 
-                if vm.selectedDay == .today && !vm.planningStore.unplannedTasks.isEmpty {
+                if vm.selectedDay == .today && !vm.unplannedTasks.isEmpty {
                     UnplannedTasksSection(
-                        tasks: vm.planningStore.unplannedTasks,
+                        tasks: vm.unplannedTasks,
                         timerService: vm.timerService,
                         selectedIndex: vm.isUnplannedSelected ? vm.selectedIndex - vm.sortedActivities.count : nil
                     )
@@ -72,18 +72,18 @@ struct TodayView: View {
 
                 if !vm.isTomorrow {
                     TodayStatsFooter(
-                        totalHours: vm.isYesterday ? yesterdayTotalHours : vm.activityService.todayTotalHours,
-                        billablePercentage: vm.isYesterday ? yesterdayBillablePercentage : vm.activityService.todayBillablePercentage,
+                        totalHours: vm.isYesterday ? yesterdayTotalHours : vm.todayTotalHours,
+                        billablePercentage: vm.isYesterday ? yesterdayBillablePercentage : vm.todayBillablePercentage,
                         entryCount: vm.sortedActivities.count
                     )
                 }
             }
 
             // Undo toast — shown after deleting an entry
-            if let pending = vm.deleteUndoManager.pendingDelete {
+            if let pending = vm.pendingDelete {
                 UndoToastView(
                     projectName: pending.activity.project.name,
-                    onUndo: { vm.deleteUndoManager.undoDelete() }
+                    onUndo: { vm.undoDelete() }
                 )
             }
         }
@@ -99,10 +99,10 @@ struct TodayView: View {
                     if appState.session.currentUserId != nil { break }
                 }
             }
-            await vm.activityService.refreshTodayStats()
-            await vm.activityService.refreshYesterdayActivities()
-            await vm.planningStore.refreshAllPlanning()
-            await vm.planningStore.refreshAbsences()
+            await vm.refreshTodayStats()
+            await vm.refreshYesterdayActivities()
+            await vm.refreshAllPlanning()
+            await vm.refreshAbsences()
             vm.lastSyncedAt = Date()
             if let idx = vm.activeEntryIndex {
                 vm.selectedIndex = idx
@@ -124,11 +124,11 @@ struct TodayView: View {
             vm.editingActivityId = nil
             vm.deletingActivityId = nil
         }
-        .onChange(of: vm.activityService.todayActivities) {
+        .onChange(of: vm.todayActivitiesVersion) {
             guard !vm.isYesterday else { return }
             vm.syncSelectionAfterDataChange()
         }
-        .onChange(of: vm.activityService.yesterdayActivities) {
+        .onChange(of: vm.yesterdayActivitiesVersion) {
             guard vm.isYesterday else { return }
             vm.syncSelectionAfterDataChange()
         }
@@ -278,7 +278,7 @@ struct TodayView: View {
 
     private var tomorrowView: some View {
         VStack(spacing: 0) {
-            if vm.planningStore.tomorrowPlanningEntries.isEmpty {
+            if vm.tomorrowPlanningEntries.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "sun.horizon")
                         .font(.system(size: 28 + fontBoost, weight: .light))
@@ -304,14 +304,14 @@ struct TodayView: View {
                 .padding(.bottom, 4)
 
                 VStack(spacing: 2) {
-                    ForEach(vm.planningStore.tomorrowPlanningEntries) { entry in
+                    ForEach(vm.tomorrowPlanningEntries) { entry in
                         tomorrowPlanningRow(entry)
                     }
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
 
-                let totalPlanned = vm.planningStore.tomorrowPlanningEntries.reduce(0.0) { $0 + $1.hoursPerDay }
+                let totalPlanned = vm.tomorrowPlanningEntries.reduce(0.0) { $0 + $1.hoursPerDay }
                 HStack {
                     Spacer()
                     Text(String(format: "%.0fh geplant", totalPlanned))
@@ -343,10 +343,10 @@ struct TodayView: View {
                             isSelected: index == vm.selectedIndex,
                             isHovered: vm.hoveredActivityId == activity.id,
                             isRunning: !vm.isYesterday && activity.isTimerRunning,
-                            isPaused: !vm.isYesterday && vm.timerService.isPausedActivity(activity),
+                            isPaused: !vm.isYesterday && vm.isPausedActivity(activity),
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
-                            plannedHours: vm.isYesterday ? nil : vm.planningStore.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
+                            plannedHours: vm.isYesterday ? nil : vm.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
                             projects: appState.catalog.projects,
                             budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,
@@ -390,13 +390,13 @@ struct TodayView: View {
     // MARK: - Stats
 
     private var yesterdayTotalHours: Double {
-        vm.activityService.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
+        vm.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
     }
 
     private var yesterdayBillablePercentage: Double {
         let total = yesterdayTotalHours
         guard total > 0 else { return 0 }
-        let billable = vm.activityService.yesterdayActivities.filter(\.billable).reduce(0.0) { $0 + $1.hours }
+        let billable = vm.yesterdayActivities.filter(\.billable).reduce(0.0) { $0 + $1.hours }
         return (billable / total) * 100.0
     }
 }

@@ -27,6 +27,7 @@ final class AppState {
     let monitorEngine: MonitorEngine
     let networkMonitor: NetworkMonitor
     let entryQueue: EntryQueue
+    let offlineSyncService: OfflineSyncService
 
     let yesterdayService: YesterdayService
 
@@ -164,6 +165,7 @@ final class AppState {
         self.monitorEngine = engine
         self.networkMonitor = NetworkMonitor()
         self.entryQueue = EntryQueue()
+        self.offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
 
         // Create extracted submodules
         let projectCatalog = ProjectCatalog()
@@ -190,7 +192,7 @@ final class AppState {
         deleteUndo.timerStopProvider = timerSvc
 
         // Wire usage recording for manual entries (recency, recent entries, descriptions)
-        activitySvc.sideEffects = sideEffects
+        activitySvc.usageRecorder = sideEffects
 
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate
@@ -241,13 +243,15 @@ final class AppState {
 
     /// Sync queued entries after reconnecting. Deduplicates against existing activities.
     func syncQueuedEntries() async {
-        await session.syncQueuedEntries(
+        guard let userId = session.currentUserId else { return }
+        await offlineSyncService.sync(
             queue: entryQueue,
-            client: makeClient(),
-            userId: session.currentUserId,
-            dispatcher: notificationDispatcher,
-            onSynced: { [weak self] in
-                await self?.activityService.refreshTodayStats()
+            userId: userId,
+            onSynced: { [weak self] syncedCount in
+                guard let self else { return }
+                let message = String(localized: "offline.synced \(syncedCount)")
+                self.notificationDispatcher.send(.projectsRefreshed, message: message)
+                await self.activityService.refreshTodayStats()
             }
         )
     }

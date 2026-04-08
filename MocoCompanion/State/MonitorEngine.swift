@@ -48,84 +48,147 @@ extension PollingMonitor {
     func resetSession() {}
 }
 
+// MARK: - Monitor Scheduler Protocol
+
+/// Owns the timing policy for polling monitors. The engine delegates all time/Task
+/// management here, making orchestration logic testable without real Task.sleep.
+@MainActor
+protocol MonitorScheduler: AnyObject {
+    /// Register a monitor. The scheduler calls `onTick` at the monitor's poll interval.
+    /// The scheduler must respect the monitor's `pollInterval`.
+    func schedule(_ monitor: any PollingMonitor, onTick: @escaping @MainActor () async -> Void)
+
+    /// Optionally fire one immediate tick before entering the interval loop.
+    /// Called by the engine for monitors registered with `immediateFirstCheck: true`.
+    func scheduleImmediate(_ monitor: any PollingMonitor, onTick: @escaping @MainActor () async -> Void)
+
+    /// Cancel all scheduled timers.
+    func cancelAll()
+
+    /// Cancel the timer for a specific monitor.
+    func cancel(_ monitor: any PollingMonitor)
+}
+
+// MARK: - Production Scheduler
+
+/// Production implementation using `Task.sleep` per monitor.
+@MainActor
+final class TaskMonitorScheduler: MonitorScheduler {
+    private let logger = Logger(category: "MonitorScheduler")
+    private var tasks: [ObjectIdentifier: Task<Void, Never>] = [:]
+
+    func schedule(_ monitor: any PollingMonitor, onTick: @escaping @MainActor () async -> Void) {
+        let id = ObjectIdentifier(monitor)
+        tasks[id]?.cancel()
+        tasks[id] = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: monitor.pollInterval)
+                guard !Task.isCancelled else { break }
+                await onTick()
+            }
+            self.logger.debug("\(monitor.monitorName): scheduler loop exited")
+        }
+    }
+
+    func scheduleImmediate(_ monitor: any PollingMonitor, onTick: @escaping @MainActor () async -> Void) {
+        let id = ObjectIdentifier(monitor)
+        tasks[id]?.cancel()
+        tasks[id] = Task { [weak self] in
+            guard let self else { return }
+            // Immediate first tick
+            await onTick()
+            // Then periodic
+            while !Task.isCancelled {
+                try? await Task.sleep(for: monitor.pollInterval)
+                guard !Task.isCancelled else { break }
+                await onTick()
+            }
+            self.logger.debug("\(monitor.monitorName): scheduler loop exited")
+        }
+    }
+
+    func cancelAll() {
+        tasks.values.forEach { $0.cancel() }
+        tasks.removeAll()
+    }
+
+    func cancel(_ monitor: any PollingMonitor) {
+        let id = ObjectIdentifier(monitor)
+        tasks[id]?.cancel()
+        tasks.removeValue(forKey: id)
+    }
+}
+
 // MARK: - Monitor Engine
 
 /// Runs all registered monitors, handles dedup, and dispatches notifications.
-/// Single `stopAll()` for app termination.
+/// Timing is delegated to MonitorScheduler — swap for ManualMonitorScheduler in tests.
 @MainActor
 final class MonitorEngine {
     private let logger = Logger(category: "MonitorEngine")
     private let dispatcher: NotificationDispatcher
+    private let scheduler: any MonitorScheduler
 
-    private var tasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     private var dedupLedger = DedupLedger()
-    /// Keep strong references to monitors so they aren't deallocated.
-    private var monitors: [ObjectIdentifier: PollingMonitor] = [:]
+    /// Strong references so monitors aren't deallocated.
+    private var monitors: [ObjectIdentifier: any PollingMonitor] = [:]
 
-    init(dispatcher: NotificationDispatcher) {
+    init(dispatcher: NotificationDispatcher, scheduler: (any MonitorScheduler)? = nil) {
         self.dispatcher = dispatcher
+        self.scheduler = scheduler ?? TaskMonitorScheduler()
     }
 
     /// Register and start polling a monitor.
     /// - Parameter immediateFirstCheck: If true, run the first check immediately instead of waiting for the poll interval.
-    func register(_ monitor: PollingMonitor, immediateFirstCheck: Bool = false) {
+    func register(_ monitor: any PollingMonitor, immediateFirstCheck: Bool = false) {
         let id = ObjectIdentifier(monitor)
-        tasks[id]?.cancel()
         monitors[id] = monitor
+        scheduler.cancel(monitor)
 
-        tasks[id] = Task { [weak self] in
-            guard let self else { return }
-            self.logger.info("\(monitor.monitorName): started")
-
-            // Optional immediate first check before entering the polling loop
-            if immediateFirstCheck && monitor.isActive {
-                let alerts = await monitor.check()
-                for alert in alerts {
-                    if self.dedupLedger.shouldFire(alert) {
-                        self.dispatcher.send(alert.type, message: alert.message)
-                        self.dedupLedger.markFired(alert)
-                        self.logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
-                    }
-                }
-            }
-
-            while !Task.isCancelled {
-                try? await Task.sleep(for: monitor.pollInterval)
-                guard !Task.isCancelled else { break }
-
-                guard monitor.isActive else { continue }
-
-                let alerts = await monitor.check()
-                for alert in alerts {
-                    if self.dedupLedger.shouldFire(alert) {
-                        self.dispatcher.send(alert.type, message: alert.message)
-                        self.dedupLedger.markFired(alert)
-                        self.logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
-                    }
-                }
-            }
-            self.logger.info("\(monitor.monitorName): stopped")
+        let tick: @MainActor () async -> Void = { [weak self] in
+            await self?.poll(monitor)
         }
+
+        if immediateFirstCheck {
+            scheduler.scheduleImmediate(monitor, onTick: tick)
+        } else {
+            scheduler.schedule(monitor, onTick: tick)
+        }
+
+        logger.info("\(monitor.monitorName): registered")
     }
 
     /// Unregister a specific monitor.
-    func unregister(_ monitor: PollingMonitor) {
+    func unregister(_ monitor: any PollingMonitor) {
         let id = ObjectIdentifier(monitor)
-        tasks[id]?.cancel()
-        tasks.removeValue(forKey: id)
+        scheduler.cancel(monitor)
         monitors.removeValue(forKey: id)
     }
 
     /// Reset dedup state for a specific monitor (e.g., new tracking session).
-    func resetSession(for monitor: PollingMonitor) {
+    func resetSession(for monitor: any PollingMonitor) {
         monitor.resetSession()
         dedupLedger.clearPrefix(monitor.monitorName + ":")
     }
 
     /// Stop all monitors. Call from applicationWillTerminate.
     func stopAll() {
-        tasks.values.forEach { $0.cancel() }
-        tasks.removeAll()
+        scheduler.cancelAll()
         monitors.removeAll()
+    }
+
+    // MARK: - Private
+
+    private func poll(_ monitor: any PollingMonitor) async {
+        guard monitor.isActive else { return }
+        let alerts = await monitor.check()
+        for alert in alerts {
+            if dedupLedger.shouldFire(alert) {
+                dispatcher.send(alert.type, message: alert.message)
+                dedupLedger.markFired(alert)
+                logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
+            }
+        }
     }
 }

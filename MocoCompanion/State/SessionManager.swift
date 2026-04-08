@@ -48,51 +48,5 @@ final class SessionManager {
         }
     }
 
-    /// Sync queued entries after reconnecting. Deduplicates against existing activities.
-    func syncQueuedEntries(
-        queue: EntryQueue,
-        client: (any MocoClientProtocol)?,
-        userId: Int?,
-        dispatcher: NotificationDispatcher,
-        onSynced: () async -> Void
-    ) async {
-        guard !queue.isEmpty else { return }
-        guard let client else { return }
-        guard let userId else { return }
 
-        logger.info("Syncing \(queue.count) queued entries")
-        var syncedCount = 0
-
-        for entry in queue.entries {
-            do {
-                let existing = try await client.fetchActivities(from: entry.date, to: entry.date, userId: userId)
-                let isDuplicate = existing.contains { activity in
-                    activity.project.id == entry.projectId
-                    && activity.task.id == entry.taskId
-                    && activity.description == entry.description
-                }
-                if isDuplicate {
-                    logger.info("Skipping duplicate queued entry for \(entry.projectName)")
-                    queue.remove(id: entry.id)
-                    continue
-                }
-                _ = try await client.createActivity(
-                    date: entry.date, projectId: entry.projectId, taskId: entry.taskId,
-                    description: entry.description, seconds: entry.seconds, tag: entry.tag
-                )
-                queue.remove(id: entry.id)
-                syncedCount += 1
-                logger.info("Synced queued entry for \(entry.projectName)")
-            } catch {
-                logger.error("Failed to sync queued entry: \(error.localizedDescription)")
-                break
-            }
-        }
-
-        if syncedCount > 0 {
-            let message = String(localized: "offline.synced \(syncedCount)")
-            dispatcher.send(.projectsRefreshed, message: message)
-            await onSynced()
-        }
-    }
 }

@@ -1,6 +1,13 @@
 import Foundation
 import os
 
+/// Capability for recording project/task usage for recency and autocomplete.
+/// ActivityService depends on this instead of the concrete TimerSideEffects type.
+@MainActor
+protocol UsageRecording: AnyObject {
+    func recordUsage(projectId: Int, taskId: Int, description: String)
+}
+
 /// Manages activity data: CRUD operations, today/yesterday stats, and data refresh.
 /// Uses optimistic local updates after mutations (upserts API responses into local arrays)
 /// instead of full refetches. Full refresh reserved for periodic sync only.
@@ -30,7 +37,7 @@ final class ActivityService: ActivitySyncing {
     private let userIdProvider: () -> Int?
 
     /// Records usage for recency/autocomplete after manual entries.
-    weak var sideEffects: TimerSideEffects?
+    weak var usageRecorder: (any UsageRecording)?
 
     /// Rechecks yesterday warning when yesterday activities change locally.
     weak var yesterdayService: YesterdayService?
@@ -172,7 +179,7 @@ final class ActivityService: ActivitySyncing {
                 description: apiDescription, seconds: seconds, tag: tag
             )
             appendToday(created)
-            sideEffects?.recordUsage(projectId: projectId, taskId: taskId, description: description)
+            usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)
             notificationDispatcher.manualEntry(projectName: created.project.name, hours: Double(seconds) / 3600.0)
             return .success(created)
         } catch {

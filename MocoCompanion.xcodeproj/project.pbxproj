@@ -14,6 +14,11 @@
 		06C1928DB253469A95521AE9 /* FirstUseHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D7A824E23E4FDFBD3786E8 /* FirstUseHintView.swift */; };
 		08F610420048672DC2A1517F /* DeleteUndoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678EF1F8F9AA2877C8B81CB5 /* DeleteUndoManagerTests.swift */; };
 		0A632BF04D48364FF8B71E47 /* TimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */; };
+		0FF10FF10FF10FF10FF10FF1 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */; };
+		0FF20FF20FF20FF20FF20FF2 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */; };
+		0FF30FF30FF30FF30FF30FF3 /* OfflineSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */; };
+		0FF50FF50FF50FF50FF50FF5 /* MonitorEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */; };
+		0FF70FF70FF70FF70FF70FF7 /* ManualMonitorScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */; };
 		0B25A1C3D7E4F8901A2B3C4D /* MocoBudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */; };
 		0C3A0C21E74AE69182EDE1E5 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */; };
 		0D0499ADA7BB50F41B1E6FE7 /* TimerSideEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9C7 /* TimerSideEffects.swift */; };
@@ -225,6 +230,10 @@
 		2571D3B463887787904F8C7E /* TagExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractorTests.swift; sourceTree = "<group>"; };
 		2C43DA1A627C014E38AA2D16 /* DaySelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaySelection.swift; sourceTree = "<group>"; };
 		2C5AAF743678AC038AC40149 /* SessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
+		0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncService.swift; sourceTree = "<group>"; };
+		0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncServiceTests.swift; sourceTree = "<group>"; };
+		0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorEngineTests.swift; sourceTree = "<group>"; };
+		0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualMonitorScheduler.swift; sourceTree = "<group>"; };
 		2D280BBA036682BB1D8A44F0 /* MocoCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MocoCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EA4BC4688D7148D30A005AA /* QuickEntryStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryStateMachine.swift; sourceTree = "<group>"; };
 		2EA4BC4688D7148D30A005AB /* QuickEntryProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryProtocols.swift; sourceTree = "<group>"; };
@@ -403,6 +412,8 @@
 				DE3F2142F620024E05E304AA /* PlanningStoreTests.swift */,
 				50A2BB3391A505072FAEA502 /* ProjectCatalogTests.swift */,
 				C14F935686BADDDCECC10AC8 /* SessionManagerTests.swift */,
+				0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */,
+				0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -441,6 +452,7 @@
 				8FD3BFB973074B42B6D6CB7B /* NetworkMonitor.swift */,
 				33B091C34FA813522D05A4CD /* ProjectCatalog.swift */,
 				2C5AAF743678AC038AC40149 /* SessionManager.swift */,
+				0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */,
 				6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */,
 				6D8442130790C1BCD23A7A2F /* YesterdayService.swift */,
 			);
@@ -525,6 +537,7 @@
 				AA01AA01AA01AA01AA01AA01 /* MockTimerAPI.swift */,
 				AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */,
 				207F92C2CEED2BD7D1372065 /* MockMocoClient.swift */,
+				0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -820,6 +833,7 @@
 				6CF95DEDD858424FB9D6E65B /* NetworkMonitor.swift in Sources */,
 				A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */,
 				EAB431DCC1B765064DA90E65 /* SessionManager.swift in Sources */,
+				0FF10FF10FF10FF10FF10FF1 /* OfflineSyncService.swift in Sources */,
 				3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */,
 				05A034685C5B7EAEA6B2362F /* PersistedState.swift in Sources */,
 				E3F16EF456736A5477D7CCD0 /* YesterdayService.swift in Sources */,
@@ -912,6 +926,10 @@
 				2874B287493A1043D0B6C889 /* PlanningStoreTests.swift in Sources */,
 				D21FF350EE3378E6838ED3C8 /* ProjectCatalogTests.swift in Sources */,
 				6C7925ED67506613173AD21C /* SessionManagerTests.swift in Sources */,
+				0FF30FF30FF30FF30FF30FF3 /* OfflineSyncServiceTests.swift in Sources */,
+				0FF50FF50FF50FF50FF50FF5 /* MonitorEngineTests.swift in Sources */,
+				0FF70FF70FF70FF70FF70FF7 /* ManualMonitorScheduler.swift in Sources */,
+				0FF20FF20FF20FF20FF20FF2 /* OfflineSyncService.swift in Sources */,
 				8B12AAC47B196079731A750B /* MockMocoClient.swift in Sources */,
 				435FE392A273DE661799D8BF /* ProjectCache.swift in Sources */,
 			);
