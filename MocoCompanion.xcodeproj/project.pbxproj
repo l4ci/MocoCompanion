@@ -34,6 +34,7 @@
 		355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */; };
 		359B0662EED0F0675AC14426 /* MocoClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */; };
 		3CB31F5EAABD709C2096CB4F /* DaySelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C43DA1A627C014E38AA2D16 /* DaySelection.swift */; };
+		3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */; };
 		40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */; };
 		4113ED48535E1ECD63D12F74 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */; };
 		41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
@@ -49,12 +50,9 @@
 		568C46350AC00693A06318E0 /* MocoPlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */; };
 		57A488D95CF124D65F67A159 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */; };
 		585C793D185FA7EDD6CAE07E /* ActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA368B3F7194171B836A66B /* ActivityService.swift */; };
-		AA21AA21AA21AA21AA21AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
-		AA21AA21AA21AA21AA21AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
-		AA22AA22AA22AA22AA22AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
-		AA22AA22AA22AA22AA22AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
 		58A1B2C3D4E5F60718293A4B /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */; };
 		58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2571D3B463887787904F8C7E /* TagExtractorTests.swift */; };
+		5BF73E2AE5DF1BCF744BB90C /* TimerStopProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */; };
 		5F7AD97C28DB87C54801F598 /* GreetingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */; };
 		672C8702F9B2AFC75594A767 /* MocoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BC1029B70591A5D9B437C4 /* MocoSession.swift */; };
 		69F31CA5F96D5AD82E759D9B /* TimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */; };
@@ -95,6 +93,10 @@
 		A76CA3112D0C939FCB4D6961 /* YesterdayCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACAA5DC343392E36E544F313 /* YesterdayCheckManager.swift */; };
 		A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B091C34FA813522D05A4CD /* ProjectCatalog.swift */; };
 		A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DE3813688601F145EE7C4 /* StatusItemController.swift */; };
+		AA21AA21AA21AA21AA21AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
+		AA21AA21AA21AA21AA21AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
+		AA22AA22AA22AA22AA22AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
+		AA22AA22AA22AA22AA22AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
 		AB01AB01AB01AB01AB01AB01 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB02AB02AB02AB02AB02AB02 /* AboutSettingsTab.swift */; };
 		ABCD1234567890ABCDEF0002 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */; };
 		ABCD1234567890ABCDEF0004 /* PanelDismissPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0003 /* PanelDismissPolicy.swift */; };
@@ -241,6 +243,7 @@
 		64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPopoverView.swift; sourceTree = "<group>"; };
 		69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractor.swift; sourceTree = "<group>"; };
+		6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerStopProvider.swift; sourceTree = "<group>"; };
 		71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayStateTests.swift; sourceTree = "<group>"; };
 		7920563D8DACABBBDEC8892C /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
 		7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetService.swift; sourceTree = "<group>"; };
@@ -259,8 +262,6 @@
 		90FAF0165CF44DD9B1C1BC46 /* OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerView.swift; sourceTree = "<group>"; };
 		9ADD519E64051033A0F06C83 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9BA368B3F7194171B836A66B /* ActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityService.swift; sourceTree = "<group>"; };
-		AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
-		AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtilities.swift; sourceTree = "<group>"; };
 		A0AA040396C6E5C43AF2FDB4 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MocoCompanionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -283,6 +284,8 @@
 		AA11AA11AA11AA11AA11AA11 /* NotificationDispatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDispatcherTests.swift; sourceTree = "<group>"; };
 		AA12AA12AA12AA12AA12AA12 /* TimerSideEffectsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSideEffectsTests.swift; sourceTree = "<group>"; };
 		AA13AA13AA13AA13AA13AA13 /* TodayViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModelTests.swift; sourceTree = "<group>"; };
+		AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
+		AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsTab.swift; sourceTree = "<group>"; };
 		AB02AB02AB02AB02AB02AB02 /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
 		AB527B9DF5DD04CF188C758C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -415,6 +418,7 @@
 				8FD3BFB973074B42B6D6CB7B /* NetworkMonitor.swift */,
 				33B091C34FA813522D05A4CD /* ProjectCatalog.swift */,
 				2C5AAF743678AC038AC40149 /* SessionManager.swift */,
+				6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */,
 			);
 			path = State;
 			sourceTree = "<group>";
@@ -792,6 +796,7 @@
 				6CF95DEDD858424FB9D6E65B /* NetworkMonitor.swift in Sources */,
 				A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */,
 				EAB431DCC1B765064DA90E65 /* SessionManager.swift in Sources */,
+				3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -870,6 +875,7 @@
 				CC11CC11CC11CC11CC11CC11 /* MocoWorkModels.swift in Sources */,
 				CC12CC12CC12CC12CC12CC12 /* MocoPlanningModels.swift in Sources */,
 				CC13CC13CC13CC13CC13CC13 /* MocoProjectModels.swift in Sources */,
+				5BF73E2AE5DF1BCF744BB90C /* TimerStopProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

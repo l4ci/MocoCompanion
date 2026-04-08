@@ -23,7 +23,7 @@ struct ActivitySyncTarget: @unchecked Sendable {
 /// the internal stop-then-start sequence.
 @Observable
 @MainActor
-final class TimerService {
+final class TimerService: TimerStopProvider {
     private let logger = Logger(category: "TimerService")
 
     // MARK: - Observable State
@@ -196,6 +196,16 @@ final class TimerService {
             activitySync.applyFetchedActivities?(activities)
         } else {
             await activitySync.refreshTodayStats?()
+        }
+    }
+
+    /// Stop the timer if it is currently running or paused for the given activity.
+    func stopTimerIfActive(activityId: Int) async {
+        switch timerState {
+        case .running(let id, _) where id == activityId,
+             .paused(let id, _) where id == activityId:
+            await stopTimer()
+        default: break
         }
     }
 

@@ -94,7 +94,7 @@ struct ActivityServiceTests {
 
     // MARK: - deleteActivity
 
-    @Test("deleteActivity removes from local arrays and invokes onNeedTimerStop")
+    @Test("deleteActivity removes from local arrays and invokes timer stop")
     @MainActor func deleteRemovesLocally() async {
         var api = MockActivityAPI()
         let a1 = TestFactories.makeActivity(id: 10)
@@ -106,16 +106,15 @@ struct ActivityServiceTests {
         await service.refreshTodayStats()
         #expect(service.todayActivities.count == 2)
 
-        var timerStopCalledWith: Int?
-        service.deleteUndoManager?.onNeedTimerStop = { activityId in
-            timerStopCalledWith = activityId
-        }
+        let mockTimer = MockTimerStopProvider()
+        let dum = service.deleteUndoManager!
+        dum.timerStopProvider = mockTimer
 
-        await service.deleteActivity(activityId: 10)
+        await dum.deleteActivity(activityId: 10)
 
         #expect(service.todayActivities.count == 1)
         #expect(service.todayActivities.first?.id == 20)
-        #expect(timerStopCalledWith == 10)
+        #expect(mockTimer.stoppedActivityId == 10)
     }
 
     // MARK: - editActivity
@@ -320,5 +319,21 @@ struct ActivityServiceTests {
         #expect(service.todayPlanningEntries.first?.id == 1)
         #expect(service.tomorrowPlanningEntries.count == 1)
         #expect(service.tomorrowPlanningEntries.first?.id == 2)
+    }
+}
+
+// MARK: - Test Helpers
+
+@MainActor
+final class MockTimerStopProvider: TimerStopProvider {
+    var timerState: TimerState = .idle
+    var stoppedActivityId: Int?
+
+    func stopTimer() async {
+        // no-op
+    }
+
+    func stopTimerIfActive(activityId: Int) async {
+        stoppedActivityId = activityId
     }
 }

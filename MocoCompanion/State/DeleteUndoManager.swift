@@ -28,8 +28,8 @@ final class DeleteUndoManager {
     private let activityService: ActivityService
     private let sideEffects: TimerSideEffects
 
-    /// Called by coordinator to stop timer before deleting a timed activity.
-    var onNeedTimerStop: ((Int) async -> Void)?
+    /// Stops the timer before deleting a timed activity.
+    var timerStopProvider: (any TimerStopProvider)?
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
@@ -46,8 +46,8 @@ final class DeleteUndoManager {
     func deleteActivity(activityId: Int) async {
         guard clientFactory() != nil else { return }
 
-        // Stop timer if this activity is being timed (via coordinator callback)
-        await onNeedTimerStop?(activityId)
+        // Stop timer if this activity is being timed
+        await timerStopProvider?.stopTimerIfActive(activityId: activityId)
 
         // Capture the activity before removing it locally
         let activity = activityService.todayActivities.first(where: { $0.id == activityId })

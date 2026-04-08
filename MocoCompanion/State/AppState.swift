@@ -210,15 +210,7 @@ final class AppState {
         ))
 
         // Wire delete → timer: stop timer before deleting a timed activity
-        deleteUndo.onNeedTimerStop = { [weak timerSvc] activityId in
-            guard let timerSvc else { return }
-            switch timerSvc.timerState {
-            case .running(let id, _) where id == activityId,
-                 .paused(let id, _) where id == activityId:
-                await timerSvc.stopTimer()
-            default: break
-            }
-        }
+        deleteUndo.timerStopProvider = timerSvc
 
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate
