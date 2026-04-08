@@ -10,19 +10,14 @@ final class RecencyTracker {
     /// Number of days after which recency score decays to zero.
     private static let decayDays: Double = 14
 
-    private let store: PersistedValue<[String: TimeInterval]>
+    private let state: PersistedState<[String: TimeInterval]>
 
-    /// projectId → last used date
+    /// projectId → last used date (decoded from storage on init)
     private(set) var usageMap: [Int: Date] = [:]
 
     init(backend: StorageBackend = DefaultsBackend()) {
-        self.store = PersistedValue(key: "projectRecency", default: [:], backend: backend)
-        let decoded = store.load()
-        usageMap = decoded.reduce(into: [Int: Date]()) { dict, pair in
-            if let id = Int(pair.key) {
-                dict[id] = Date(timeIntervalSince1970: pair.value)
-            }
-        }
+        self.state = PersistedState(key: "projectRecency", default: [:], backend: backend)
+        usageMap = Self.decode(state.value)
     }
 
     // MARK: - Public API
@@ -30,7 +25,7 @@ final class RecencyTracker {
     /// Record that a project was just used.
     func recordUsage(projectId: Int) {
         usageMap[projectId] = Date()
-        save()
+        persist()
         Self.logger.info("Recorded usage for project \(projectId)")
     }
 
@@ -55,9 +50,9 @@ final class RecencyTracker {
         return scores
     }
 
-    // MARK: - Persistence
+    // MARK: - Private
 
-    private func save() {
+    private func persist() {
         // Prune entries older than decayDays before saving
         let cutoff = Date().addingTimeInterval(-Self.decayDays * 86400)
         let pruned = usageMap.filter { $0.value > cutoff }
@@ -70,6 +65,14 @@ final class RecencyTracker {
         let encoded = usageMap.reduce(into: [String: TimeInterval]()) { dict, pair in
             dict[String(pair.key)] = pair.value.timeIntervalSince1970
         }
-        store.save(encoded)
+        state.set(encoded)
+    }
+
+    private static func decode(_ raw: [String: TimeInterval]) -> [Int: Date] {
+        raw.reduce(into: [Int: Date]()) { dict, pair in
+            if let id = Int(pair.key) {
+                dict[id] = Date(timeIntervalSince1970: pair.value)
+            }
+        }
     }
 }

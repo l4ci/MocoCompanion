@@ -10,6 +10,7 @@
 		003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17A964FC46F794226D7EF94 /* View+Helpers.swift */; };
 		0187C4FB77154F5FCD841007 /* GreetingHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */; };
 		02DC858B75C35F5AB265A2A7 /* MocoProjectModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */; };
+		05A034685C5B7EAEA6B2362F /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8338EC56052D96B662668E47 /* PersistedState.swift */; };
 		06C1928DB253469A95521AE9 /* FirstUseHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D7A824E23E4FDFBD3786E8 /* FirstUseHintView.swift */; };
 		0A632BF04D48364FF8B71E47 /* TimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */; };
 		0B25A1C3D7E4F8901A2B3C4D /* MocoBudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */; };
@@ -165,6 +166,7 @@
 		D2D2D2D2D2D2D2D2D2D2D203 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */; };
 		D2D2D2D2D2D2D2D2D2D2D204 /* RecentEntriesTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */; };
 		D2D2D2D2D2D2D2D2D2D2D205 /* JSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */; };
+		D32E0800CC8E42D4B360A535 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8338EC56052D96B662668E47 /* PersistedState.swift */; };
 		D869DB32B7DC7B34FC469399 /* KeyCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F417899FA33E643E479F268 /* KeyCombo.swift */; };
 		D9B0ABB2AD904F9ACE53445E /* StatusTimerSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC1B3AA6D9DAE68AC1048A7 /* StatusTimerSection.swift */; };
 		DA5585EC97CF4A058E9779E7 /* UndoToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC868E794E864A7FA28062AA /* UndoToastView.swift */; };
@@ -253,6 +255,7 @@
 		808DE3813688601F145EE7C4 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		81BC1A4F9EC3400AB3F43929 /* SearchFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFieldView.swift; sourceTree = "<group>"; };
 		830513740374C08D5E534785 /* ProjectTaskRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTaskRef.swift; sourceTree = "<group>"; };
+		8338EC56052D96B662668E47 /* PersistedState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
 		8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayBannerView.swift; sourceTree = "<group>"; };
 		8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoActivityModels.swift; sourceTree = "<group>"; };
 		8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingHelperTests.swift; sourceTree = "<group>"; };
@@ -352,6 +355,7 @@
 				C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */,
 				BBE9B210348D16F543330D40 /* Logger+App.swift */,
 				A17A964FC46F794226D7EF94 /* View+Helpers.swift */,
+				8338EC56052D96B662668E47 /* PersistedState.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -797,6 +801,7 @@
 				A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */,
 				EAB431DCC1B765064DA90E65 /* SessionManager.swift in Sources */,
 				3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */,
+				05A034685C5B7EAEA6B2362F /* PersistedState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -876,6 +881,7 @@
 				CC12CC12CC12CC12CC12CC12 /* MocoPlanningModels.swift in Sources */,
 				CC13CC13CC13CC13CC13CC13 /* MocoProjectModels.swift in Sources */,
 				5BF73E2AE5DF1BCF744BB90C /* TimerStopProvider.swift in Sources */,
+				D32E0800CC8E42D4B360A535 /* PersistedState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -9,14 +9,13 @@ final class FavoritesManager {
     private static let logger = Logger(category: "Favorites")
     static let maxFavorites = 5
 
-    private let store: PersistedValue<[FavoriteEntry]>
+    private let state: PersistedState<[FavoriteEntry]>
 
     /// Persisted favorite entries.
-    private(set) var favorites: [FavoriteEntry] = []
+    var favorites: [FavoriteEntry] { state.value }
 
     init(backend: StorageBackend = DefaultsBackend()) {
-        self.store = PersistedValue(key: "favoriteEntries", default: [], backend: backend)
-        favorites = store.load()
+        self.state = PersistedState(key: "favoriteEntries", default: [], backend: backend)
     }
 
     // MARK: - Model
@@ -40,40 +39,41 @@ final class FavoritesManager {
     /// Toggle favorite status for a search entry.
     /// If already a favorite, removes it. Otherwise adds it (respecting max cap).
     func toggle(_ entry: SearchEntry) {
-        if let index = favorites.firstIndex(where: { $0.projectId == entry.projectId && $0.taskId == entry.taskId }) {
-            let removed = favorites.remove(at: index)
-            Self.logger.info("Removed favorite: \(removed.displayText)")
-        } else {
-            guard favorites.count < Self.maxFavorites else {
-                Self.logger.info("Cannot add favorite — max \(Self.maxFavorites) reached")
-                return
+        state.update { favorites in
+            if let index = favorites.firstIndex(where: { $0.projectId == entry.projectId && $0.taskId == entry.taskId }) {
+                let removed = favorites.remove(at: index)
+                FavoritesManager.logger.info("Removed favorite: \(removed.displayText)")
+            } else {
+                guard favorites.count < FavoritesManager.maxFavorites else {
+                    FavoritesManager.logger.info("Cannot add favorite — max \(FavoritesManager.maxFavorites) reached")
+                    return
+                }
+                let fav = FavoriteEntry(
+                    projectId: entry.projectId,
+                    taskId: entry.taskId,
+                    customerName: entry.customerName,
+                    projectName: entry.projectName,
+                    taskName: entry.taskName
+                )
+                favorites.append(fav)
+                FavoritesManager.logger.info("Added favorite: \(fav.displayText)")
             }
-            let fav = FavoriteEntry(
-                projectId: entry.projectId,
-                taskId: entry.taskId,
-                customerName: entry.customerName,
-                projectName: entry.projectName,
-                taskName: entry.taskName
-            )
-            favorites.append(fav)
-            Self.logger.info("Added favorite: \(fav.displayText)")
         }
-        save()
     }
 
     /// Remove a favorite by its ID.
     func remove(id: String) {
-        if let index = favorites.firstIndex(where: { $0.id == id }) {
-            let removed = favorites.remove(at: index)
-            Self.logger.info("Removed favorite: \(removed.displayText)")
-            save()
+        state.update { favorites in
+            if let index = favorites.firstIndex(where: { $0.id == id }) {
+                let removed = favorites.remove(at: index)
+                FavoritesManager.logger.info("Removed favorite: \(removed.displayText)")
+            }
         }
     }
 
     /// Move favorites for drag-to-reorder. Persists new order.
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {
-        favorites.move(fromOffsets: source, toOffset: destination)
-        save()
+        state.update { $0.move(fromOffsets: source, toOffset: destination) }
         Self.logger.info("Reordered favorites")
     }
 
@@ -88,11 +88,5 @@ final class FavoritesManager {
             Self.logger.info("Filtered \(staleCount) stale favorite(s)")
         }
         return active
-    }
-
-    // MARK: - Persistence
-
-    private func save() {
-        store.save(favorites)
     }
 }

@@ -9,14 +9,13 @@ final class RecentEntriesTracker {
     private static let logger = Logger(category: "Recents")
     static let maxEntries = 5
 
-    private let store: PersistedValue<[RecentEntry]>
+    private let state: PersistedState<[RecentEntry]>
 
     /// Most-recent-first list of recent entries.
-    private(set) var entries: [RecentEntry] = []
+    var entries: [RecentEntry] { state.value }
 
     init(backend: StorageBackend = DefaultsBackend()) {
-        self.store = PersistedValue(key: "recentEntries", default: [], backend: backend)
-        entries = store.load()
+        self.state = PersistedState(key: "recentEntries", default: [], backend: backend)
     }
 
     // MARK: - Model
@@ -35,40 +34,34 @@ final class RecentEntriesTracker {
 
     /// Record a submitted entry. Deduplicates by projectId+taskId, keeps most recent.
     func record(projectId: Int, taskId: Int, customerName: String, projectName: String, taskName: String, description: String) {
-        // Remove existing entry for same project+task
-        entries.removeAll { $0.projectId == projectId && $0.taskId == taskId }
+        state.update { entries in
+            // Remove existing entry for same project+task
+            entries.removeAll { $0.projectId == projectId && $0.taskId == taskId }
 
-        let entry = RecentEntry(
-            projectId: projectId,
-            taskId: taskId,
-            customerName: customerName,
-            projectName: projectName,
-            taskName: taskName,
-            description: description,
-            date: Date()
-        )
+            let entry = RecentEntry(
+                projectId: projectId,
+                taskId: taskId,
+                customerName: customerName,
+                projectName: projectName,
+                taskName: taskName,
+                description: description,
+                date: Date()
+            )
 
-        // Insert at front (most recent first)
-        entries.insert(entry, at: 0)
+            // Insert at front (most recent first)
+            entries.insert(entry, at: 0)
 
-        // Cap at max
-        if entries.count > Self.maxEntries {
-            entries = Array(entries.prefix(Self.maxEntries))
+            // Cap at max
+            if entries.count > RecentEntriesTracker.maxEntries {
+                entries = Array(entries.prefix(RecentEntriesTracker.maxEntries))
+            }
         }
-
-        save()
-        Self.logger.info("Recorded recent entry: \(entry.projectName) > \(entry.taskName)")
+        Self.logger.info("Recorded recent entry: \(projectName) > \(taskName)")
     }
 
     /// Return recent entries that still exist in current search entries.
     func activeEntries(validEntries: [SearchEntry]) -> [RecentEntry] {
         let validIds = Set(validEntries.map(\.id))
         return entries.filter { validIds.contains($0.id) }
-    }
-
-    // MARK: - Persistence
-
-    private func save() {
-        store.save(entries)
     }
 }

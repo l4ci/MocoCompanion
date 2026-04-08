@@ -10,10 +10,10 @@ final class DescriptionStore {
     private static let logger = Logger(category: "DescriptionStore")
     static let maxEntries = 100
 
-    private let store: PersistedValue<[Entry]>
+    private let state: PersistedState<[Entry]>
 
     /// Description text → usage count, sorted by count descending.
-    private(set) var entries: [Entry] = []
+    var entries: [Entry] { state.value }
 
     struct Entry: Codable {
         let text: String
@@ -21,8 +21,7 @@ final class DescriptionStore {
     }
 
     init(backend: StorageBackend = DefaultsBackend()) {
-        self.store = PersistedValue(key: "descriptionHistory", default: [], backend: backend)
-        entries = store.load()
+        self.state = PersistedState(key: "descriptionHistory", default: [], backend: backend)
     }
 
     // MARK: - Public API
@@ -30,27 +29,19 @@ final class DescriptionStore {
     /// Record a used description. Strips ticket tags before storing.
     /// Only records non-empty descriptions after tag removal.
     func record(_ description: String) {
-        guard let updated = DescriptionMatcher.record(description, into: entries, maxEntries: Self.maxEntries) else { return }
-        entries = updated
-        save()
+        guard let updated = DescriptionMatcher.record(description, into: state.value, maxEntries: Self.maxEntries) else { return }
+        state.set(updated)
     }
 
     /// Find the best matching completion for a partial input.
     /// Returns the full suggested text if a match is found.
     func suggest(for input: String) -> String? {
-        DescriptionMatcher.suggest(for: input, entries: entries)
+        DescriptionMatcher.suggest(for: input, entries: state.value)
     }
 
     /// Clear all stored descriptions.
     func clearAll() {
-        entries = []
-        save()
+        state.set([])
         Self.logger.info("Description history cleared")
-    }
-
-    // MARK: - Private
-
-    private func save() {
-        store.save(entries)
     }
 }
