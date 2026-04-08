@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import UserNotifications
 import os
@@ -55,6 +56,13 @@ final class NotificationDispatcher: NotificationSending {
         content.body = message
         content.sound = .default
 
+        // Attach the app icon so macOS displays it in the notification banner.
+        // LSUIElement (menu bar) apps don't get an automatic icon in Notification Center
+        // — attaching it explicitly ensures it always appears.
+        if let attachment = Self.notificationIconAttachment() {
+            content.attachments = [attachment]
+        }
+
         let request = UNNotificationRequest(
             identifier: "\(type.rawValue)-\(UUID().uuidString)",
             content: content,
@@ -69,6 +77,51 @@ final class NotificationDispatcher: NotificationSending {
                 logger.error("Failed to post notification: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// Returns a `UNNotificationAttachment` pointing to the app icon PNG written to a temp file.
+    /// The attachment is keyed under a fixed filename so the OS can cache it across notifications.
+    /// Returns nil silently if the icon cannot be resolved — notification still posts without icon.
+    private static func notificationIconAttachment() -> UNNotificationAttachment? {
+        // Resolve the 128pt app icon from the bundle (renders at 256px on @2x screens).
+        guard
+            let appIcon = NSImage(named: NSImage.applicationIconName),
+            let cgImage = appIcon.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        else { return nil }
+
+        let size = CGSize(width: 256, height: 256)
+        let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(size.width),
+            pixelsHigh: Int(size.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )
+        guard let rep = bitmapRep else { return nil }
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        NSGraphicsContext.current?.imageInterpolation = .high
+        let destRect = NSRect(origin: .zero, size: size)
+        NSImage(cgImage: cgImage, size: size).draw(in: destRect)
+        NSGraphicsContext.restoreGraphicsState()
+
+        guard let pngData = rep.representation(using: .png, properties: [:]) else { return nil }
+
+        let iconURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("MocoCompanionNotificationIcon.png")
+        do {
+            try pngData.write(to: iconURL, options: .atomic)
+        } catch {
+            return nil
+        }
+
+        return try? UNNotificationAttachment(identifier: "app-icon", url: iconURL, options: nil)
     }
 }
 
