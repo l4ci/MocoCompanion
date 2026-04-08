@@ -28,25 +28,24 @@ struct TodayViewModelTests {
             userIdProvider: { 42 }
         )
 
-        // Wire extracted stores for forwarding
         let planningStore = PlanningStore(
             clientFactory: { activityAPI },
             userIdProvider: { 42 },
             todayActivitiesProvider: { [weak activityService] in activityService?.todayActivities ?? [] }
         )
-        activityService.planningStore = planningStore
         let deleteUndo = DeleteUndoManager(
             clientFactory: { activityAPI },
             activityService: activityService,
             notificationDispatcher: dispatcher
         )
-        activityService.deleteUndoManager = deleteUndo
 
         let favoritesManager = FavoritesManager(backend: InMemoryBackend())
 
         let viewModel = TodayViewModel(
             timerService: timerService,
             activityService: activityService,
+            planningStore: planningStore,
+            deleteUndoManager: deleteUndo,
             favoritesManager: favoritesManager
         )
 
@@ -303,7 +302,7 @@ struct TodayViewModelTests {
 
         let (vm, _, activityService) = makeViewModel(activityAPI: api)
         await activityService.refreshTodayStats()
-        await activityService.refreshTodayPlanning()
+        await vm.planningStore.refreshTodayPlanning()
 
         // 1 activity + 1 unplanned task = 2 navigable items
         #expect(vm.totalNavigableCount == 2)
@@ -617,7 +616,7 @@ struct TodayViewModelTests {
 
         let (vm, _, activityService) = makeViewModel(activityAPI: api)
         await activityService.refreshTodayStats()
-        await activityService.refreshTodayPlanning()
+        await vm.planningStore.refreshTodayPlanning()
 
         // Move to the unplanned task
         vm.moveSelection(by: 1)
@@ -717,7 +716,7 @@ struct TodayViewModelTests {
 
         let (vm, _, activityService) = makeViewModel(activityAPI: api)
         await activityService.refreshTodayStats()
-        await activityService.refreshTodayPlanning()
+        await vm.planningStore.refreshTodayPlanning()
 
         // ⌘2 = shortcut index 1 → selectByShortcut(1) → mapped index 1 → unplanned task
         let result = vm.handleKeyPress(key: KeyEquivalent("2"), characters: "2", modifiers: .command)
@@ -980,7 +979,7 @@ struct TodayViewModelTests {
 
         let (vm, _, activityService) = makeViewModel(activityAPI: api)
         await activityService.refreshTodayStats()
-        await activityService.refreshTodayPlanning()
+        await vm.planningStore.refreshTodayPlanning()
 
         // Move selection to unplanned task
         vm.moveSelection(by: 1)

@@ -57,7 +57,7 @@ final class AppState {
         }
 
         // Today's planning entries
-        for entry in activityService.todayPlanningEntries {
+        for entry in planningStore.todayPlanningEntries {
             if let projectId = entry.project?.id { ids.insert(projectId) }
         }
 
@@ -175,7 +175,6 @@ final class AppState {
             todayActivitiesProvider: { [weak activitySvc] in activitySvc?.todayActivities ?? [] }
         )
         self.planningStore = planningSvc
-        activitySvc.planningStore = planningSvc
 
         // Create DeleteUndoManager — owns delete lifecycle with undo support
         let deleteUndo = DeleteUndoManager(
@@ -184,7 +183,6 @@ final class AppState {
             notificationDispatcher: dispatcher
         )
         self.deleteUndoManager = deleteUndo
-        activitySvc.deleteUndoManager = deleteUndo
 
         // Monitor engine — centralized polling, dedup, and dispatch for background monitors
         let engine = MonitorEngine(dispatcher: dispatcher)

@@ -23,18 +23,6 @@ final class ActivityService {
     private var _sortedToday: [MocoActivity]?
     private var _sortedYesterday: [MocoActivity]?
 
-    /// A planned task that the user hasn't tracked time on yet today.
-    struct UnplannedTask: Identifiable {
-        let planningEntry: MocoPlanningEntry
-        var id: Int { planningEntry.id }
-        var projectId: Int { planningEntry.project?.id ?? 0 }
-        var taskId: Int { planningEntry.task?.id ?? 0 }
-        var projectName: String { planningEntry.project?.name ?? "Unknown" }
-        var customerName: String { planningEntry.project?.customerName ?? "" }
-        var taskName: String { planningEntry.task?.name ?? "Unknown" }
-        var plannedHours: Double { planningEntry.hoursPerDay }
-    }
-
     // MARK: - Dependencies
 
     private let clientFactory: () -> (any ActivityAPI)?
@@ -46,32 +34,6 @@ final class ActivityService {
 
     /// Called when yesterday's activities change locally (edit, delete, refresh).
     var onYesterdayDataChanged: (() -> Void)?
-
-    // MARK: - Forwarding to PlanningStore (set by AppState after init)
-
-    var planningStore: PlanningStore?
-
-    var todayPlanningEntries: [MocoPlanningEntry] { planningStore?.todayPlanningEntries ?? [] }
-    var tomorrowPlanningEntries: [MocoPlanningEntry] { planningStore?.tomorrowPlanningEntries ?? [] }
-    var absences: [String: MocoSchedule] { planningStore?.absences ?? [:] }
-    var unplannedTasks: [UnplannedTask] { planningStore?.unplannedTasks ?? [] }
-
-    func refreshTodayPlanning() async { await planningStore?.refreshTodayPlanning() }
-    func refreshTomorrowPlanning() async { await planningStore?.refreshTomorrowPlanning() }
-    func refreshAllPlanning() async { await planningStore?.refreshAllPlanning() }
-    func refreshAbsences() async { await planningStore?.refreshAbsences() }
-    func absence(for date: String) -> MocoSchedule? { planningStore?.absence(for: date) }
-    func plannedHours(projectId: Int, taskId: Int) -> Double? { planningStore?.plannedHours(projectId: projectId, taskId: taskId) }
-
-    // MARK: - Forwarding to DeleteUndoManager (set by AppState after init)
-
-    var deleteUndoManager: DeleteUndoManager?
-
-    var pendingDelete: DeleteUndoManager.PendingDelete? { deleteUndoManager?.pendingDelete }
-
-    func deleteActivity(activityId: Int) async { await deleteUndoManager?.deleteActivity(activityId: activityId) }
-    func undoDelete() { deleteUndoManager?.undoDelete() }
-    func commitPendingDelete() async { await deleteUndoManager?.commitPendingDelete() }
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,

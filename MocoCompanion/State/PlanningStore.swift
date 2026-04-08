@@ -137,14 +137,26 @@ final class PlanningStore {
         return matching.reduce(0) { $0 + $1.hoursPerDay }
     }
 
-    var unplannedTasks: [ActivityService.UnplannedTask] {
+    var unplannedTasks: [UnplannedTask] {
         let activities = todayActivitiesProvider()
         let trackedKeys = Set(activities.map { "\($0.project.id)-\($0.task.id)" })
         return todayPlanningEntries.compactMap { entry in
             guard let project = entry.project, let task = entry.task else { return nil }
             let key = "\(project.id)-\(task.id)"
             if trackedKeys.contains(key) { return nil }
-            return ActivityService.UnplannedTask(planningEntry: entry)
+            return UnplannedTask(planningEntry: entry)
         }
+    }
+
+    /// A planned task that the user hasn't tracked time on yet today.
+    struct UnplannedTask: Identifiable {
+        let planningEntry: MocoPlanningEntry
+        var id: Int { planningEntry.id }
+        var projectId: Int { planningEntry.project?.id ?? 0 }
+        var taskId: Int { planningEntry.task?.id ?? 0 }
+        var projectName: String { planningEntry.project?.name ?? "Unknown" }
+        var customerName: String { planningEntry.project?.customerName ?? "" }
+        var taskName: String { planningEntry.task?.name ?? "Unknown" }
+        var plannedHours: Double { planningEntry.hoursPerDay }
     }
 }

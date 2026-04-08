@@ -32,6 +32,8 @@ struct TodayView: View {
         self._vm = State(initialValue: TodayViewModel(
             timerService: appState.timerService,
             activityService: appState.activityService,
+            planningStore: appState.planningStore,
+            deleteUndoManager: appState.deleteUndoManager,
             favoritesManager: appState.favoritesManager
         ))
     }
@@ -47,22 +49,22 @@ struct TodayView: View {
 
             dayToggle
 
-            if let absence = vm.activityService.absence(for: vm.selectedDay.dateString) {
+            if let absence = vm.planningStore.absence(for: vm.selectedDay.dateString) {
                 absenceBanner(absence)
             }
 
             if vm.isTomorrow {
                 tomorrowView
-            } else if vm.sortedActivities.isEmpty && (vm.selectedDay != .today || vm.activityService.unplannedTasks.isEmpty) {
+            } else if vm.sortedActivities.isEmpty && (vm.selectedDay != .today || vm.planningStore.unplannedTasks.isEmpty) {
                 TodayEmptyState(isYesterday: vm.isYesterday)
             } else {
                 if !vm.sortedActivities.isEmpty {
                     activitiesList
                 }
 
-                if vm.selectedDay == .today && !vm.activityService.unplannedTasks.isEmpty {
+                if vm.selectedDay == .today && !vm.planningStore.unplannedTasks.isEmpty {
                     UnplannedTasksSection(
-                        tasks: vm.activityService.unplannedTasks,
+                        tasks: vm.planningStore.unplannedTasks,
                         timerService: vm.timerService,
                         selectedIndex: vm.isUnplannedSelected ? vm.selectedIndex - vm.sortedActivities.count : nil
                     )
@@ -78,10 +80,10 @@ struct TodayView: View {
             }
 
             // Undo toast — shown after deleting an entry
-            if let pending = vm.activityService.pendingDelete {
+            if let pending = vm.deleteUndoManager.pendingDelete {
                 UndoToastView(
                     projectName: pending.activity.project.name,
-                    onUndo: { vm.activityService.undoDelete() }
+                    onUndo: { vm.deleteUndoManager.undoDelete() }
                 )
             }
         }
@@ -99,8 +101,8 @@ struct TodayView: View {
             }
             await vm.activityService.refreshTodayStats()
             await vm.activityService.refreshYesterdayActivities()
-            await vm.activityService.refreshAllPlanning()
-            await vm.activityService.refreshAbsences()
+            await vm.planningStore.refreshAllPlanning()
+            await vm.planningStore.refreshAbsences()
             vm.lastSyncedAt = Date()
             if let idx = vm.activeEntryIndex {
                 vm.selectedIndex = idx
@@ -276,7 +278,7 @@ struct TodayView: View {
 
     private var tomorrowView: some View {
         VStack(spacing: 0) {
-            if vm.activityService.tomorrowPlanningEntries.isEmpty {
+            if vm.planningStore.tomorrowPlanningEntries.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "sun.horizon")
                         .font(.system(size: 28 + fontBoost, weight: .light))
@@ -302,14 +304,14 @@ struct TodayView: View {
                 .padding(.bottom, 4)
 
                 VStack(spacing: 2) {
-                    ForEach(vm.activityService.tomorrowPlanningEntries) { entry in
+                    ForEach(vm.planningStore.tomorrowPlanningEntries) { entry in
                         tomorrowPlanningRow(entry)
                     }
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
 
-                let totalPlanned = vm.activityService.tomorrowPlanningEntries.reduce(0.0) { $0 + $1.hoursPerDay }
+                let totalPlanned = vm.planningStore.tomorrowPlanningEntries.reduce(0.0) { $0 + $1.hoursPerDay }
                 HStack {
                     Spacer()
                     Text(String(format: "%.0fh geplant", totalPlanned))
@@ -344,7 +346,7 @@ struct TodayView: View {
                             isPaused: !vm.isYesterday && vm.timerService.isPausedActivity(activity),
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
-                            plannedHours: vm.isYesterday ? nil : vm.activityService.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
+                            plannedHours: vm.isYesterday ? nil : vm.planningStore.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
                             projects: appState.projects,
                             budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,
@@ -353,6 +355,7 @@ struct TodayView: View {
                             hoursDraft: $hoursDraft,
                             hoveredActivityId: $vm.hoveredActivityId,
                             activityService: vm.activityService,
+                            deleteUndoManager: vm.deleteUndoManager,
                             favoritesManager: appState.favoritesManager,
                             onSelect: {
                                 vm.selectedIndex = index

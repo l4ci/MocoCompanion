@@ -27,6 +27,7 @@ struct TodayActivityRow: View {
     @Binding var hoveredActivityId: Int?
 
     var activityService: ActivityService
+    var deleteUndoManager: DeleteUndoManager
     var favoritesManager: FavoritesManager?
     var onSelect: () -> Void
     var onAction: () -> Void
@@ -167,7 +168,7 @@ struct TodayActivityRow: View {
         deletingActivityId = nil
         onFocusList()  // restore focus immediately before async work
         Task {
-            await activityService.deleteActivity(activityId: id)
+            await deleteUndoManager.deleteActivity(activityId: id)
         }
     }
 

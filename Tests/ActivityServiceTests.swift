@@ -17,20 +17,6 @@ struct ActivityServiceTests {
             notificationDispatcher: dispatcher,
             userIdProvider: { 42 }
         )
-        // Wire PlanningStore for planning-related forwarding
-        let planningStore = PlanningStore(
-            clientFactory: { capturedAPI },
-            userIdProvider: { 42 },
-            todayActivitiesProvider: { [weak service] in service?.todayActivities ?? [] }
-        )
-        service.planningStore = planningStore
-        // Wire DeleteUndoManager for delete-related forwarding
-        let deleteUndo = DeleteUndoManager(
-            clientFactory: { capturedAPI },
-            activityService: service,
-            notificationDispatcher: dispatcher
-        )
-        service.deleteUndoManager = deleteUndo
         return (service, capturedAPI)
     }
 
@@ -102,15 +88,20 @@ struct ActivityServiceTests {
         api.fetchActivitiesHandler = { _, _, _ in [a1, a2] }
         api.deleteActivityHandler = { _ in }
 
-        let (service, _) = makeService(api: api)
+        let (service, capturedAPI) = makeService(api: api)
         await service.refreshTodayStats()
         #expect(service.todayActivities.count == 2)
 
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
+        let deleteUndo = DeleteUndoManager(
+            clientFactory: { capturedAPI },
+            activityService: service,
+            notificationDispatcher: dispatcher
+        )
         let mockTimer = MockTimerStopProvider()
-        let dum = service.deleteUndoManager!
-        dum.timerStopProvider = mockTimer
+        deleteUndo.timerStopProvider = mockTimer
 
-        await dum.deleteActivity(activityId: 10)
+        await deleteUndo.deleteActivity(activityId: 10)
 
         #expect(service.todayActivities.count == 1)
         #expect(service.todayActivities.first?.id == 20)
@@ -266,30 +257,31 @@ struct ActivityServiceTests {
         #expect(sorted.last?.id == 1)
     }
 
-    // MARK: - unplannedTasks
+    // MARK: - PlanningStore (tested directly, no longer forwarded)
 
     @Test("unplannedTasks filters planning entries against tracked activities")
     @MainActor func unplannedFiltersTracked() async {
         var api = MockActivityAPI()
-        // Activity already tracked for project 100, task 200
         let tracked = TestFactories.makeActivity(id: 1, projectId: 100, taskId: 200)
         api.fetchActivitiesHandler = { _, _, _ in [tracked] }
 
-        // Two planning entries: one matches tracked, one doesn't
         let planned1 = TestFactories.makePlanningEntry(id: 10, projectId: 100, taskId: 200)
         let planned2 = TestFactories.makePlanningEntry(id: 11, projectId: 101, taskId: 201, taskName: "Unplanned Task")
         api.fetchPlanningEntriesHandler = { _, _ in [planned1, planned2] }
 
-        let (service, _) = makeService(api: api)
+        let (service, capturedAPI) = makeService(api: api)
         await service.refreshTodayStats()
-        await service.refreshTodayPlanning()
+        let planningStore = PlanningStore(
+            clientFactory: { capturedAPI },
+            userIdProvider: { 42 },
+            todayActivitiesProvider: { [weak service] in service?.todayActivities ?? [] }
+        )
+        await planningStore.refreshTodayPlanning()
 
-        let unplanned = service.unplannedTasks
+        let unplanned = planningStore.unplannedTasks
         #expect(unplanned.count == 1)
         #expect(unplanned.first?.taskId == 201)
     }
-
-    // MARK: - refreshAllPlanning
 
     @Test("refreshAllPlanning splits entries into today and tomorrow")
     @MainActor func refreshAllPlanningSplits() async {
@@ -312,13 +304,17 @@ struct ActivityServiceTests {
         )
         api.fetchPlanningEntriesHandler = { _, _ in [todayEntry, tomorrowEntry] }
 
-        let (service, _) = makeService(api: api)
-        await service.refreshAllPlanning()
+        let planningStore = PlanningStore(
+            clientFactory: { api },
+            userIdProvider: { 42 },
+            todayActivitiesProvider: { [] }
+        )
+        await planningStore.refreshAllPlanning()
 
-        #expect(service.todayPlanningEntries.count == 1)
-        #expect(service.todayPlanningEntries.first?.id == 1)
-        #expect(service.tomorrowPlanningEntries.count == 1)
-        #expect(service.tomorrowPlanningEntries.first?.id == 2)
+        #expect(planningStore.todayPlanningEntries.count == 1)
+        #expect(planningStore.todayPlanningEntries.first?.id == 1)
+        #expect(planningStore.tomorrowPlanningEntries.count == 1)
+        #expect(planningStore.tomorrowPlanningEntries.first?.id == 2)
     }
 }
 

@@ -11,6 +11,8 @@ final class TodayViewModel {
 
     let timerService: TimerService
     let activityService: ActivityService
+    let planningStore: PlanningStore
+    let deleteUndoManager: DeleteUndoManager
     let favoritesManager: FavoritesManager
 
     // MARK: - Navigation State
@@ -37,9 +39,11 @@ final class TodayViewModel {
     /// Whether a manual refresh is in progress.
     var isRefreshing = false
 
-    init(timerService: TimerService, activityService: ActivityService, favoritesManager: FavoritesManager) {
+    init(timerService: TimerService, activityService: ActivityService, planningStore: PlanningStore, deleteUndoManager: DeleteUndoManager, favoritesManager: FavoritesManager) {
         self.timerService = timerService
         self.activityService = activityService
+        self.planningStore = planningStore
+        self.deleteUndoManager = deleteUndoManager
         self.favoritesManager = favoritesManager
     }
 
@@ -49,11 +53,11 @@ final class TodayViewModel {
         switch selectedDay {
         case .today:
             await activityService.refreshTodayStats()
-            await activityService.refreshAllPlanning()
+            await planningStore.refreshAllPlanning()
         case .yesterday:
             await activityService.refreshYesterdayActivities()
         case .tomorrow:
-            await activityService.refreshAllPlanning()
+            await planningStore.refreshAllPlanning()
         }
         lastSyncedAt = Date()
         isRefreshing = false
@@ -88,7 +92,7 @@ final class TodayViewModel {
     /// Total navigable items (tracked + unplanned on today).
     var totalNavigableCount: Int {
         let base = sortedActivities.count
-        if selectedDay == .today { return base + activityService.unplannedTasks.count }
+        if selectedDay == .today { return base + planningStore.unplannedTasks.count }
         return base
     }
 
@@ -98,10 +102,10 @@ final class TodayViewModel {
     }
 
     /// The unplanned task at the current selection, if any.
-    var selectedUnplannedTask: ActivityService.UnplannedTask? {
+    var selectedUnplannedTask: PlanningStore.UnplannedTask? {
         guard isUnplannedSelected else { return nil }
         let offset = selectedIndex - sortedActivities.count
-        let tasks = activityService.unplannedTasks
+        let tasks = planningStore.unplannedTasks
         guard tasks.indices.contains(offset) else { return nil }
         return tasks[offset]
     }

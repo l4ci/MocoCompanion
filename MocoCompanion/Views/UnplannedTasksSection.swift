@@ -4,7 +4,7 @@ import SwiftUI
 /// Each task has a play button to start tracking immediately.
 /// Supports keyboard selection via selectedUnplannedIndex.
 struct UnplannedTasksSection: View {
-    let tasks: [ActivityService.UnplannedTask]
+    let tasks: [PlanningStore.UnplannedTask]
     var timerService: TimerService
     /// Index of the selected unplanned task within this section (0-based), or nil.
     var selectedIndex: Int? = nil
@@ -47,7 +47,7 @@ struct UnplannedTasksSection: View {
 
 /// A single unplanned task row with project/task info, planned hours, and start button.
 struct PlannedTaskRow: View {
-    let task: ActivityService.UnplannedTask
+    let task: PlanningStore.UnplannedTask
     var timerService: TimerService
     var isSelected: Bool = false
 
