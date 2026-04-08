@@ -136,17 +136,7 @@ final class AppState {
         let timerSvc = TimerService(
             clientFactory: clientFactory,
             userIdProvider: userIdProvider,
-            activitySync: ActivitySyncTarget(
-                upsertActivity: { [weak activitySvc] activity in
-                    activitySvc?.upsertActivity(activity)
-                },
-                applyFetchedActivities: { [weak activitySvc] activities in
-                    activitySvc?.applyFetchedTodayActivities(activities)
-                },
-                refreshTodayStats: { [weak activitySvc] in
-                    await activitySvc?.refreshTodayStats()
-                }
-            )
+            activitySync: activitySvc
         )
         self.timerService = timerSvc
 

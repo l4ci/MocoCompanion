@@ -9,7 +9,7 @@ import os
 /// Forwarding properties maintain backward compatibility for callers.
 @Observable
 @MainActor
-final class ActivityService {
+final class ActivityService: ActivitySyncing {
     private let logger = Logger(category: "ActivityService")
 
     // MARK: - Observable State

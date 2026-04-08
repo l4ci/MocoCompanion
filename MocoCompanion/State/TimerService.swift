@@ -1,18 +1,13 @@
 import Foundation
 import os
 
-/// Callback target for syncing timer state changes to the activity list.
-/// Replaces the TimerActivityCoordinator — closures wired by AppState at init.
-struct ActivitySyncTarget: @unchecked Sendable {
-    let upsertActivity: (MocoActivity) -> Void
-    let applyFetchedActivities: (([MocoActivity]) -> Void)?
-    let refreshTodayStats: (() async -> Void)?
-
-    static let noop = ActivitySyncTarget(
-        upsertActivity: { _ in },
-        applyFetchedActivities: nil,
-        refreshTodayStats: nil
-    )
+/// Syncs timer state changes to the activity list.
+/// ActivityService conforms; TimerService depends on the protocol.
+@MainActor
+protocol ActivitySyncing: AnyObject {
+    func upsertActivity(_ activity: MocoActivity)
+    func applyFetchedTodayActivities(_ activities: [MocoActivity])
+    func refreshTodayStats() async
 }
 
 /// Owns the timer lifecycle: start, pause, resume, stop, continue, toggle.
@@ -61,12 +56,12 @@ final class TimerService: TimerStopProvider {
 
     private let clientFactory: () -> (any TimerAPI)?
     private let userIdProvider: () -> Int?
-    private let activitySync: ActivitySyncTarget
+    private weak var activitySync: (any ActivitySyncing)?
 
     init(
         clientFactory: @escaping () -> (any TimerAPI)?,
         userIdProvider: @escaping () -> Int? = { nil },
-        activitySync: ActivitySyncTarget = .noop
+        activitySync: (any ActivitySyncing)? = nil
     ) {
         self.clientFactory = clientFactory
         self.userIdProvider = userIdProvider
@@ -147,7 +142,7 @@ final class TimerService: TimerStopProvider {
             timerState = .paused(activityId: activityId, projectName: projectName)
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
             onEvent?(.paused(projectName: projectName))
-            activitySync.upsertActivity(stopped)
+            activitySync?.upsertActivity(stopped)
         } catch {
             handleError(error, label: "pauseTimer")
         }
@@ -167,7 +162,7 @@ final class TimerService: TimerStopProvider {
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
             onEvent?(.resumed(projectName: projectName))
-            activitySync.upsertActivity(started)
+            activitySync?.upsertActivity(started)
         } catch {
             handleError(error, label: "resumeTimer")
         }
@@ -206,9 +201,9 @@ final class TimerService: TimerStopProvider {
         let activities = await syncCurrentTimer()
         // Push fetched activities to activity service
         if let activities {
-            activitySync.applyFetchedActivities?(activities)
+            activitySync?.applyFetchedTodayActivities(activities)
         } else {
-            await activitySync.refreshTodayStats?()
+            await activitySync?.refreshTodayStats()
         }
     }
 
@@ -256,7 +251,7 @@ final class TimerService: TimerStopProvider {
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
             onEvent?(.continued(projectId: started.project.id, taskId: started.task.id, projectName: projectName))
-            activitySync.upsertActivity(started)
+            activitySync?.upsertActivity(started)
         } catch {
             handleError(error, label: "continueTimer")
             await syncCurrentTimer()
