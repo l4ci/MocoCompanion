@@ -28,22 +28,7 @@ final class AppState {
     let networkMonitor: NetworkMonitor
     let entryQueue: EntryQueue
 
-    // MARK: - Forwarding Properties
-
-    var projects: [MocoProject] { catalog.projects }
-    var isLoading: Bool { catalog.isLoading }
-    var searchEntries: [SearchEntry] { catalog.searchEntries }
-    var assignedProjectIds: [Int] { catalog.assignedProjectIds }
-    var currentUserId: Int? { session.currentUserId }
-    var currentUserProfile: MocoUserProfile? { session.currentUserProfile }
-    var cachedAvatarImage: NSImage? { session.cachedAvatarImage }
-
     let yesterdayService: YesterdayService
-
-    var yesterdayWarning: YesterdayWarning? {
-        get { yesterdayService.warning }
-        set { yesterdayService.warning = newValue }
-    }
 
     /// Project IDs that are relevant for budget monitoring: today's tracked activities,
     /// today's planned entries, favorites, and recent entries. Much smaller than all
@@ -76,7 +61,7 @@ final class AppState {
 
     /// Fuzzy search over flattened project/task entries, boosted by recency.
     func search(query: String) -> [FuzzyMatcher.Match] {
-        FuzzyMatcher.search(query: query, in: searchEntries, recencyScores: recencyTracker.allScores())
+        FuzzyMatcher.search(query: query, in: catalog.searchEntries, recencyScores: recencyTracker.allScores())
     }
 
     /// Build a client from current settings. Returns nil if not configured.

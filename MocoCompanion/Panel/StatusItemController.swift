@@ -88,8 +88,8 @@ final class StatusItemController {
                 timerService: timerService,
                 activityService: appState.activityService,
                 yesterdayWarning: Binding(
-                    get: { [weak appState] in appState?.yesterdayWarning },
-                    set: { [weak appState] in appState?.yesterdayWarning = $0 }
+                    get: { [weak appState] in appState?.yesterdayService.warning },
+                    set: { [weak appState] in appState?.yesterdayService.warning = $0 }
                 )
             )
         )

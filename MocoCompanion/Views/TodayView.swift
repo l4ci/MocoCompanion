@@ -43,8 +43,8 @@ struct TodayView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Yesterday under-booking warning — visible in Log view
-            if let warning = appState.yesterdayWarning {
-                YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayWarning = nil })
+            if let warning = appState.yesterdayService.warning {
+                YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayService.warning = nil })
             }
 
             dayToggle
@@ -93,10 +93,10 @@ struct TodayView: View {
         .task(id: refreshId) {
             // Wait for session to establish userId before fetching — prevents
             // returning all-users data for accounts with elevated permissions.
-            if appState.currentUserId == nil {
+            if appState.session.currentUserId == nil {
                 for _ in 0..<50 { // up to 5 seconds
                     try? await Task.sleep(for: .milliseconds(100))
-                    if appState.currentUserId != nil { break }
+                    if appState.session.currentUserId != nil { break }
                 }
             }
             await vm.activityService.refreshTodayStats()
@@ -347,7 +347,7 @@ struct TodayView: View {
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
                             plannedHours: vm.isYesterday ? nil : vm.planningStore.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
-                            projects: appState.projects,
+                            projects: appState.catalog.projects,
                             budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,
                             deletingActivityId: $vm.deletingActivityId,

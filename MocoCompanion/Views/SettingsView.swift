@@ -19,8 +19,8 @@ struct SettingsView: View {
             NotificationsSettingsTab(settings: settings)
                 .tabItem { Label(String(localized: "settings.notifications"), systemImage: "bell") }
             ProjectsSettingsTab(
-                projects: appState?.projects ?? [],
-                isLoading: appState?.isLoading ?? false,
+                projects: appState?.catalog.projects ?? [],
+                isLoading: appState?.catalog.isLoading ?? false,
                 onRefresh: { await appState?.fetchProjects() }
             )
                 .tabItem { Label(String(localized: "settings.projects"), systemImage: "list.bullet") }

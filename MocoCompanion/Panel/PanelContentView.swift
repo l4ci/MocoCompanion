@@ -171,13 +171,13 @@ private struct PanelContentInner: View {
 
     @ViewBuilder
     private var userAvatarView: some View {
-        if let nsImage = appState.cachedAvatarImage {
+        if let nsImage = appState.session.cachedAvatarImage {
             Image(nsImage: nsImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
-        } else if let profile = appState.currentUserProfile {
+        } else if let profile = appState.session.currentUserProfile {
             // Logged in but no avatar — show initials
             let initial = String(profile.firstname.prefix(1))
             Text(initial)
@@ -196,7 +196,7 @@ private struct PanelContentInner: View {
     }
 
     private var greetingText: String {
-        GreetingHelper.currentGreeting(name: appState.currentUserProfile?.firstname, locale: appState.settings.resolvedLocale)
+        GreetingHelper.currentGreeting(name: appState.session.currentUserProfile?.firstname, locale: appState.settings.resolvedLocale)
     }
 
     private var todayDateString: String {

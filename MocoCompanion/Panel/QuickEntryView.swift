@@ -35,7 +35,7 @@ struct QuickEntryView: View {
                 settings: appState.settings,
                 recentEntriesTracker: appState.recentEntriesTracker,
                 descriptionStore: appState.descriptionStore,
-                entriesProvider: { [weak appState] in appState?.searchEntries ?? [] },
+                entriesProvider: { [weak appState] in appState?.catalog.searchEntries ?? [] },
                 searchFn: { [weak appState] query in appState?.search(query: query) ?? [] }
             )
         ))
@@ -55,8 +55,8 @@ struct QuickEntryView: View {
                     focusedField = .search
                 }
             } else {
-                if let warning = appState.yesterdayWarning {
-                    YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayWarning = nil })
+                if let warning = appState.yesterdayService.warning {
+                    YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayService.warning = nil })
                 }
 
                 SearchFieldView(
@@ -67,8 +67,8 @@ struct QuickEntryView: View {
                     hasActiveTimer: sm.hasActiveTimer,
                     hasMinSearchChars: sm.hasMinSearchChars,
                     displayItemCount: sm.displayItems.count,
-                    avatarImage: appState.cachedAvatarImage,
-                    userFirstname: appState.currentUserProfile?.firstname,
+                    avatarImage: appState.session.cachedAvatarImage,
+                    userFirstname: appState.session.currentUserProfile?.firstname,
                     onSubmit: handleSearchSubmit,
                     onMoveSelection: { sm.moveSelection(by: $0) },
                     onSelectByIndex: { _ = sm.selectByIndex($0); focusAfterSelect() },
@@ -84,9 +84,9 @@ struct QuickEntryView: View {
                     )
                 }
 
-                if appState.isLoading && appState.projects.isEmpty {
+                if appState.catalog.isLoading && appState.catalog.projects.isEmpty {
                     QuickEntryLoadingView()
-                } else if appState.projects.isEmpty && !appState.isLoading {
+                } else if appState.catalog.projects.isEmpty && !appState.catalog.isLoading {
                     QuickEntryNotConfiguredView(
                         isConfigured: appState.settings.isConfigured,
                         onRetry: {
@@ -105,7 +105,7 @@ struct QuickEntryView: View {
                     )
                 }
 
-                if sm.phase.isSearching && sm.searchResults.isEmpty && sm.hasMinSearchChars && !appState.projects.isEmpty {
+                if sm.phase.isSearching && sm.searchResults.isEmpty && sm.hasMinSearchChars && !appState.catalog.projects.isEmpty {
                     QuickEntryNoResultsView()
                 }
 
@@ -156,7 +156,7 @@ struct QuickEntryView: View {
                     sm.searchText = prefill
                 }
             }
-            if appState.projects.isEmpty && !appState.isLoading {
+            if appState.catalog.projects.isEmpty && !appState.catalog.isLoading {
                 Task { await appState.fetchProjects() }
             }
         }
