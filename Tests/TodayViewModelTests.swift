@@ -15,17 +15,16 @@ struct TodayViewModelTests {
         timerAPI: MockTimerAPI = MockTimerAPI(),
         activityAPI: MockActivityAPI = MockActivityAPI()
     ) -> (TodayViewModel, TimerService, ActivityService) {
-        let sideEffects = TestFactories.makeStubSideEffects()
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
 
         let timerService = TimerService(
             clientFactory: { timerAPI },
-            sideEffects: sideEffects,
             userIdProvider: { 42 }
         )
 
         let activityService = ActivityService(
             clientFactory: { activityAPI },
-            sideEffects: sideEffects,
+            notificationDispatcher: dispatcher,
             userIdProvider: { 42 }
         )
 
@@ -39,7 +38,7 @@ struct TodayViewModelTests {
         let deleteUndo = DeleteUndoManager(
             clientFactory: { activityAPI },
             activityService: activityService,
-            sideEffects: sideEffects
+            notificationDispatcher: dispatcher
         )
         activityService.deleteUndoManager = deleteUndo
 

@@ -41,21 +41,34 @@ final class TimerService: TimerStopProvider {
         }
     }
 
+    // MARK: - Events
+
+    /// Discrete events emitted after timer state transitions.
+    enum Event: Sendable {
+        case started(projectId: Int, taskId: Int, description: String, projectName: String)
+        case paused(projectName: String)
+        case resumed(projectName: String)
+        case stopped
+        case continued(projectId: Int, taskId: Int, projectName: String)
+        case externalTimerStopped
+        case error(MocoError)
+    }
+
+    /// Event handler — set by the composition root to wire side effects.
+    var onEvent: ((Event) -> Void)?
+
     // MARK: - Dependencies
 
     private let clientFactory: () -> (any TimerAPI)?
-    private let sideEffects: TimerSideEffects
     private let userIdProvider: () -> Int?
     private let activitySync: ActivitySyncTarget
 
     init(
         clientFactory: @escaping () -> (any TimerAPI)?,
-        sideEffects: TimerSideEffects,
         userIdProvider: @escaping () -> Int? = { nil },
         activitySync: ActivitySyncTarget = .noop
     ) {
         self.clientFactory = clientFactory
-        self.sideEffects = sideEffects
         self.userIdProvider = userIdProvider
         self.activitySync = activitySync
     }
@@ -99,7 +112,7 @@ final class TimerService: TimerStopProvider {
             timerState = .running(activityId: activity.id, projectName: activity.project.name)
             lastError = nil
 
-            sideEffects.onTimerStarted(projectId: projectId, taskId: taskId, description: description, projectName: activity.project.name)
+            onEvent?(.started(projectId: projectId, taskId: taskId, description: description, projectName: activity.project.name))
 
             return .success(activity)
         } catch {
@@ -133,7 +146,7 @@ final class TimerService: TimerStopProvider {
             let stopped = try await client.stopTimer(activityId: activityId)
             timerState = .paused(activityId: activityId, projectName: projectName)
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
-            sideEffects.onTimerPaused(projectName: projectName)
+            onEvent?(.paused(projectName: projectName))
             activitySync.upsertActivity(stopped)
         } catch {
             handleError(error, label: "pauseTimer")
@@ -153,7 +166,7 @@ final class TimerService: TimerStopProvider {
             currentActivity = started
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
-            sideEffects.onTimerResumed(projectName: projectName)
+            onEvent?(.resumed(projectName: projectName))
             activitySync.upsertActivity(started)
         } catch {
             handleError(error, label: "resumeTimer")
@@ -180,7 +193,7 @@ final class TimerService: TimerStopProvider {
         do {
             _ = try await client.stopTimer(activityId: activityId)
             logger.info("Timer stopped: activityId=\(activityId) project=\(projectName)")
-            sideEffects.onTimerStopped()
+            onEvent?(.stopped)
         } catch {
             handleError(error, label: "stopTimer")
         }
@@ -242,7 +255,7 @@ final class TimerService: TimerStopProvider {
             timerState = .running(activityId: started.id, projectName: projectName)
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
-            sideEffects.onTimerContinued(projectId: started.project.id, taskId: started.task.id, projectName: projectName)
+            onEvent?(.continued(projectId: started.project.id, taskId: started.task.id, projectName: projectName))
             activitySync.upsertActivity(started)
         } catch {
             handleError(error, label: "continueTimer")
@@ -277,7 +290,7 @@ final class TimerService: TimerStopProvider {
             if let running = activities.first(where: { $0.isTimerRunning }) {
                 logger.info("Found externally running timer: activityId=\(running.id) — stopping it")
                 _ = try await client.stopTimer(activityId: running.id)
-                sideEffects.onExternalTimerStopped()
+                onEvent?(.externalTimerStopped)
             }
         } catch {
             logger.error("stopRunningTimerQuietly server check failed: \(error.localizedDescription)")
@@ -313,7 +326,7 @@ final class TimerService: TimerStopProvider {
     private func handleError(_ error: any Error, label: String) {
         let mocoError = MocoError.from(error)
         lastError = mocoError
-        sideEffects.onError(mocoError)
+        onEvent?(.error(mocoError))
         logger.error("\(label) failed: \(error.localizedDescription)")
         Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "TimerService") }
     }

@@ -11,10 +11,10 @@ struct ActivityServiceTests {
         api: MockActivityAPI = MockActivityAPI()
     ) -> (ActivityService, MockActivityAPI) {
         let capturedAPI = api
-        let sideEffects = TestFactories.makeStubSideEffects()
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
         let service = ActivityService(
             clientFactory: { capturedAPI },
-            sideEffects: sideEffects,
+            notificationDispatcher: dispatcher,
             userIdProvider: { 42 }
         )
         // Wire PlanningStore for planning-related forwarding
@@ -28,7 +28,7 @@ struct ActivityServiceTests {
         let deleteUndo = DeleteUndoManager(
             clientFactory: { capturedAPI },
             activityService: service,
-            sideEffects: sideEffects
+            notificationDispatcher: dispatcher
         )
         service.deleteUndoManager = deleteUndo
         return (service, capturedAPI)
@@ -54,10 +54,10 @@ struct ActivityServiceTests {
 
     @Test("refreshTodayStats with nil client returns silently (empty state)")
     @MainActor func refreshWithNilClient() async {
-        let sideEffects = TestFactories.makeStubSideEffects()
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
         let service = ActivityService(
             clientFactory: { nil as (any ActivityAPI)? },
-            sideEffects: sideEffects,
+            notificationDispatcher: dispatcher,
             userIdProvider: { 42 }
         )
 

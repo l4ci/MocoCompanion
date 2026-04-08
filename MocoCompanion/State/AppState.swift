@@ -142,7 +142,7 @@ final class AppState {
         // Create ActivityService first (TimerService needs it for sync target)
         let activitySvc = ActivityService(
             clientFactory: clientFactory,
-            sideEffects: sideEffects,
+            notificationDispatcher: dispatcher,
             userIdProvider: userIdProvider
         )
         self.activityService = activitySvc
@@ -150,7 +150,6 @@ final class AppState {
         // Create TimerService with activity sync target (replaces TimerActivityCoordinator)
         let timerSvc = TimerService(
             clientFactory: clientFactory,
-            sideEffects: sideEffects,
             userIdProvider: userIdProvider,
             activitySync: ActivitySyncTarget(
                 upsertActivity: { [weak activitySvc] activity in
@@ -166,6 +165,9 @@ final class AppState {
         )
         self.timerService = timerSvc
 
+        // Wire timer events → side effects
+        timerSvc.onEvent = { [weak sideEffects] event in sideEffects?.handle(event) }
+
         // Create PlanningStore — owns planning entries, absences, unplanned tasks
         let planningSvc = PlanningStore(
             clientFactory: clientFactory,
@@ -179,7 +181,7 @@ final class AppState {
         let deleteUndo = DeleteUndoManager(
             clientFactory: clientFactory,
             activityService: activitySvc,
-            sideEffects: sideEffects
+            notificationDispatcher: dispatcher
         )
         self.deleteUndoManager = deleteUndo
         activitySvc.deleteUndoManager = deleteUndo
@@ -213,6 +215,11 @@ final class AppState {
 
         // Wire delete → timer: stop timer before deleting a timed activity
         deleteUndo.timerStopProvider = timerSvc
+
+        // Wire usage recording for manual entries (recency, recent entries, descriptions)
+        activitySvc.onUsageRecorded = { [weak sideEffects] projectId, taskId, description in
+            sideEffects?.recordUsage(projectId: projectId, taskId: taskId, description: description)
+        }
 
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate

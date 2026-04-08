@@ -113,6 +113,28 @@ final class TimerSideEffects {
         notificationDispatcher.apiError(error)
     }
 
+    // MARK: - Event Handler
+
+    /// Dispatch a TimerService event to the appropriate side-effect method.
+    func handle(_ event: TimerService.Event) {
+        switch event {
+        case .started(let projectId, let taskId, let description, let projectName):
+            onTimerStarted(projectId: projectId, taskId: taskId, description: description, projectName: projectName)
+        case .paused(let projectName):
+            onTimerPaused(projectName: projectName)
+        case .resumed(let projectName):
+            onTimerResumed(projectName: projectName)
+        case .stopped:
+            onTimerStopped()
+        case .continued(let projectId, let taskId, let projectName):
+            onTimerContinued(projectId: projectId, taskId: taskId, projectName: projectName)
+        case .externalTimerStopped:
+            onExternalTimerStopped()
+        case .error(let mocoError):
+            onError(mocoError)
+        }
+    }
+
     // MARK: - Private
 
     private enum SoundType { case start, stop }
@@ -131,7 +153,7 @@ final class TimerSideEffects {
         }
     }
 
-    private func recordUsage(projectId: Int, taskId: Int, description: String) {
+    func recordUsage(projectId: Int, taskId: Int, description: String) {
         recencyTracker.recordUsage(projectId: projectId)
         let entries = searchEntriesProvider()
         if let searchEntry = entries.first(where: { $0.projectId == projectId && $0.taskId == taskId }) {

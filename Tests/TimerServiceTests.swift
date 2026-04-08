@@ -11,10 +11,8 @@ struct TimerServiceTests {
         api: MockTimerAPI = MockTimerAPI()
     ) -> (TimerService, MockTimerAPI) {
         let capturedAPI = api
-        let sideEffects = TestFactories.makeStubSideEffects()
         let service = TimerService(
             clientFactory: { capturedAPI },
-            sideEffects: sideEffects,
             userIdProvider: { 42 }
         )
         return (service, capturedAPI)
@@ -105,10 +103,8 @@ struct TimerServiceTests {
 
     @Test("startTimer with nil client returns .failure(.invalidConfiguration)")
     @MainActor func startTimerNoClient() async {
-        let sideEffects = TestFactories.makeStubSideEffects()
         let service = TimerService(
             clientFactory: { nil as (any TimerAPI)? },
-            sideEffects: sideEffects,
             userIdProvider: { 42 }
         )
 
@@ -213,10 +209,8 @@ struct TimerServiceTests {
         syncAPI.fetchActivitiesHandler = { _, _, _ in
             [TestFactories.makeActivity(id: 10, timerStartedAt: nil)]
         }
-        let sideEffects = TestFactories.makeStubSideEffects()
         let service = TimerService(
             clientFactory: { syncAPI },
-            sideEffects: sideEffects,
             userIdProvider: { 42 }
         )
 

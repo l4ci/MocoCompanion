@@ -38,8 +38,11 @@ final class ActivityService {
     // MARK: - Dependencies
 
     private let clientFactory: () -> (any ActivityAPI)?
-    private let sideEffects: TimerSideEffects
+    private let notificationDispatcher: NotificationDispatcher
     private let userIdProvider: () -> Int?
+
+    /// Called after a manual entry or duplication to record usage for recency/autocomplete.
+    var onUsageRecorded: ((Int, Int, String) -> Void)?
 
     /// Called when yesterday's activities change locally (edit, delete, refresh).
     var onYesterdayDataChanged: (() -> Void)?
@@ -72,11 +75,11 @@ final class ActivityService {
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
-        sideEffects: TimerSideEffects,
+        notificationDispatcher: NotificationDispatcher,
         userIdProvider: @escaping () -> Int? = { nil }
     ) {
         self.clientFactory = clientFactory
-        self.sideEffects = sideEffects
+        self.notificationDispatcher = notificationDispatcher
         self.userIdProvider = userIdProvider
     }
 
@@ -156,7 +159,7 @@ final class ActivityService {
         do {
             let updated = try await client.updateActivity(activityId: activityId, description: apiDescription, tag: tag)
             upsertToday(updated)
-            sideEffects.onDescriptionUpdated()
+            notificationDispatcher.descriptionUpdated()
         } catch {
             handleError(error, label: "updateDescription")
         }
@@ -171,7 +174,7 @@ final class ActivityService {
             )
             upsertToday(updated)
             upsertYesterday(updated)
-            sideEffects.onActivityEdited()
+            notificationDispatcher.entryUpdated()
         } catch {
             handleError(error, label: "editActivity")
         }
@@ -187,7 +190,7 @@ final class ActivityService {
             )
             upsertToday(updated)
             upsertYesterday(updated)
-            sideEffects.onActivityEdited()
+            notificationDispatcher.entryUpdated()
         } catch {
             handleError(error, label: "reassignActivity")
         }
@@ -207,10 +210,8 @@ final class ActivityService {
                 description: apiDescription, seconds: seconds, tag: tag
             )
             appendToday(created)
-            sideEffects.onManualEntry(
-                projectId: projectId, taskId: taskId, description: description,
-                projectName: created.project.name, hours: Double(seconds) / 3600.0
-            )
+            onUsageRecorded?(projectId, taskId, description)
+            notificationDispatcher.manualEntry(projectName: created.project.name, hours: Double(seconds) / 3600.0)
             return .success(created)
         } catch {
             handleError(error, label: "bookManualEntry")
@@ -229,7 +230,7 @@ final class ActivityService {
                 tag: activity.tag.isEmpty ? nil : activity.tag
             )
             appendToday(created)
-            sideEffects.onDuplicated(projectName: created.project.name, hours: created.hours)
+            notificationDispatcher.entryDuplicated(projectName: created.project.name, hours: created.hours)
             return .success(created)
         } catch {
             handleError(error, label: "duplicateToToday")
@@ -317,7 +318,7 @@ final class ActivityService {
 
     private func handleError(_ error: any Error, label: String) {
         let mocoError = MocoError.from(error)
-        sideEffects.onError(mocoError)
+        notificationDispatcher.apiError(mocoError)
         logger.error("\(label) failed: \(error.localizedDescription)")
         Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
     }

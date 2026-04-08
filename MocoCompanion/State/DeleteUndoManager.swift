@@ -26,7 +26,7 @@ final class DeleteUndoManager {
 
     private let clientFactory: () -> (any ActivityAPI)?
     private let activityService: ActivityService
-    private let sideEffects: TimerSideEffects
+    private let notificationDispatcher: NotificationDispatcher
 
     /// Stops the timer before deleting a timed activity.
     var timerStopProvider: (any TimerStopProvider)?
@@ -34,11 +34,11 @@ final class DeleteUndoManager {
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
         activityService: ActivityService,
-        sideEffects: TimerSideEffects
+        notificationDispatcher: NotificationDispatcher
     ) {
         self.clientFactory = clientFactory
         self.activityService = activityService
-        self.sideEffects = sideEffects
+        self.notificationDispatcher = notificationDispatcher
     }
 
     // MARK: - Delete with Undo
@@ -59,7 +59,7 @@ final class DeleteUndoManager {
 
         // Remove locally for instant visual feedback
         activityService.removeLocal(activityId: activityId)
-        sideEffects.onActivityDeleted()
+        notificationDispatcher.entryDeleted()
 
         guard let activity else {
             // Activity wasn't in local arrays — just delete server-side
@@ -123,7 +123,7 @@ final class DeleteUndoManager {
 
     private func handleError(_ error: any Error, label: String) {
         let mocoError = MocoError.from(error)
-        sideEffects.onError(mocoError)
+        notificationDispatcher.apiError(mocoError)
         logger.error("\(label) failed: \(error.localizedDescription)")
         Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "DeleteUndoManager") }
     }
