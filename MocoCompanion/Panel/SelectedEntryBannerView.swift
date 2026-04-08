@@ -21,10 +21,12 @@ struct SelectedEntryBannerView: View {
                     .font(.system(size: 18 + fontBoost))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(entry.customerName)
-                        .font(.system(size: 13 + fontBoost, weight: .medium))
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
+                    if !entry.customerName.isEmpty {
+                        Text(entry.customerName)
+                            .font(.system(size: 13 + fontBoost, weight: .medium))
+                            .foregroundStyle(theme.textSecondary)
+                            .lineLimit(1)
+                    }
 
                     Text(entry.projectName)
                         .font(.system(size: 15 + fontBoost))

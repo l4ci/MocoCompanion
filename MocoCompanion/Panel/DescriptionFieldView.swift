@@ -62,6 +62,7 @@ struct DescriptionFieldView: View {
                         Text(suggestion)
                             .font(.system(size: bodySize))
                             .foregroundStyle(theme.textTertiary.opacity(0.5))
+                            .lineLimit(2...4)
                             .padding(.top, 1)
                     }
 

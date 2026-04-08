@@ -272,8 +272,8 @@ final class QuickEntryStateMachine {
         guard let entry = selectedEntry else { return .apiError }
 
         if isManualMode {
-            guard let hours = DateUtilities.parseHours(manualHours), hours > 0 else {
-                commands.reportValidationError("Enter valid hours (e.g. 1.5, 1h 30m)")
+            guard let hours = DateUtilities.parseHours(manualHours), hours > 0, hours <= 24 else {
+                commands.reportValidationError(String(localized: "validation.hours"))
                 return .validationError
             }
 

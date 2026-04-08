@@ -65,7 +65,7 @@ struct ActivityEditOverlay: View {
                     TextField("0.0h", text: $hoursDraft)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: bodySize, design: .monospaced))
-                        .frame(width: 52)
+                        .frame(minWidth: 64, maxWidth: 80)
                         .focused($focusedField, equals: .hours)
                         .onSubmit { handleSave() }
                         .onExitCommand { onCancel() }

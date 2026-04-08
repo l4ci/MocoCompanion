@@ -117,43 +117,46 @@ struct TodayActivityRow: View {
     }
 
     private var deleteConfirmation: some View {
-        HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(String(localized: "action.deleteConfirm \(activity.project.name)"))
-                .font(.system(size: 15 + fontBoost, weight: .medium))
+                .font(.system(size: 14 + fontBoost, weight: .medium))
                 .foregroundStyle(.red)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
+            HStack(spacing: 8) {
+                Spacer()
 
-            Button {
-                cancelDelete()
-            } label: {
-                HStack(spacing: 4) {
-                    Text(String(localized: "action.cancel"))
-                    Text("(Esc)")
-                        .font(.system(size: captionSize - 1))
-                        .foregroundStyle(.secondary)
+                Button {
+                    cancelDelete()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(String(localized: "action.cancel"))
+                        Text("(Esc)")
+                            .font(.system(size: captionSize - 1))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.mini)
-            .keyboardShortcut(.cancelAction)
-            .accessibilityLabel(String(localized: "a11y.cancelDelete"))
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+                .keyboardShortcut(.cancelAction)
+                .accessibilityLabel(String(localized: "a11y.cancelDelete"))
 
-            Button {
-                confirmDelete()
-            } label: {
-                HStack(spacing: 4) {
-                    Text(String(localized: "action.delete"))
-                    Text("(↩)")
-                        .font(.system(size: captionSize - 1))
+                Button {
+                    confirmDelete()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(String(localized: "action.delete"))
+                        Text("(↩)")
+                            .font(.system(size: captionSize - 1))
+                    }
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.mini)
+                .keyboardShortcut(.defaultAction)
+                .accessibilityLabel(String(localized: "a11y.confirmDelete"))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .controlSize(.mini)
-            .keyboardShortcut(.defaultAction)
-            .accessibilityLabel(String(localized: "a11y.confirmDelete"))
         }
         .focusable()
         .onExitCommand { cancelDelete() }

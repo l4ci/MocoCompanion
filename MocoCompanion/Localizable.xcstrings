@@ -468,6 +468,38 @@
         }
       }
     },
+    "a11y.shortcutSelect %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Befehl %lld zum Auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Command %lld to select"
+          }
+        }
+      }
+    },
+    "a11y.tapToSelect" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen zum Auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to select"
+          }
+        }
+      }
+    },
     "a11y.stopTimer %@" : {
       "localizations" : {
         "de" : {
@@ -823,9 +855,6 @@
           }
         }
       }
-    },
-    "Command %lld to select" : {
-
     },
     "debug.apiLog" : {
       "localizations" : {
@@ -4839,6 +4868,22 @@
         }
       }
     },
+    "tomorrow.hoursPlanned %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldh geplant"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldh planned"
+          }
+        }
+      }
+    },
     "tomorrow.title" : {
       "localizations" : {
         "de" : {
@@ -4915,6 +4960,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version %@ is available. Click to download."
+          }
+        }
+      }
+    },
+    "validation.hours" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gültige Stunden eingeben (z. B. 1.5, 1h 30m)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter valid hours (e.g. 1.5, 1h 30m)"
           }
         }
       }

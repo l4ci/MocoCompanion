@@ -99,6 +99,6 @@ struct SearchResultsListView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(entry.customerName), \(entry.projectName), \(entry.taskName)")
-        .accessibilityHint("Command \(index + 1) to select")
+        .accessibilityHint(index < 5 ? String(localized: "a11y.shortcutSelect \(index + 1)") : String(localized: "a11y.tapToSelect"))
     }
 }

@@ -76,7 +76,7 @@ struct StatusPopoverView: View {
                 }
                 .padding(.horizontal, 10)
             }
-            .frame(minHeight: min(CGFloat(sortedActivities.count), 3) * 76, maxHeight: 320)
+            .frame(maxHeight: 320)
         }
     }
 

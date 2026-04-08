@@ -314,7 +314,7 @@ struct TodayView: View {
                 let totalPlanned = vm.tomorrowPlanningEntries.reduce(0.0) { $0 + $1.hoursPerDay }
                 HStack {
                     Spacer()
-                    Text(String(format: "%.0fh geplant", totalPlanned))
+                    Text(String(localized: "tomorrow.hoursPlanned \(Int(totalPlanned.rounded()))"))
                         .font(.system(size: captionSize, weight: .medium, design: .monospaced))
                         .foregroundStyle(theme.textTertiary)
                 }
