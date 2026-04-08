@@ -29,11 +29,11 @@ final class ActivityService: ActivitySyncing {
     private let notificationDispatcher: NotificationDispatcher
     private let userIdProvider: () -> Int?
 
-    /// Called after a manual entry or duplication to record usage for recency/autocomplete.
-    var onUsageRecorded: ((Int, Int, String) -> Void)?
+    /// Records usage for recency/autocomplete after manual entries.
+    weak var sideEffects: TimerSideEffects?
 
-    /// Called when yesterday's activities change locally (edit, delete, refresh).
-    var onYesterdayDataChanged: (() -> Void)?
+    /// Rechecks yesterday warning when yesterday activities change locally.
+    weak var yesterdayService: YesterdayService?
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
@@ -104,7 +104,7 @@ final class ActivityService: ActivitySyncing {
             let activities = try await client.fetchActivities(from: yesterday, to: yesterday, userId: userId)
             yesterdayActivities = activities
             _sortedYesterday = nil
-            onYesterdayDataChanged?()
+            yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
             logger.info("Yesterday sync: \(activities.count) entries")
         } catch {
             logger.error("refreshYesterdayActivities failed: \(error.localizedDescription)")
@@ -172,7 +172,7 @@ final class ActivityService: ActivitySyncing {
                 description: apiDescription, seconds: seconds, tag: tag
             )
             appendToday(created)
-            onUsageRecorded?(projectId, taskId, description)
+            sideEffects?.recordUsage(projectId: projectId, taskId: taskId, description: description)
             notificationDispatcher.manualEntry(projectName: created.project.name, hours: Double(seconds) / 3600.0)
             return .success(created)
         } catch {
@@ -216,7 +216,7 @@ final class ActivityService: ActivitySyncing {
         recomputeTodayStats()
         invalidateSortedCaches()
         _sortedYesterday = nil
-        if hadYesterday { onYesterdayDataChanged?() }
+        if hadYesterday { yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities) }
     }
 
     /// Restore a today activity after undo. Called by DeleteUndoManager.
@@ -230,7 +230,7 @@ final class ActivityService: ActivitySyncing {
     func restoreYesterday(_ activity: MocoActivity) {
         yesterdayActivities.append(activity)
         _sortedYesterday = nil
-        onYesterdayDataChanged?()
+        yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
     }
 
     /// Insert or update an activity in the today array.
@@ -251,7 +251,7 @@ final class ActivityService: ActivitySyncing {
         if let idx = yesterdayActivities.firstIndex(where: { $0.id == activity.id }) {
             yesterdayActivities[idx] = activity
             _sortedYesterday = nil
-            onYesterdayDataChanged?()
+            yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
         }
     }
 

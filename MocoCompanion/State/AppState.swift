@@ -190,9 +190,7 @@ final class AppState {
         deleteUndo.timerStopProvider = timerSvc
 
         // Wire usage recording for manual entries (recency, recent entries, descriptions)
-        activitySvc.onUsageRecorded = { [weak sideEffects] projectId, taskId, description in
-            sideEffects?.recordUsage(projectId: projectId, taskId: taskId, description: description)
-        }
+        activitySvc.sideEffects = sideEffects
 
         self._searchEntriesBox = searchEntriesBox
         self._rateGate = rateGate
@@ -208,10 +206,7 @@ final class AppState {
 
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
         // immediately recompute the warning without waiting for the 10-minute poll.
-        activitySvc.onYesterdayDataChanged = { [weak yesterdaySvc, weak activitySvc] in
-            guard let yesterdaySvc, let activitySvc else { return }
-            yesterdaySvc.recheckLocally(yesterdayActivities: activitySvc.yesterdayActivities)
-        }
+        activitySvc.yesterdayService = yesterdaySvc
 
         // Wire network reconnect: sync queued entries + refresh data
         networkMonitor.onReconnect = { [weak self] in
