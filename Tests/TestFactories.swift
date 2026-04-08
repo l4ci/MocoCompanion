@@ -214,6 +214,14 @@ enum TestFactories {
         return try! JSONDecoder().decode(MocoProjectContract.self, from: data)
     }
 
+    // MARK: - Common Test Helpers
+
+    /// A notification dispatcher that suppresses all notifications. Safe for unit tests.
+    @MainActor
+    static func makeStubDispatcher() -> NotificationDispatcher {
+        NotificationDispatcher(isEnabledCheck: { _ in false })
+    }
+
     // MARK: - TimerSideEffects
 
     /// Create a stub TimerSideEffects that suppresses all real side-effects
