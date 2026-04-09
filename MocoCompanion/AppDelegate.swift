@@ -281,7 +281,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let timelineView = TimelineWindow(
             shadowEntryStore: appState.shadowEntryStore,
             appRecordStore: appState.appRecordStore,
-            syncState: appState.syncState
+            syncState: appState.syncState,
+            projectCatalog: appState.catalog
         )
 
         let hostingView = NSHostingController(rootView: timelineView)
