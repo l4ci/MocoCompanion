@@ -63,6 +63,7 @@ enum TestFactories {
         hours: Double = 1.0,
         description: String = "",
         locked: Bool = false,
+        startTime: String? = nil,
         syncStatus: SyncStatus = .synced
     ) -> ShadowEntry {
         let resolvedDate = date ?? todayString()
@@ -90,6 +91,7 @@ enum TestFactories {
             userLastname: "User",
             hourlyRate: 100.0,
             timerStartedAt: nil,
+            startTime: startTime,
             locked: locked,
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: "2025-01-01T00:00:00Z",
