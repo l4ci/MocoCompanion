@@ -120,6 +120,7 @@
 		B1CF740E6AC2F20DBA23CC3E /* SearchFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81BC1A4F9EC3400AB3F43929 /* SearchFieldView.swift */; };
 		B37F973122A37C765EF8D154 /* RecencyTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF907C8374EF28C0F07F8CD /* RecencyTracker.swift */; };
 		B4E321592FDB627C6024C396 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11539CAD40E18E9C3A9F61F8 /* HotKey.swift */; };
+		410D242F30044A9B94BE2914 /* AutotrackerSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F978257FFF4AA9A3258096 /* AutotrackerSettingsTab.swift */; };
 		B50DE05C488BBB2EABEC74E9 /* NotificationsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */; };
 		B6CFAC64D2D755F84A410DA4 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */; };
 		B7E1B930A9AF082E40496274 /* DedupLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */; };
@@ -298,6 +299,7 @@
 		B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEditOverlay.swift; sourceTree = "<group>"; };
 		B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
 		B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
+		98F978257FFF4AA9A3258096 /* AutotrackerSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutotrackerSettingsTab.swift; sourceTree = "<group>"; };
 		BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsSettingsTab.swift; sourceTree = "<group>"; };
 		BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		BBE9B210348D16F543330D40 /* Logger+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+App.swift"; sourceTree = "<group>"; };
@@ -572,6 +574,7 @@
 				F1CE438DC586E0B8BDB2776F /* DaySelection.swift */,
 				AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */,
 				7920563D8DACABBBDEC8892C /* EntryRow.swift */,
+				98F978257FFF4AA9A3258096 /* AutotrackerSettingsTab.swift */,
 				8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */,
 				0796D5B01BF27D2CC206F9E6 /* FirstUseHintView.swift */,
 				EB90CC24EA6613103E7BF038 /* GeneralSettingsTab.swift */,
@@ -775,6 +778,7 @@
 				28E335CFF816ED03D71350CB /* NetworkMonitor.swift in Sources */,
 				95162FD161C5CD76A550CD9A /* NotificationCatalog.swift in Sources */,
 				5074A69F78980BA7C306B6DF /* NotificationDispatcher.swift in Sources */,
+				410D242F30044A9B94BE2914 /* AutotrackerSettingsTab.swift in Sources */,
 				B50DE05C488BBB2EABEC74E9 /* NotificationsSettingsTab.swift in Sources */,
 				5E075D2D85D9CA132E0B39AE /* OfflineBannerView.swift in Sources */,
 				78E77753543F2E2ED0503527 /* OfflineSyncService.swift in Sources */,

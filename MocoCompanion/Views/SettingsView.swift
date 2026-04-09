@@ -24,6 +24,8 @@ struct SettingsView: View {
                 onRefresh: { await appState?.fetchProjects() }
             )
                 .tabItem { Label(String(localized: "settings.projects"), systemImage: "list.bullet") }
+            AutotrackerSettingsTab(settings: settings, appRecorder: appState?.appRecorder)
+                .tabItem { Label(String(localized: "settings.autotracker"), systemImage: "record.circle") }
             DebugSettingsTab(settings: settings)
                 .tabItem { Label(String(localized: "settings.debug"), systemImage: "ladybug") }
             AboutSettingsTab()

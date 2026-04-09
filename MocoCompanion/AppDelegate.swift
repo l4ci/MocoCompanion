@@ -125,6 +125,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             guard case .running = await self.timerService.timerState else { return }
             await self.timerService.sync()
         }
+
+        // Autotracker: cleanup old records and start if enabled
+        appState.appRecordStore.cleanup(olderThan: appState.settings.autotrackerRetentionDays)
+        if appState.settings.autotrackerEnabled {
+            appState.appRecorder.start()
+        }
     }
 
     /// Prevent the app from quitting when the last window closes — it lives in the menu bar.
@@ -155,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationWillTerminate(_ notification: Notification) {
         statusItemController?.teardown()
         appState.monitorEngine.stopAll()
+        appState.appRecorder.stop()
         backgroundPollingTask?.cancel()
         timerSyncTask?.cancel()
     }

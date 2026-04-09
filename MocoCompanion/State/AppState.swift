@@ -31,6 +31,8 @@ final class AppState {
     let shadowEntryStore: ShadowEntryStore
     let syncEngine: SyncEngine
     let syncState: SyncState
+    let appRecordStore: AppRecordStore
+    let appRecorder: AppRecorder
 
     let yesterdayService: YesterdayService
 
@@ -193,6 +195,10 @@ final class AppState {
         self.networkMonitor = NetworkMonitor()
         self.entryQueue = EntryQueue()
         self.offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
+
+        let recordStore = AppRecordStore()
+        self.appRecordStore = recordStore
+        self.appRecorder = AppRecorder(store: recordStore)
 
         // Create extracted submodules
         let projectCatalog = ProjectCatalog()

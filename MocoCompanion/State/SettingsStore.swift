@@ -27,6 +27,8 @@ final class SettingsStore {
         static let apiLogLevel = "apiLogLevel"
         static let appLogLevel = "appLogLevel"
         static let entryFontSizeBoost = "entryFontSizeBoost"
+        static let autotrackerEnabled = "autotrackerEnabled"
+        static let autotrackerRetentionDays = "autotrackerRetentionDays"
         static let panelPositionX = "panelPositionX"
         static let panelPositionY = "panelPositionY"
         static let hasSavedPanelPosition = "hasSavedPanelPosition"
@@ -181,6 +183,16 @@ final class SettingsStore {
         customShortcutKeyCode != 0
     }
 
+    // MARK: - Preferences: Autotracker
+
+    var autotrackerEnabled: Bool {
+        didSet { Self.save(Key.autotrackerEnabled, autotrackerEnabled) }
+    }
+
+    var autotrackerRetentionDays: Int {
+        didSet { Self.save(Key.autotrackerRetentionDays, autotrackerRetentionDays) }
+    }
+
     // MARK: - Preferences: Debug
 
     /// API log level (0=debug, 1=info, 2=warning, 3=error).
@@ -221,6 +233,8 @@ final class SettingsStore {
         self.panelResetSeconds = Self.read(Key.panelResetSeconds, default: 60)
         self.hasSeenFirstUseHint = Self.read(Key.hasSeenFirstUseHint, default: false)
         self.appLanguage = Self.read(Key.appLanguage, default: "system")
+        self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
+        self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
@@ -276,6 +290,8 @@ final class SettingsStore {
         customShortcutModifiers = 0
         apiLogLevel = .info
         appLogLevel = .info
+        autotrackerEnabled = false
+        autotrackerRetentionDays = 14
 
         Self.logger.info("All app data has been reset")
     }
