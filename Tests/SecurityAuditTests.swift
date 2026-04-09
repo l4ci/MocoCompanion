@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+@testable import MocoCompanion
 
 /// Automated security audit tests covering:
 /// - R016: No API tokens in logs or debug output

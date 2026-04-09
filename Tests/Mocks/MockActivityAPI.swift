@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Closure-based mock for ActivityAPI. Uses distinct closure names for the three
 /// `updateActivity` overloads to avoid ambiguity.

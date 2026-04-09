@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Closure-based mock for TimerAPI. Each method delegates to a stored closure,
 /// defaulting to safe stubs (empty array for fetches, throwing for mutations).

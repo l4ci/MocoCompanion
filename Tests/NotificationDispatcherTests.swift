@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+@testable import MocoCompanion
 
 @Suite("NotificationDispatcher")
 struct NotificationDispatcherTests {

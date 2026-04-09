@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Closure-based mock for BudgetAPI (project details, reports, contracts).
 struct MockBudgetAPI: BudgetAPI, @unchecked Sendable {

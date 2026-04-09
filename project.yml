@@ -51,20 +51,10 @@ targets:
   MocoCompanionTests:
     type: bundle.unit-test
     platform: macOS
+    dependencies:
+      - target: MocoCompanion
     sources:
       - path: Tests
-      - path: MocoCompanion/Utilities/DateUtilities.swift
-      - path: MocoCompanion/Utilities/GreetingHelper.swift
-      - path: MocoCompanion/Utilities/Logger+App.swift
-      - path: MocoCompanion/Search/FuzzyMatcher.swift
-      - path: MocoCompanion/Search/SearchEntry.swift
-      - path: MocoCompanion/Search/ProjectTaskRef.swift
-      - path: MocoCompanion/Search/TagExtractor.swift
-      - path: MocoCompanion/API/Models/MocoProjectModels.swift
-      - path: MocoCompanion/API/Models/MocoActivityModels.swift
-      - path: MocoCompanion/State/TimerState.swift
-      - path: MocoCompanion/Panel/MenuBarDisplayState.swift
-      - path: MocoCompanion/Localizable.xcstrings
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mococompanion.tests

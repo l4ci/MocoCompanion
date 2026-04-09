@@ -2,6 +2,7 @@ import Testing
 import Foundation
 import SwiftUI
 import AppKit
+@testable import MocoCompanion
 
 @Suite("TodayViewModel")
 struct TodayViewModelTests {

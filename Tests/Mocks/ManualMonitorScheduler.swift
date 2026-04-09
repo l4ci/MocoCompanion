@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Test double for MonitorScheduler. Stores tick callbacks per monitor name
 /// and lets tests fire them on demand — no real time required.

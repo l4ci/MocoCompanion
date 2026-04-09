@@ -1,4 +1,5 @@
 import Testing
+@testable import MocoCompanion
 
 @Suite("MenuBarDisplayState")
 struct MenuBarDisplayStateTests {

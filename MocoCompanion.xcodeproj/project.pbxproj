@@ -8,51 +8,43 @@
 
 /* Begin PBXBuildFile section */
 		003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17A964FC46F794226D7EF94 /* View+Helpers.swift */; };
+		0046EA285DD92D7A9E7745D4 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C187B2025BF397B94B0F8B72 /* MenuBarIconRenderer.swift */; };
 		0187C4FB77154F5FCD841007 /* GreetingHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */; };
 		02DC858B75C35F5AB265A2A7 /* MocoProjectModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */; };
-		05A034685C5B7EAEA6B2362F /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8338EC56052D96B662668E47 /* PersistedState.swift */; };
-		06C1928DB253469A95521AE9 /* FirstUseHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D7A824E23E4FDFBD3786E8 /* FirstUseHintView.swift */; };
-		08F610420048672DC2A1517F /* DeleteUndoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678EF1F8F9AA2877C8B81CB5 /* DeleteUndoManagerTests.swift */; };
+		03952E1AED6BF91DD2094043 /* MocoBudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F076B54A04E8F34EAA7BDC /* MocoBudgetModels.swift */; };
+		06E592DA8395B337443574D0 /* MonitorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 882CA70BE643BC4519089A44 /* MonitorEngine.swift */; };
+		0823CF78EC092753534D4779 /* APIRateGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F91C17CFE7CFBDE03D894B1 /* APIRateGate.swift */; };
 		0A632BF04D48364FF8B71E47 /* TimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */; };
-		0FF10FF10FF10FF10FF10FF1 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */; };
-		0FF20FF20FF20FF20FF20FF2 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */; };
-		0FF30FF30FF30FF30FF30FF3 /* OfflineSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */; };
-		0FF50FF50FF50FF50FF50FF5 /* MonitorEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */; };
-		0FF70FF70FF70FF70FF70FF7 /* ManualMonitorScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */; };
-		0B25A1C3D7E4F8901A2B3C4D /* MocoBudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */; };
-		0C3A0C21E74AE69182EDE1E5 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */; };
+		0AEFBFC907D75EB14A951A13 /* FirstUseHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0796D5B01BF27D2CC206F9E6 /* FirstUseHintView.swift */; };
 		0D0499ADA7BB50F41B1E6FE7 /* TimerSideEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9C7 /* TimerSideEffects.swift */; };
-		0D0499ADA7BB50F41B1E6FE9 /* MonitorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9C9 /* MonitorEngine.swift */; };
-		0D0499ADA7BB50F41B1EF000 /* IdleReminderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9CA /* IdleReminderMonitor.swift */; };
-		0F2B6305842E37234BD9F69B /* DateUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */; };
+		0FC9EB693CF6614A19EB1AA8 /* AppRecordStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22DA733D555B249A6353D870 /* AppRecordStoreTests.swift */; };
 		10801DD06650FE31DF737CF2 /* TodayActivityRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7039A8A3711BD16FFBB95D4 /* TodayActivityRow.swift */; };
+		109BE65F64B17168422C11BD /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */; };
 		129BCB84138D649D7723A2FC /* YesterdayBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */; };
-		142F473C20CF0D241E00A4A3 /* SearchEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083DBF3F4FDA3D42D29D28D8 /* SearchEntry.swift */; };
-		1749D7A7F57137067859014E /* MenuBarDisplayState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A18402BDB45EF8239974AF7 /* MenuBarDisplayState.swift */; };
+		13E10A450FBB90887A7A5C7F /* BudgetServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB733DE7E80E45699E3C801 /* BudgetServiceTests.swift */; };
+		166449E65014D689EF8978D0 /* IdleReminderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */; };
+		16B0D3B093CA49FA24F4F466 /* StorageBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977338C7A178D1FDC00982C9 /* StorageBackend.swift */; };
 		17E5FECB5CC9EB2B45A99C8C /* FuzzyMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6B8DDBF460C33BA5F63652A /* FuzzyMatcherTests.swift */; };
-		18B4B7D205E50F5772BF4C92 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8442130790C1BCD23A7A2F /* YesterdayService.swift */; };
 		18D3B37B9D51AF9DA77B0CB3 /* Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = C659502FB03D6F89F924EAF5 /* Key.swift */; };
 		1A7A8344ED8EDF161694D53B /* DateUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */; };
+		1C0660D37287CE81ED91B26A /* ProjectCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC062BBBB9150B6BE5486BE /* ProjectCache.swift */; };
 		1F4DFDB934DB37FE1F7693AC /* PanelContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF763622F55B4F2F3B24674 /* PanelContentView.swift */; };
-		20LACRNL9WPN0O1511DHZ43M /* FavoritesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = FELVVYXFBNBJP0XP7E2S9JBP /* FavoritesSettingsTab.swift */; };
-		235C727E153F9DC4FFACD8FE /* ValueBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC6 /* ValueBox.swift */; };
+		2090FAE2EAF59A9B59A524C9 /* TimerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267149EA97C64826FBFF558 /* TimerServiceTests.swift */; };
 		23618893A4088D259A66FCBF /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA4C16C810095ADD5FFA999 /* FloatingPanel.swift */; };
-		256FC725D793DEBBD2CEF0F1 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
 		2679E42A2F31F9493E969662 /* SoundFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */; };
-		2874B287493A1043D0B6C889 /* PlanningStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F2142F620024E05E304AA /* PlanningStoreTests.swift */; };
+		28E335CFF816ED03D71350CB /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3451464A94CF321FD4B56BF /* NetworkMonitor.swift */; };
 		315EB06AA452780517B9D348 /* Logger+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE9B210348D16F543330D40 /* Logger+App.swift */; };
 		355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */; };
 		359B0662EED0F0675AC14426 /* MocoClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */; };
-		3CB31F5EAABD709C2096CB4F /* DaySelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C43DA1A627C014E38AA2D16 /* DaySelection.swift */; };
-		3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */; };
+		35A84AB923D02624568F7C8A /* DescriptionMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB67C9BF94CA9E55B76E7403 /* DescriptionMatcher.swift */; };
+		3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */; };
 		40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */; };
-		4113ED48535E1ECD63D12F74 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */; };
 		41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
 		431F1AE5B1C92CEB1E74C3F6 /* TodayStatsFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56CE3EE0D21EB33F2A9E833 /* TodayStatsFooter.swift */; };
-		435FE392A273DE661799D8BF /* ProjectCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6835EFBB344967AEDFDE3F /* ProjectCache.swift */; };
 		473C7AE9F85AD11EA306F0A4 /* TimerHintSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53712E974F5F6D7CFA756E1F /* TimerHintSection.swift */; };
 		4A20E21C7A7D9F017FFB64F3 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA0A6BE8ED846CF41EDA669 /* SettingsStore.swift */; };
 		4C34B11A5355433709DCF33D /* GreetingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */; };
+		4C9ED8D96E4EA2DF2091F006 /* SecurityAuditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2644CC1AD406CCF9B26CA0D4 /* SecurityAuditTests.swift */; };
 		4D944346A9F4FE79D87232FA /* SearchResultsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E130DB9763B0686ADCAAF671 /* SearchResultsListView.swift */; };
 		5074A69F78980BA7C306B6DF /* NotificationDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3206CE65199144879E51EA48 /* NotificationDispatcher.swift */; };
 		52C84A535CCCE17A696E811D /* NSEventModifierFlags+HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5283B76DB180928E2031B5 /* NSEventModifierFlags+HotKey.swift */; };
@@ -61,310 +53,283 @@
 		568C46350AC00693A06318E0 /* MocoPlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */; };
 		57A488D95CF124D65F67A159 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */; };
 		585C793D185FA7EDD6CAE07E /* ActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA368B3F7194171B836A66B /* ActivityService.swift */; };
-		58A1B2C3D4E5F60718293A4B /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */; };
 		58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2571D3B463887787904F8C7E /* TagExtractorTests.swift */; };
-		5A8CFDDB90A303DC099FBED1 /* EntryQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D76756557E74F6DA95BA310 /* EntryQueue.swift */; };
-		5BF73E2AE5DF1BCF744BB90C /* TimerStopProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */; };
-		5F7AD97C28DB87C54801F598 /* GreetingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */; };
+		5C84E168B69BB67963553E2E /* UndoToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72295BCC7A05744D102D54C5 /* UndoToastView.swift */; };
+		5D46FA960D89E5846D6AC910 /* BudgetTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B69C0B1DDD40769CB4BF16 /* BudgetTypes.swift */; };
+		5E075D2D85D9CA132E0B39AE /* OfflineBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C6653686AB6A3660887801 /* OfflineBannerView.swift */; };
+		659A93C5D86E17A5DFDE5B45 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4600FE513522EF5A2727F020 /* UpdateChecker.swift */; };
 		672C8702F9B2AFC75594A767 /* MocoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BC1029B70591A5D9B437C4 /* MocoSession.swift */; };
-		69F31CA5F96D5AD82E759D9B /* TimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */; };
-		6C7925ED67506613173AD21C /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14F935686BADDDCECC10AC8 /* SessionManagerTests.swift */; };
-		6CF95DEDD858424FB9D6E65B /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD3BFB973074B42B6D6CB7B /* NetworkMonitor.swift */; };
+		688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF68317E12950934C6A45E4 /* TestFactories.swift */; };
+		6E3875216B6FEE549CDDE8FB /* TimerSideEffectsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */; };
 		6E39DF30FC9E0F6AEB54C3BB /* MocoActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */; };
 		6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0707079AFDBAE016F65B7B5D /* AppDelegate.swift */; };
-		710D6297507095C7FB7DCA1A /* StorageBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD702974AC6F21DFD37A480 /* StorageBackend.swift */; };
 		712210B5065C630BCBB0889A /* RecentEntriesTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */; };
+		7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */; };
 		7577075485A39F41BA5BEC5C /* TodayEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD4F63924DB4A2978661182 /* TodayEmptyState.swift */; };
+		78AC96CCF33BF54D054A8BB3 /* DedupLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3568C7B05EF74C4486C575DF /* DedupLedger.swift */; };
+		78E77753543F2E2ED0503527 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */; };
 		790B32F7F8BA74CE06DF3F3C /* StatusPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */; };
 		792BF98FAD94EBD8FE00F1E9 /* ProjectTaskRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830513740374C08D5E534785 /* ProjectTaskRef.swift */; };
 		7A2070E4D6F30DCF671805F4 /* UnplannedTasksSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24BDAB19C48AA4D154CDD90 /* UnplannedTasksSection.swift */; };
-		7A6B41BB7BCD800A7F1635EB /* DaySelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C43DA1A627C014E38AA2D16 /* DaySelection.swift */; };
-		7A83E52C94179E8ED15D37F6 /* MocoProjectModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */; };
+		7B86FB0010B3E33AF6CCC0D7 /* BudgetCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */; };
 		7B908F83CA18C421EE81E2B8 /* FuzzyMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADCE30AE9D6424AECC826D2 /* FuzzyMatcher.swift */; };
 		7C56CDAD059F01010B844ADB /* MocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6181F86BFE3D1C108365BF3 /* MocoClient.swift */; };
+		7C7BE8734AF946E95C228D49 /* AppRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1244C6FC2B1082217D8F4E7F /* AppRecord.swift */; };
 		7D3C41AAA4948CEE74F50A29 /* ActivityEditOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */; };
+		7F3F53A76F22D7C4C7092433 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */; };
 		8031ACA863899456340F6371 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F5FEA3B2CCB6B815D8C914 /* Theme.swift */; };
+		82C82D0F4DAF8A4BFFFF946E /* QuickEntryContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259B61E27F0D689549B9F1E8 /* QuickEntryContracts.swift */; };
+		8346AB40F0FA5721FEBA4D2C /* ValueBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 438422F3B01E22301B030204 /* ValueBox.swift */; };
 		8498015E58D696514349E1F6 /* LaunchAtLoginHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */; };
-		8B12AAC47B196079731A750B /* MockMocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207F92C2CEED2BD7D1372065 /* MockMocoClient.swift */; };
+		855F05C4769B8D5C0FDE21B1 /* MockMocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */; };
+		85FF9F731D2B2889647F8E40 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */; };
+		8CC9B1A620F6577ADDDF4682 /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9230F5232E57326E6B57713F /* ProjectCatalog.swift */; };
 		907F693566D37220983C0CC0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADD519E64051033A0F06C83 /* SettingsView.swift */; };
+		9396109485871986242B0AB2 /* AppRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041CF3D39FB897772BE1A72B /* AppRecorder.swift */; };
 		939938CB4E5F5C976BCD0CB0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */; };
-		94D5E8B0802AA1F80905574F /* Logger+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE9B210348D16F543330D40 /* Logger+App.swift */; };
+		9431BDDC2C4708214FEE803B /* ActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */; };
+		944023A464965603EFD6E625 /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2A0A29840D8E4016EC8727 /* BudgetService.swift */; };
 		95162FD161C5CD76A550CD9A /* NotificationCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */; };
 		967D11BA9BF5164E96EB85B5 /* StatusActivityRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2317D195286BC0C46C9741 /* StatusActivityRow.swift */; };
 		9911AB76B69B019E2E4F05E8 /* JSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */; };
-		9911AB76B69B019E2E4F05E9 /* ValueBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC6 /* ValueBox.swift */; };
 		99B818C878F5A3B6BBE4C533 /* MocoWorkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7D73E3B102615000B10B5 /* MocoWorkModels.swift */; };
-		9F7F0BF1AE9C2E3C02C85663 /* MocoActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */; };
-		A1A1A1A1A1A1A1A1A1A1A101 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1A1A1A1A1A1A1A1A1A1A100 /* Assets.xcassets */; };
-		A1A1A1A1A1A1A1A1A1A1A102 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1A1A1A1A1A1A1A1A1A1A100 /* Assets.xcassets */; };
-		A1F2B3C4D5E6F70819203143 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2B3C4D5E6F70819203142 /* SetupWizardView.swift */; };
+		99DA72D0C90207BB51C92A30 /* QuickEntryStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */; };
+		9D97044DF3117A9C6C5BF32A /* OfflineSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */; };
+		9F783D67EAAA25F000D14065 /* BudgetDepletionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E711995E777F152C7FE6981 /* BudgetDepletionMonitor.swift */; };
 		A21E70EFA52719A54390639E /* ProjectsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7AF3BB61B72EF6538994BC /* ProjectsSettingsTab.swift */; };
 		A2EE040BD8DE6FEC171CED05 /* TimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */; };
-		A365B00C697640B2EACF233D /* StorageBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD702974AC6F21DFD37A480 /* StorageBackend.swift */; };
 		A37C403B6686B228EB87F2DE /* QuickEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A3A92C13A43DF304A0254 /* QuickEntryView.swift */; };
 		A3BDDE0EF4F878359653C870 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407AA89A2C397D153A840B32 /* AppLogger.swift */; };
+		A3CC383E4848A5A2927E573B /* AppRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */; };
+		A41228181FD57B065E7A0576 /* NotificationDispatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */; };
+		A47328DA18D0A76C02223FEC /* MockBudgetAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F15D68DA50B3EE0381EDCF /* MockBudgetAPI.swift */; };
+		A49550582285D68A6E703CC7 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */; };
 		A60540232EF6ECBE07ADEDDA /* EntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7920563D8DACABBBDEC8892C /* EntryRow.swift */; };
-		A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B091C34FA813522D05A4CD /* ProjectCatalog.swift */; };
+		A6BEE81E03F3E085106C3697 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FBFFE8C2F878C02B6BE6DF7 /* Assets.xcassets */; };
+		A7109E76E8E3AB2B124D79CD /* EntryQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011B6721B43C2268A3D0C31E /* EntryQueue.swift */; };
 		A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DE3813688601F145EE7C4 /* StatusItemController.swift */; };
-		AA21AA21AA21AA21AA21AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
-		AA21AA21AA21AA21AA21AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
-		AA22AA22AA22AA22AA22AA01 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */; };
-		AA22AA22AA22AA22AA22AA02 /* DeleteUndoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */; };
-		AB01AB01AB01AB01AB01AB01 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB02AB02AB02AB02AB02AB02 /* AboutSettingsTab.swift */; };
-		ABCD1234567890ABCDEF0002 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */; };
-		ABCD1234567890ABCDEF0004 /* PanelDismissPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0003 /* PanelDismissPolicy.swift */; };
+		AC06679248047DEE5547D1A7 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */; };
 		AD81C4D9CFCEF08DC91800B5 /* KeyCombo+System.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC92CE67BD12A7846E9B0B9 /* KeyCombo+System.swift */; };
 		AF05B1ABCD10E9756A49D72F /* ActivityDurationText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */; };
-		B1B1B1B1B1B1B1B1B1B1B101 /* BudgetCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B1B1B1B1B1B1B1B1B1B100 /* BudgetCalculator.swift */; };
+		B0CF016F487AFC1F39D849B2 /* AppRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */; };
 		B1CF740E6AC2F20DBA23CC3E /* SearchFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81BC1A4F9EC3400AB3F43929 /* SearchFieldView.swift */; };
-		B2B2B2B2B2B2B2B2B2B2B201 /* BudgetCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B2B2B2B2B2B2B2B2B2B200 /* BudgetCalculatorTests.swift */; };
-		B2B2B2B2B2B2B2B2B2B2B202 /* BudgetCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B1B1B1B1B1B1B1B1B1B100 /* BudgetCalculator.swift */; };
-		B2B2B2B2B2B2B2B2B2B2B203 /* MocoBudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */; };
-		B2C3D4E5F60718293A415263 /* BudgetDepletionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304142 /* BudgetDepletionMonitor.swift */; };
-		B2E3C4D5F6A708192A3B4C5E /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E3C4D5F6A708192A3B4C5D /* UpdateChecker.swift */; };
 		B37F973122A37C765EF8D154 /* RecencyTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF907C8374EF28C0F07F8CD /* RecencyTracker.swift */; };
-		B3B3B3B3B3B3B3B3B3B3B301 /* BudgetTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B3B3B3B3B3B3B3B3B300 /* BudgetTypes.swift */; };
-		B3B3B3B3B3B3B3B3B3B3B302 /* BudgetTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B3B3B3B3B3B3B3B3B3B300 /* BudgetTypes.swift */; };
 		B4E321592FDB627C6024C396 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11539CAD40E18E9C3A9F61F8 /* HotKey.swift */; };
 		B50DE05C488BBB2EABEC74E9 /* NotificationsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */; };
-		B667E20B8ADE4940BBAB3402 /* EntryQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D76756557E74F6DA95BA310 /* EntryQueue.swift */; };
 		B6CFAC64D2D755F84A410DA4 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */; };
-		B74CD343081776AE6E8F90C8 /* FuzzyMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADCE30AE9D6424AECC826D2 /* FuzzyMatcher.swift */; };
-		BB01BB01BB01BB01BB01BB01 /* MockTimerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01AA01AA01AA01AA01AA01 /* MockTimerAPI.swift */; };
-		BB02BB02BB02BB02BB02BB02 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */; };
-		BB03BB03BB03BB03BB03BB03 /* MockBudgetAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */; };
-		BB04BB04BB04BB04BB04BB04 /* MockYesterdayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */; };
-		BB06BB06BB06BB06BB06BB06 /* TestFactories.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA06AA06AA06AA06AA06AA06 /* TestFactories.swift */; };
-		BB07BB07BB07BB07BB07BB07 /* TimerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA07AA07AA07AA07AA07AA07 /* TimerServiceTests.swift */; };
-		BB08BB08BB08BB08BB08BB08 /* ActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA08BB08AA08BB08AA08BB08 /* ActivityServiceTests.swift */; };
-		BB09BB09BB09BB09BB09BB09 /* YesterdayServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA09AA09AA09AA09AA09AA09 /* YesterdayServiceTests.swift */; };
-		BB10BB10BB10BB10BB10BB10 /* BudgetServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10AA10AA10AA10AA10AA10 /* BudgetServiceTests.swift */; };
-		BB11BB11BB11BB11BB11BB11 /* NotificationDispatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11AA11AA11AA11AA11AA11 /* NotificationDispatcherTests.swift */; };
-		BB12BB12BB12BB12BB12BB12 /* TimerSideEffectsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12AA12AA12AA12AA12AA12 /* TimerSideEffectsTests.swift */; };
-		BB13BB13BB13BB13BB13BB13 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA13AA13AA13AA13AA13AA13 /* TodayViewModelTests.swift */; };
-		BBCC1234567890ABCDEF0002 /* PanelDismissPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCC1234567890ABCDEF0001 /* PanelDismissPolicyTests.swift */; };
-		BBCC1234567890ABCDEF0003 /* PanelDismissPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD1234567890ABCDEF0003 /* PanelDismissPolicy.swift */; };
+		B7E1B930A9AF082E40496274 /* DedupLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */; };
+		B9EE677E8EFF9E807CA7C847 /* MockTimerAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 013BC31FD68DE0BE154BE283 /* MockTimerAPI.swift */; };
 		BF6653A261485E2ED9A95147 /* SearchEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083DBF3F4FDA3D42D29D28D8 /* SearchEntry.swift */; };
-		C1C1C1C1C1C1C1C1C1C1C101 /* APIRateGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C1C1C1C1C1C1C1C1C1C100 /* APIRateGate.swift */; };
+		BF8D61D1C973ADFF199B9834 /* DaySelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CE438DC586E0B8BDB2776F /* DaySelection.swift */; };
+		C29E1BFC01BCF68B89836A81 /* YesterdayServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA68B5C275AEBA5CD3CA8BE4 /* YesterdayServiceTests.swift */; };
 		C3CE3CB6721A57A72FA83671 /* DescriptionFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9640BA4177989BECE15EB0 /* DescriptionFieldView.swift */; };
-		C3F446409F60477E8FB83009 /* OfflineBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FAF0165CF44DD9B1C1BC46 /* OfflineBannerView.swift */; };
 		C45A386412B8D01E4DB25BBB /* ProjectSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04785C855EE4166447EC3C31 /* ProjectSearchField.swift */; };
 		C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AA040396C6E5C43AF2FDB4 /* AppState.swift */; };
-		CC01CC01CC01CC01CC01CC01 /* TimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */; };
-		CC02CC02CC02CC02CC02CC02 /* TimerSideEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9C7 /* TimerSideEffects.swift */; };
-		CC03CC03CC03CC03CC03CC03 /* MocoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E0D39E480AA80553F9EFC9 /* MocoError.swift */; };
-		CC04CC04CC04CC04CC04CC04 /* MocoClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */; };
-		CC05CC05CC05CC05CC05CC05 /* SoundFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */; };
-		CC06CC06CC06CC06CC06CC06 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407AA89A2C397D153A840B32 /* AppLogger.swift */; };
-		CC07CC07CC07CC07CC07CC07 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA0A6BE8ED846CF41EDA669 /* SettingsStore.swift */; };
-		CC08CC08CC08CC08CC08CC08 /* RecencyTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF907C8374EF28C0F07F8CD /* RecencyTracker.swift */; };
-		CC09CC09CC09CC09CC09CC09 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */; };
-		CC10CC10CC10CC10CC10CC10 /* MocoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BC1029B70591A5D9B437C4 /* MocoSession.swift */; };
-		CC11CC11CC11CC11CC11CC11 /* MocoWorkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7D73E3B102615000B10B5 /* MocoWorkModels.swift */; };
-		CC12CC12CC12CC12CC12CC12 /* MocoPlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */; };
-		CC13CC13CC13CC13CC13CC13 /* MocoProjectModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */; };
-		CC20CC20CC20CC20CC20CC20 /* ActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA368B3F7194171B836A66B /* ActivityService.swift */; };
-		CC21CC21CC21CC21CC21CC21 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		CC22CC22CC22CC22CC22CC22 /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */; };
-		CCDD1234567890ABCDEF0002 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDD1234567890ABCDEF0001 /* MenuBarIconRenderer.swift */; };
-		CCDD1234567890ABCDEF0003 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDD1234567890ABCDEF0001 /* MenuBarIconRenderer.swift */; };
+		C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155477772B61048004E7FA09 /* ShadowEntry.swift */; };
+		C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */; };
+		C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */; };
+		CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */; };
 		CD075754355EAFBC2A8B85AD /* MocoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E0D39E480AA80553F9EFC9 /* MocoError.swift */; };
-		CD5E2A12D085BF8381BAB5DE /* ProjectTaskRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830513740374C08D5E534785 /* ProjectTaskRef.swift */; };
-		D1D1D1D1D1D1D1D1D1D1D101 /* QuickEntryContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D1D1D1D1D1D1D1D100 /* QuickEntryContracts.swift */; };
-		D1D1D1D1D1D1D1D1D1D1D102 /* QuickEntryContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D1D1D1D1D1D1D1D100 /* QuickEntryContracts.swift */; };
-		D21FF350EE3378E6838ED3C8 /* ProjectCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A2BB3391A505072FAEA502 /* ProjectCatalogTests.swift */; };
+		CDE43F20A94383A18DCB527A /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68735F0E6B189FF28DBED588 /* PersistedState.swift */; };
+		CDFE23B60C327F8005573356 /* TimerStopProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BDDE0ACEE37AEBF21F6F66 /* TimerStopProvider.swift */; };
+		CEA9890A20524E058034EFBD /* ProjectCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19DFB4A44EC1662BD52E18D5 /* ProjectCatalogTests.swift */; };
 		D2747CFDD0929DB3D551AE6A /* SelectedEntryBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB599E1B7ED04F5FFDBAB5C /* SelectedEntryBannerView.swift */; };
-		D2D2D2D2D2D2D2D2D2D2D201 /* QuickEntryStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D2D2D2D2D2D2D2D2D2D200 /* QuickEntryStateMachineTests.swift */; };
-		D2D2D2D2D2D2D2D2D2D2D202 /* QuickEntryStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA4BC4688D7148D30A005AA /* QuickEntryStateMachine.swift */; };
-		D2D2D2D2D2D2D2D2D2D2D203 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */; };
-		D2D2D2D2D2D2D2D2D2D2D204 /* RecentEntriesTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */; };
-		D2D2D2D2D2D2D2D2D2D2D205 /* JSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */; };
-		D32E0800CC8E42D4B360A535 /* PersistedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8338EC56052D96B662668E47 /* PersistedState.swift */; };
+		D6F0A6407E85ECBC061325AF /* DescriptionMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E03D9E5C5B1848AEC9805CA /* DescriptionMatcherTests.swift */; };
 		D869DB32B7DC7B34FC469399 /* KeyCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F417899FA33E643E479F268 /* KeyCombo.swift */; };
+		D93FD86778FD04E04DFBB527 /* BudgetCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC794945C75FADB549222EF7 /* BudgetCalculator.swift */; };
 		D9B0ABB2AD904F9ACE53445E /* StatusTimerSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC1B3AA6D9DAE68AC1048A7 /* StatusTimerSection.swift */; };
-		DA5585EC97CF4A058E9779E7 /* UndoToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC868E794E864A7FA28062AA /* UndoToastView.swift */; };
+		DAD761F9AF3F05CEA5AABBA1 /* QuickEntryProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F6C6071BDFB765C9A948C4 /* QuickEntryProtocols.swift */; };
 		DB0A9BDDE56C2D11B975C81E /* PanelTabSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A649458AAD4E7E1E11C44F /* PanelTabSwitcher.swift */; };
 		DCB20DC8FE63342998B36876 /* HotKeysController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63BF8CB3DC091CBBE466CCB /* HotKeysController.swift */; };
-		DD01DD01DD01DD01DD01DD01 /* SecurityAuditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD02DD02DD02DD02DD02DD02 /* SecurityAuditTests.swift */; };
-		DD2EF314777AA30B92F2113B /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B091C34FA813522D05A4CD /* ProjectCatalog.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E101 /* DedupLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E1E1E1E1E1E1E1E1E1E100 /* DedupLedger.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E102 /* DedupLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E1E1E1E1E1E1E1E1E1E100 /* DedupLedger.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E103 /* DedupLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E1E1E1E1E1E1E1E1E1E104 /* DedupLedgerTests.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E105 /* MonitorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9BD2C43DBA09472251A9C9 /* MonitorEngine.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E106 /* NotificationCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */; };
-		E1E1E1E1E1E1E1E1E1E1E107 /* NotificationDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3206CE65199144879E51EA48 /* NotificationDispatcher.swift */; };
 		E3659E74CFEEBDA3B42DD871 /* MenuBarDisplayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */; };
-		E3F16EF456736A5477D7CCD0 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8442130790C1BCD23A7A2F /* YesterdayService.swift */; };
 		E7A2F1510719C6720F9B1DE8 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */; };
 		E80CC1D361139172B07EE02C /* PanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5973648FAF93E8A684598A9F /* PanelController.swift */; };
 		E91141A00ED352E41837844E /* QuickEntryStatusViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B089F7F88ED3724439EF40B /* QuickEntryStatusViews.swift */; };
 		EAA2B90C588F613E7FB72B67 /* QuickEntryStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA4BC4688D7148D30A005AA /* QuickEntryStateMachine.swift */; };
-		EAA2B90C588F613E7FB72B68 /* QuickEntryProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA4BC4688D7148D30A005AB /* QuickEntryProtocols.swift */; };
-		EAB431DCC1B765064DA90E65 /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5AAF743678AC038AC40149 /* SessionManager.swift */; };
+		EABC473DB3DCD76D67F5FD67 /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */; };
 		ED34548F2AFA3BBEFDC097FC /* DescriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC0065706C321F573697AB9 /* DescriptionStore.swift */; };
 		EF0832E0F708C9A6295E651C /* ShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FE72E53ADA34DC01D6CE143 /* ShortcutRecorderView.swift */; };
-		EFB4B73B38803BBAFF3C432F /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5AAF743678AC038AC40149 /* SessionManager.swift */; };
-		F1F1F1F1F1F1F1F1F1F1F101 /* DescriptionMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1F1F1F1F1F1F1F1F1F100 /* DescriptionMatcher.swift */; };
-		F1F1F1F1F1F1F1F1F1F1F102 /* DescriptionMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1F1F1F1F1F1F1F1F1F100 /* DescriptionMatcher.swift */; };
-		F1F1F1F1F1F1F1F1F1F1F103 /* DescriptionMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1F1F1F1F1F1F1F1F1F104 /* DescriptionMatcherTests.swift */; };
-		F1F1F1F1F1F1F1F1F1F1F105 /* DescriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC0065706C321F573697AB9 /* DescriptionStore.swift */; };
 		F35396DD2EAAAC57711F8821 /* DateUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */; };
 		F57D58E78894B0A9E2B4783D /* MocoCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 488D706B6C0807DF49EAF9F7 /* MocoCompanionApp.swift */; };
-		F76CE5FDDA7745A383944B76 /* ProjectCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6835EFBB344967AEDFDE3F /* ProjectCache.swift */; };
+		F7349612CD66027955DF7822 /* PlanningStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */; };
+		F86776B2F41AAE54D1121EBF /* MonitorEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */; };
 		F8CA65F8458F1BBA51C8D296 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB90CC24EA6613103E7BF038 /* GeneralSettingsTab.swift */; };
+		F9CEA892429B87DB7E14F171 /* PanelDismissPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB18FCF8315AA2D9B0CB29B /* PanelDismissPolicy.swift */; };
+		FBD51B48A7B040A332953187 /* MockYesterdayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */; };
+		FD6B58393AD52B2989AF6402 /* ManualMonitorScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870AD2BE762A2FFB94F30A96 /* ManualMonitorScheduler.swift */; };
+		FEDA0FB7F7ACE340F0D1C674 /* FavoritesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */; };
+		FEFF30C288FC79963E39D644 /* DeleteUndoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D614C0994FEB7F5C71E22F5A /* DeleteUndoManagerTests.swift */; };
+		FFC05799ACCF9800C54E0956 /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E467B55E6F7835D8A4B8318 /* SessionManager.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		85417E388C1AB32892C13902 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 98319034B24AA3D06A7B1513 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A4BA7AE95B5D7426B57E9C4;
+			remoteInfo = MocoCompanion;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		011B6721B43C2268A3D0C31E /* EntryQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryQueue.swift; sourceTree = "<group>"; };
+		013BC31FD68DE0BE154BE283 /* MockTimerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimerAPI.swift; sourceTree = "<group>"; };
+		01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedgerTests.swift; sourceTree = "<group>"; };
 		03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsTab.swift; sourceTree = "<group>"; };
+		041CF3D39FB897772BE1A72B /* AppRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecorder.swift; sourceTree = "<group>"; };
 		04785C855EE4166447EC3C31 /* ProjectSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSearchField.swift; sourceTree = "<group>"; };
 		0707079AFDBAE016F65B7B5D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		0796D5B01BF27D2CC206F9E6 /* FirstUseHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstUseHintView.swift; sourceTree = "<group>"; };
 		083DBF3F4FDA3D42D29D28D8 /* SearchEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchEntry.swift; sourceTree = "<group>"; };
 		0A18402BDB45EF8239974AF7 /* MenuBarDisplayState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayState.swift; sourceTree = "<group>"; };
 		0D5283B76DB180928E2031B5 /* NSEventModifierFlags+HotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSEventModifierFlags+HotKey.swift"; sourceTree = "<group>"; };
 		11539CAD40E18E9C3A9F61F8 /* HotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
+		1244C6FC2B1082217D8F4E7F /* AppRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecord.swift; sourceTree = "<group>"; };
+		12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWizardView.swift; sourceTree = "<group>"; };
+		14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecordStore.swift; sourceTree = "<group>"; };
 		14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoPlanningModels.swift; sourceTree = "<group>"; };
 		154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
+		155477772B61048004E7FA09 /* ShadowEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowEntry.swift; sourceTree = "<group>"; };
+		166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecorderTests.swift; sourceTree = "<group>"; };
 		16F5FEA3B2CCB6B815D8C914 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		181B2C9AADBB7C2084B3AF0E /* MocoCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MocoCompanion.entitlements; sourceTree = "<group>"; };
+		19DFB4A44EC1662BD52E18D5 /* ProjectCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCatalogTests.swift; sourceTree = "<group>"; };
 		1BF907C8374EF28C0F07F8CD /* RecencyTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecencyTracker.swift; sourceTree = "<group>"; };
-		207F92C2CEED2BD7D1372065 /* MockMocoClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockMocoClient.swift; sourceTree = "<group>"; };
+		1E03D9E5C5B1848AEC9805CA /* DescriptionMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMatcherTests.swift; sourceTree = "<group>"; };
+		1E467B55E6F7835D8A4B8318 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
+		21F6C6071BDFB765C9A948C4 /* QuickEntryProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryProtocols.swift; sourceTree = "<group>"; };
+		2267149EA97C64826FBFF558 /* TimerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerServiceTests.swift; sourceTree = "<group>"; };
+		22DA733D555B249A6353D870 /* AppRecordStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecordStoreTests.swift; sourceTree = "<group>"; };
 		2571D3B463887787904F8C7E /* TagExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractorTests.swift; sourceTree = "<group>"; };
-		2C43DA1A627C014E38AA2D16 /* DaySelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaySelection.swift; sourceTree = "<group>"; };
-		2C5AAF743678AC038AC40149 /* SessionManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
-		0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncService.swift; sourceTree = "<group>"; };
-		0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncServiceTests.swift; sourceTree = "<group>"; };
-		0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorEngineTests.swift; sourceTree = "<group>"; };
-		0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualMonitorScheduler.swift; sourceTree = "<group>"; };
+		259B61E27F0D689549B9F1E8 /* QuickEntryContracts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryContracts.swift; sourceTree = "<group>"; };
+		25F15D68DA50B3EE0381EDCF /* MockBudgetAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBudgetAPI.swift; sourceTree = "<group>"; };
+		2644CC1AD406CCF9B26CA0D4 /* SecurityAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityAuditTests.swift; sourceTree = "<group>"; };
+		2BB18FCF8315AA2D9B0CB29B /* PanelDismissPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDismissPolicy.swift; sourceTree = "<group>"; };
+		2BB733DE7E80E45699E3C801 /* BudgetServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetServiceTests.swift; sourceTree = "<group>"; };
 		2D280BBA036682BB1D8A44F0 /* MocoCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MocoCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EA4BC4688D7148D30A005AA /* QuickEntryStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryStateMachine.swift; sourceTree = "<group>"; };
-		2EA4BC4688D7148D30A005AB /* QuickEntryProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryProtocols.swift; sourceTree = "<group>"; };
 		2F9BD2C43DBA09472251A9C7 /* TimerSideEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSideEffects.swift; sourceTree = "<group>"; };
-		2F9BD2C43DBA09472251A9C9 /* MonitorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorEngine.swift; sourceTree = "<group>"; };
-		2F9BD2C43DBA09472251A9CA /* IdleReminderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReminderMonitor.swift; sourceTree = "<group>"; };
 		3206CE65199144879E51EA48 /* NotificationDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDispatcher.swift; sourceTree = "<group>"; };
 		325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		33B091C34FA813522D05A4CD /* ProjectCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectCatalog.swift; sourceTree = "<group>"; };
+		3568C7B05EF74C4486C575DF /* DedupLedger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedger.swift; sourceTree = "<group>"; };
+		3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
 		3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoProjectModels.swift; sourceTree = "<group>"; };
+		3C2A0A29840D8E4016EC8727 /* BudgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetService.swift; sourceTree = "<group>"; };
 		3CB599E1B7ED04F5FFDBAB5C /* SelectedEntryBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedEntryBannerView.swift; sourceTree = "<group>"; };
+		3E711995E777F152C7FE6981 /* BudgetDepletionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetDepletionMonitor.swift; sourceTree = "<group>"; };
 		3FE72E53ADA34DC01D6CE143 /* ShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderView.swift; sourceTree = "<group>"; };
 		407AA89A2C397D153A840B32 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		438422F3B01E22301B030204 /* ValueBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBox.swift; sourceTree = "<group>"; };
+		4600FE513522EF5A2727F020 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDismissPolicyTests.swift; sourceTree = "<group>"; };
 		488D706B6C0807DF49EAF9F7 /* MocoCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoCompanionApp.swift; sourceTree = "<group>"; };
 		49BC1029B70591A5D9B437C4 /* MocoSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoSession.swift; sourceTree = "<group>"; };
 		4B089F7F88ED3724439EF40B /* QuickEntryStatusViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryStatusViews.swift; sourceTree = "<group>"; };
-		4B6835EFBB344967AEDFDE3F /* ProjectCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCache.swift; sourceTree = "<group>"; };
 		4D5A3A92C13A43DF304A0254 /* QuickEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryView.swift; sourceTree = "<group>"; };
 		4E9640BA4177989BECE15EB0 /* DescriptionFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionFieldView.swift; sourceTree = "<group>"; };
-		50A2BB3391A505072FAEA502 /* ProjectCatalogTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectCatalogTests.swift; sourceTree = "<group>"; };
 		51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONStore.swift; sourceTree = "<group>"; };
-		5118FB4CC0E5C3D17BC44CC6 /* ValueBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBox.swift; sourceTree = "<group>"; };
+		52BDDE0ACEE37AEBF21F6F66 /* TimerStopProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerStopProvider.swift; sourceTree = "<group>"; };
 		53712E974F5F6D7CFA756E1F /* TimerHintSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerHintSection.swift; sourceTree = "<group>"; };
+		53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockActivityAPI.swift; sourceTree = "<group>"; };
+		546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncServiceTests.swift; sourceTree = "<group>"; };
 		5973648FAF93E8A684598A9F /* PanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelController.swift; sourceTree = "<group>"; };
-		5D76756557E74F6DA95BA310 /* EntryQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryQueue.swift; sourceTree = "<group>"; };
 		5DC92CE67BD12A7846E9B0B9 /* KeyCombo+System.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyCombo+System.swift"; sourceTree = "<group>"; };
-		5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoBudgetModels.swift; sourceTree = "<group>"; };
 		5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingHelper.swift; sourceTree = "<group>"; };
 		5FC1B3AA6D9DAE68AC1048A7 /* StatusTimerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusTimerSection.swift; sourceTree = "<group>"; };
 		64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPopoverView.swift; sourceTree = "<group>"; };
-		678EF1F8F9AA2877C8B81CB5 /* DeleteUndoManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteUndoManagerTests.swift; sourceTree = "<group>"; };
+		68735F0E6B189FF28DBED588 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
 		69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockYesterdayAPI.swift; sourceTree = "<group>"; };
+		6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDatabase.swift; sourceTree = "<group>"; };
 		6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractor.swift; sourceTree = "<group>"; };
-		6D8442130790C1BCD23A7A2F /* YesterdayService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = YesterdayService.swift; sourceTree = "<group>"; };
-		6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimerStopProvider.swift; sourceTree = "<group>"; };
+		715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncService.swift; sourceTree = "<group>"; };
 		71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayStateTests.swift; sourceTree = "<group>"; };
+		72295BCC7A05744D102D54C5 /* UndoToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToastView.swift; sourceTree = "<group>"; };
 		7920563D8DACABBBDEC8892C /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
-		7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetService.swift; sourceTree = "<group>"; };
+		7BC062BBBB9150B6BE5486BE /* ProjectCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCache.swift; sourceTree = "<group>"; };
 		7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtilitiesTests.swift; sourceTree = "<group>"; };
 		7CF763622F55B4F2F3B24674 /* PanelContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelContentView.swift; sourceTree = "<group>"; };
 		7D7AF3BB61B72EF6538994BC /* ProjectsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsSettingsTab.swift; sourceTree = "<group>"; };
+		7FBFFE8C2F878C02B6BE6DF7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReminderMonitor.swift; sourceTree = "<group>"; };
 		808DE3813688601F145EE7C4 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		81BC1A4F9EC3400AB3F43929 /* SearchFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFieldView.swift; sourceTree = "<group>"; };
 		830513740374C08D5E534785 /* ProjectTaskRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTaskRef.swift; sourceTree = "<group>"; };
-		8338EC56052D96B662668E47 /* PersistedState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		870AD2BE762A2FFB94F30A96 /* ManualMonitorScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualMonitorScheduler.swift; sourceTree = "<group>"; };
+		882CA70BE643BC4519089A44 /* MonitorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorEngine.swift; sourceTree = "<group>"; };
 		8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayBannerView.swift; sourceTree = "<group>"; };
+		89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorEngineTests.swift; sourceTree = "<group>"; };
 		8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoActivityModels.swift; sourceTree = "<group>"; };
 		8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingHelperTests.swift; sourceTree = "<group>"; };
-		8CD702974AC6F21DFD37A480 /* StorageBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageBackend.swift; sourceTree = "<group>"; };
+		8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
+		8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayService.swift; sourceTree = "<group>"; };
 		8F417899FA33E643E479F268 /* KeyCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCombo.swift; sourceTree = "<group>"; };
-		8FD3BFB973074B42B6D6CB7B /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		90FAF0165CF44DD9B1C1BC46 /* OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerView.swift; sourceTree = "<group>"; };
+		8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesSettingsTab.swift; sourceTree = "<group>"; };
+		9230F5232E57326E6B57713F /* ProjectCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCatalog.swift; sourceTree = "<group>"; };
+		94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSideEffectsTests.swift; sourceTree = "<group>"; };
+		96B69C0B1DDD40769CB4BF16 /* BudgetTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetTypes.swift; sourceTree = "<group>"; };
+		977338C7A178D1FDC00982C9 /* StorageBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageBackend.swift; sourceTree = "<group>"; };
 		9ADD519E64051033A0F06C83 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9BA368B3F7194171B836A66B /* ActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityService.swift; sourceTree = "<group>"; };
 		9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtilities.swift; sourceTree = "<group>"; };
+		9EF68317E12950934C6A45E4 /* TestFactories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFactories.swift; sourceTree = "<group>"; };
+		9F91C17CFE7CFBDE03D894B1 /* APIRateGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRateGate.swift; sourceTree = "<group>"; };
 		A0AA040396C6E5C43AF2FDB4 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MocoCompanionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A17A964FC46F794226D7EF94 /* View+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Helpers.swift"; sourceTree = "<group>"; };
-		A1A1A1A1A1A1A1A1A1A1A100 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1B2C3D4E5F6071829304142 /* BudgetDepletionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetDepletionMonitor.swift; sourceTree = "<group>"; };
 		A1E0D39E480AA80553F9EFC9 /* MocoError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoError.swift; sourceTree = "<group>"; };
-		A1F2B3C4D5E6F70819203142 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWizardView.swift; sourceTree = "<group>"; };
+		A3451464A94CF321FD4B56BF /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		A3B7D73E3B102615000B10B5 /* MocoWorkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoWorkModels.swift; sourceTree = "<group>"; };
 		A56CE3EE0D21EB33F2A9E833 /* TodayStatsFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayStatsFooter.swift; sourceTree = "<group>"; };
-		AA01AA01AA01AA01AA01AA01 /* MockTimerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimerAPI.swift; sourceTree = "<group>"; };
-		AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockActivityAPI.swift; sourceTree = "<group>"; };
-		AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBudgetAPI.swift; sourceTree = "<group>"; };
-		AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockYesterdayAPI.swift; sourceTree = "<group>"; };
-		AA06AA06AA06AA06AA06AA06 /* TestFactories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFactories.swift; sourceTree = "<group>"; };
-		AA07AA07AA07AA07AA07AA07 /* TimerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerServiceTests.swift; sourceTree = "<group>"; };
-		AA08BB08AA08BB08AA08BB08 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
-		AA09AA09AA09AA09AA09AA09 /* YesterdayServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = YesterdayServiceTests.swift; path = YesterdayServiceTests.swift; sourceTree = "<group>"; };
-		AA10AA10AA10AA10AA10AA10 /* BudgetServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetServiceTests.swift; sourceTree = "<group>"; };
-		AA11AA11AA11AA11AA11AA11 /* NotificationDispatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDispatcherTests.swift; sourceTree = "<group>"; };
-		AA12AA12AA12AA12AA12AA12 /* TimerSideEffectsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSideEffectsTests.swift; sourceTree = "<group>"; };
-		AA13AA13AA13AA13AA13AA13 /* TodayViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModelTests.swift; sourceTree = "<group>"; };
-		AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
-		AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettingsTab.swift; sourceTree = "<group>"; };
-		AB02AB02AB02AB02AB02AB02 /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
+		AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryStateMachineTests.swift; sourceTree = "<group>"; };
 		AB527B9DF5DD04CF188C758C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		AB527B9DF5DD04CF188C758D /* MocoCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MocoCompanion.entitlements; sourceTree = "<group>"; };
-		ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
-		ABCD1234567890ABCDEF0003 /* PanelDismissPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDismissPolicy.swift; sourceTree = "<group>"; };
 		AE2317D195286BC0C46C9741 /* StatusActivityRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusActivityRow.swift; sourceTree = "<group>"; };
-		B1B1B1B1B1B1B1B1B1B1B100 /* BudgetCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculator.swift; sourceTree = "<group>"; };
-		B2B2B2B2B2B2B2B2B2B2B200 /* BudgetCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculatorTests.swift; sourceTree = "<group>"; };
-		B2E3C4D5F6A708192A3B4C5D /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
-		B3B3B3B3B3B3B3B3B3B3B300 /* BudgetTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetTypes.swift; sourceTree = "<group>"; };
 		B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEditOverlay.swift; sourceTree = "<group>"; };
+		B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
+		B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
 		BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsSettingsTab.swift; sourceTree = "<group>"; };
-		BBCC1234567890ABCDEF0001 /* PanelDismissPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelDismissPolicyTests.swift; sourceTree = "<group>"; };
+		BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		BBE9B210348D16F543330D40 /* Logger+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+App.swift"; sourceTree = "<group>"; };
-		BC868E794E864A7FA28062AA /* UndoToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToastView.swift; sourceTree = "<group>"; };
 		BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCatalog.swift; sourceTree = "<group>"; };
 		BDA0A6BE8ED846CF41EDA669 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		BEA4C16C810095ADD5FFA999 /* FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanel.swift; sourceTree = "<group>"; };
 		C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDurationText.swift; sourceTree = "<group>"; };
-		C14F935686BADDDCECC10AC8 /* SessionManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
-		C1C1C1C1C1C1C1C1C1C1C100 /* APIRateGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRateGate.swift; sourceTree = "<group>"; };
+		C187B2025BF397B94B0F8B72 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
 		C659502FB03D6F89F924EAF5 /* Key.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Key.swift; sourceTree = "<group>"; };
 		C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginHelper.swift; sourceTree = "<group>"; };
-		CCDD1234567890ABCDEF0001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
+		CA68B5C275AEBA5CD3CA8BE4 /* YesterdayServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayServiceTests.swift; sourceTree = "<group>"; };
+		CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDispatcherTests.swift; sourceTree = "<group>"; };
+		CC794945C75FADB549222EF7 /* BudgetCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculator.swift; sourceTree = "<group>"; };
 		CDD4F63924DB4A2978661182 /* TodayEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayEmptyState.swift; sourceTree = "<group>"; };
 		CEC0065706C321F573697AB9 /* DescriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionStore.swift; sourceTree = "<group>"; };
 		D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEntriesTracker.swift; sourceTree = "<group>"; };
-		D1D1D1D1D1D1D1D1D1D1D100 /* QuickEntryContracts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryContracts.swift; sourceTree = "<group>"; };
-		D2D2D2D2D2D2D2D2D2D2D200 /* QuickEntryStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryStateMachineTests.swift; sourceTree = "<group>"; };
+		D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStoreTests.swift; sourceTree = "<group>"; };
+		D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
+		D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMocoClient.swift; sourceTree = "<group>"; };
 		D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerState.swift; sourceTree = "<group>"; };
-		DD02DD02DD02DD02DD02DD02 /* SecurityAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityAuditTests.swift; sourceTree = "<group>"; };
-		DE3F2142F620024E05E304AA /* PlanningStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanningStoreTests.swift; sourceTree = "<group>"; };
+		D614C0994FEB7F5C71E22F5A /* DeleteUndoManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManagerTests.swift; sourceTree = "<group>"; };
+		D8C6653686AB6A3660887801 /* OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerView.swift; sourceTree = "<group>"; };
+		DB67C9BF94CA9E55B76E7403 /* DescriptionMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMatcher.swift; sourceTree = "<group>"; };
 		E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerService.swift; sourceTree = "<group>"; };
 		E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoClientProtocol.swift; sourceTree = "<group>"; };
 		E130DB9763B0686ADCAAF671 /* SearchResultsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsListView.swift; sourceTree = "<group>"; };
-		E1E1E1E1E1E1E1E1E1E1E100 /* DedupLedger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedger.swift; sourceTree = "<group>"; };
-		E1E1E1E1E1E1E1E1E1E1E104 /* DedupLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedgerTests.swift; sourceTree = "<group>"; };
+		E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModelTests.swift; sourceTree = "<group>"; };
 		E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToUseSettingsTab.swift; sourceTree = "<group>"; };
-		E4D7A824E23E4FDFBD3786E8 /* FirstUseHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstUseHintView.swift; sourceTree = "<group>"; };
+		E5F076B54A04E8F34EAA7BDC /* MocoBudgetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoBudgetModels.swift; sourceTree = "<group>"; };
 		E63BF8CB3DC091CBBE466CCB /* HotKeysController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeysController.swift; sourceTree = "<group>"; };
 		E6B8DDBF460C33BA5F63652A /* FuzzyMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyMatcherTests.swift; sourceTree = "<group>"; };
 		E9A649458AAD4E7E1E11C44F /* PanelTabSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelTabSwitcher.swift; sourceTree = "<group>"; };
 		EB90CC24EA6613103E7BF038 /* GeneralSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsTab.swift; sourceTree = "<group>"; };
-		F1F1F1F1F1F1F1F1F1F1F100 /* DescriptionMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMatcher.swift; sourceTree = "<group>"; };
-		F1F1F1F1F1F1F1F1F1F1F104 /* DescriptionMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionMatcherTests.swift; sourceTree = "<group>"; };
+		F1CE438DC586E0B8BDB2776F /* DaySelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaySelection.swift; sourceTree = "<group>"; };
 		F24BDAB19C48AA4D154CDD90 /* UnplannedTasksSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnplannedTasksSection.swift; sourceTree = "<group>"; };
 		F6181F86BFE3D1C108365BF3 /* MocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoClient.swift; sourceTree = "<group>"; };
 		F7039A8A3711BD16FFBB95D4 /* TodayActivityRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayActivityRow.swift; sourceTree = "<group>"; };
 		F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
 		FADCE30AE9D6424AECC826D2 /* FuzzyMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyMatcher.swift; sourceTree = "<group>"; };
-		FELVVYXFBNBJP0XP7E2S9JBP /* FavoritesSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesSettingsTab.swift; sourceTree = "<group>"; };
+		FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -374,13 +339,13 @@
 				9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */,
 				5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */,
 				5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */,
-				8CD702974AC6F21DFD37A480 /* StorageBackend.swift */,
-				5118FB4CC0E5C3D17BC44CC6 /* ValueBox.swift */,
 				325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */,
 				C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */,
 				BBE9B210348D16F543330D40 /* Logger+App.swift */,
+				68735F0E6B189FF28DBED588 /* PersistedState.swift */,
+				977338C7A178D1FDC00982C9 /* StorageBackend.swift */,
+				438422F3B01E22301B030204 /* ValueBox.swift */,
 				A17A964FC46F794226D7EF94 /* View+Helpers.swift */,
-				8338EC56052D96B662668E47 /* PersistedState.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -388,32 +353,34 @@
 		17A9158CEAE6D4D9D276684B /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */,
+				166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */,
+				22DA733D555B249A6353D870 /* AppRecordStoreTests.swift */,
+				FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */,
+				2BB733DE7E80E45699E3C801 /* BudgetServiceTests.swift */,
 				7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */,
+				01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */,
+				D614C0994FEB7F5C71E22F5A /* DeleteUndoManagerTests.swift */,
+				1E03D9E5C5B1848AEC9805CA /* DescriptionMatcherTests.swift */,
 				E6B8DDBF460C33BA5F63652A /* FuzzyMatcherTests.swift */,
 				8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */,
 				71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */,
+				89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */,
+				CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */,
+				546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */,
+				47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */,
+				D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */,
+				19DFB4A44EC1662BD52E18D5 /* ProjectCatalogTests.swift */,
+				AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */,
+				2644CC1AD406CCF9B26CA0D4 /* SecurityAuditTests.swift */,
+				B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */,
 				2571D3B463887787904F8C7E /* TagExtractorTests.swift */,
-				B2B2B2B2B2B2B2B2B2B2B200 /* BudgetCalculatorTests.swift */,
-				D2D2D2D2D2D2D2D2D2D2D200 /* QuickEntryStateMachineTests.swift */,
-				E1E1E1E1E1E1E1E1E1E1E104 /* DedupLedgerTests.swift */,
-				F1F1F1F1F1F1F1F1F1F1F104 /* DescriptionMatcherTests.swift */,
-				BBCC1234567890ABCDEF0001 /* PanelDismissPolicyTests.swift */,
-				AA06AA06AA06AA06AA06AA06 /* TestFactories.swift */,
-				AA07AA07AA07AA07AA07AA07 /* TimerServiceTests.swift */,
-				AA08BB08AA08BB08AA08BB08 /* ActivityServiceTests.swift */,
-				AA09AA09AA09AA09AA09AA09 /* YesterdayServiceTests.swift */,
-				AA10AA10AA10AA10AA10AA10 /* BudgetServiceTests.swift */,
-				AA11AA11AA11AA11AA11AA11 /* NotificationDispatcherTests.swift */,
-				AA12AA12AA12AA12AA12AA12 /* TimerSideEffectsTests.swift */,
-				AA13AA13AA13AA13AA13AA13 /* TodayViewModelTests.swift */,
-				DD02DD02DD02DD02DD02DD02 /* SecurityAuditTests.swift */,
-				AA08AA08AA08AA08AA08AA08 /* Mocks */,
-				678EF1F8F9AA2877C8B81CB5 /* DeleteUndoManagerTests.swift */,
-				DE3F2142F620024E05E304AA /* PlanningStoreTests.swift */,
-				50A2BB3391A505072FAEA502 /* ProjectCatalogTests.swift */,
-				C14F935686BADDDCECC10AC8 /* SessionManagerTests.swift */,
-				0FF40FF40FF40FF40FF40FF4 /* OfflineSyncServiceTests.swift */,
-				0FF60FF60FF60FF60FF60FF6 /* MonitorEngineTests.swift */,
+				9EF68317E12950934C6A45E4 /* TestFactories.swift */,
+				2267149EA97C64826FBFF558 /* TimerServiceTests.swift */,
+				94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */,
+				E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */,
+				CA68B5C275AEBA5CD3CA8BE4 /* YesterdayServiceTests.swift */,
+				AAFA8940A9922CA75728E1EE /* Mocks */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -422,39 +389,42 @@
 			isa = PBXGroup;
 			children = (
 				9BA368B3F7194171B836A66B /* ActivityService.swift */,
-				AA20AA20AA20AA20AA20AA02 /* DeleteUndoManager.swift */,
-				AA20AA20AA20AA20AA20AA01 /* PlanningStore.swift */,
 				407AA89A2C397D153A840B32 /* AppLogger.swift */,
+				1244C6FC2B1082217D8F4E7F /* AppRecord.swift */,
+				041CF3D39FB897772BE1A72B /* AppRecorder.swift */,
+				14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */,
 				A0AA040396C6E5C43AF2FDB4 /* AppState.swift */,
-				7C8D9E0F1A2B3C4D5E6F7081 /* BudgetService.swift */,
-				B1B1B1B1B1B1B1B1B1B1B100 /* BudgetCalculator.swift */,
-				B3B3B3B3B3B3B3B3B3B3B300 /* BudgetTypes.swift */,
-				A1B2C3D4E5F6071829304142 /* BudgetDepletionMonitor.swift */,
+				CC794945C75FADB549222EF7 /* BudgetCalculator.swift */,
+				3E711995E777F152C7FE6981 /* BudgetDepletionMonitor.swift */,
+				3C2A0A29840D8E4016EC8727 /* BudgetService.swift */,
+				96B69C0B1DDD40769CB4BF16 /* BudgetTypes.swift */,
+				3568C7B05EF74C4486C575DF /* DedupLedger.swift */,
+				BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */,
+				DB67C9BF94CA9E55B76E7403 /* DescriptionMatcher.swift */,
 				CEC0065706C321F573697AB9 /* DescriptionStore.swift */,
-				F1F1F1F1F1F1F1F1F1F1F100 /* DescriptionMatcher.swift */,
+				011B6721B43C2268A3D0C31E /* EntryQueue.swift */,
 				F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */,
+				801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */,
+				882CA70BE643BC4519089A44 /* MonitorEngine.swift */,
+				A3451464A94CF321FD4B56BF /* NetworkMonitor.swift */,
 				BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */,
 				3206CE65199144879E51EA48 /* NotificationDispatcher.swift */,
+				715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */,
+				2BB18FCF8315AA2D9B0CB29B /* PanelDismissPolicy.swift */,
+				D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */,
+				7BC062BBBB9150B6BE5486BE /* ProjectCache.swift */,
+				9230F5232E57326E6B57713F /* ProjectCatalog.swift */,
 				1BF907C8374EF28C0F07F8CD /* RecencyTracker.swift */,
 				D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */,
+				1E467B55E6F7835D8A4B8318 /* SessionManager.swift */,
 				BDA0A6BE8ED846CF41EDA669 /* SettingsStore.swift */,
 				154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */,
 				E0E1AEEAEDF471FB3FDFAAE1 /* TimerService.swift */,
 				2F9BD2C43DBA09472251A9C7 /* TimerSideEffects.swift */,
-				2F9BD2C43DBA09472251A9C9 /* MonitorEngine.swift */,
-				E1E1E1E1E1E1E1E1E1E1E100 /* DedupLedger.swift */,
-				2F9BD2C43DBA09472251A9CA /* IdleReminderMonitor.swift */,
 				D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */,
-				B2E3C4D5F6A708192A3B4C5D /* UpdateChecker.swift */,
-				ABCD1234567890ABCDEF0003 /* PanelDismissPolicy.swift */,
-				5D76756557E74F6DA95BA310 /* EntryQueue.swift */,
-				4B6835EFBB344967AEDFDE3F /* ProjectCache.swift */,
-				8FD3BFB973074B42B6D6CB7B /* NetworkMonitor.swift */,
-				33B091C34FA813522D05A4CD /* ProjectCatalog.swift */,
-				2C5AAF743678AC038AC40149 /* SessionManager.swift */,
-				0FF00FF00FF00FF00FF00FF0 /* OfflineSyncService.swift */,
-				6DAC04196F6B3974214F62E6 /* TimerStopProvider.swift */,
-				6D8442130790C1BCD23A7A2F /* YesterdayService.swift */,
+				52BDDE0ACEE37AEBF21F6F66 /* TimerStopProvider.swift */,
+				4600FE513522EF5A2727F020 /* UpdateChecker.swift */,
+				8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */,
 			);
 			path = State;
 			sourceTree = "<group>";
@@ -466,6 +436,15 @@
 				A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		46267D2B887CC67BCDF28D69 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				155477772B61048004E7FA09 /* ShadowEntry.swift */,
+				6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */,
+			);
+			path = Database;
 			sourceTree = "<group>";
 		};
 		75820B175DDE0451EBD84174 = {
@@ -502,12 +481,13 @@
 			isa = PBXGroup;
 			children = (
 				0707079AFDBAE016F65B7B5D /* AppDelegate.swift */,
+				7FBFFE8C2F878C02B6BE6DF7 /* Assets.xcassets */,
 				AB527B9DF5DD04CF188C758C /* Info.plist */,
-				AB527B9DF5DD04CF188C758D /* MocoCompanion.entitlements */,
 				51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */,
-				A1A1A1A1A1A1A1A1A1A1A100 /* Assets.xcassets */,
+				181B2C9AADBB7C2084B3AF0E /* MocoCompanion.entitlements */,
 				488D706B6C0807DF49EAF9F7 /* MocoCompanionApp.swift */,
 				B170B47D065C866ACACE3417 /* API */,
+				46267D2B887CC67BCDF28D69 /* Database */,
 				FF3C0027C44C43F64639283D /* Panel */,
 				948EE717F016160B80546B0F /* Search */,
 				2707F6050CFC52198BD1FC08 /* State */,
@@ -529,15 +509,15 @@
 			path = Search;
 			sourceTree = "<group>";
 		};
-		AA08AA08AA08AA08AA08AA08 /* Mocks */ = {
+		AAFA8940A9922CA75728E1EE /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				AA02AA02AA02AA02AA02AA02 /* MockActivityAPI.swift */,
-				AA03AA03AA03AA03AA03AA03 /* MockBudgetAPI.swift */,
-				AA01AA01AA01AA01AA01AA01 /* MockTimerAPI.swift */,
-				AA04AA04AA04AA04AA04AA04 /* MockYesterdayAPI.swift */,
-				207F92C2CEED2BD7D1372065 /* MockMocoClient.swift */,
-				0FF80FF80FF80FF80FF80FF8 /* ManualMonitorScheduler.swift */,
+				870AD2BE762A2FFB94F30A96 /* ManualMonitorScheduler.swift */,
+				53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */,
+				25F15D68DA50B3EE0381EDCF /* MockBudgetAPI.swift */,
+				D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */,
+				013BC31FD68DE0BE154BE283 /* MockTimerAPI.swift */,
+				6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -545,8 +525,8 @@
 		B170B47D065C866ACACE3417 /* API */ = {
 			isa = PBXGroup;
 			children = (
+				9F91C17CFE7CFBDE03D894B1 /* APIRateGate.swift */,
 				F6181F86BFE3D1C108365BF3 /* MocoClient.swift */,
-				C1C1C1C1C1C1C1C1C1C1C100 /* APIRateGate.swift */,
 				E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */,
 				A1E0D39E480AA80553F9EFC9 /* MocoError.swift */,
 				C9AB48A482269A827A5091CC /* Models */,
@@ -558,7 +538,7 @@
 			isa = PBXGroup;
 			children = (
 				8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */,
-				5E6F7A8B9C0D1E2F3A4B5C6D /* MocoBudgetModels.swift */,
+				E5F076B54A04E8F34EAA7BDC /* MocoBudgetModels.swift */,
 				14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */,
 				3AA41B94FC9DBDA2AA272428 /* MocoProjectModels.swift */,
 				49BC1029B70591A5D9B437C4 /* MocoSession.swift */,
@@ -570,21 +550,24 @@
 		F7CDD8A64A58FDD9FC29AAA5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */,
 				03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */,
 				C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */,
 				B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */,
+				F1CE438DC586E0B8BDB2776F /* DaySelection.swift */,
 				AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */,
-				AB02AB02AB02AB02AB02AB02 /* AboutSettingsTab.swift */,
 				7920563D8DACABBBDEC8892C /* EntryRow.swift */,
+				8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */,
+				0796D5B01BF27D2CC206F9E6 /* FirstUseHintView.swift */,
 				EB90CC24EA6613103E7BF038 /* GeneralSettingsTab.swift */,
-				FELVVYXFBNBJP0XP7E2S9JBP /* FavoritesSettingsTab.swift */,
 				E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */,
 				BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */,
+				D8C6653686AB6A3660887801 /* OfflineBannerView.swift */,
 				E9A649458AAD4E7E1E11C44F /* PanelTabSwitcher.swift */,
 				04785C855EE4166447EC3C31 /* ProjectSearchField.swift */,
 				7D7AF3BB61B72EF6538994BC /* ProjectsSettingsTab.swift */,
 				9ADD519E64051033A0F06C83 /* SettingsView.swift */,
-				A1F2B3C4D5E6F70819203142 /* SetupWizardView.swift */,
+				12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */,
 				3FE72E53ADA34DC01D6CE143 /* ShortcutRecorderView.swift */,
 				AE2317D195286BC0C46C9741 /* StatusActivityRow.swift */,
 				64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */,
@@ -592,13 +575,10 @@
 				16F5FEA3B2CCB6B815D8C914 /* Theme.swift */,
 				F7039A8A3711BD16FFBB95D4 /* TodayActivityRow.swift */,
 				CDD4F63924DB4A2978661182 /* TodayEmptyState.swift */,
-				E4D7A824E23E4FDFBD3786E8 /* FirstUseHintView.swift */,
-				BC868E794E864A7FA28062AA /* UndoToastView.swift */,
-				90FAF0165CF44DD9B1C1BC46 /* OfflineBannerView.swift */,
 				A56CE3EE0D21EB33F2A9E833 /* TodayStatsFooter.swift */,
 				69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */,
-				2C43DA1A627C014E38AA2D16 /* DaySelection.swift */,
-				ABCD1234567890ABCDEF0001 /* TodayViewModel.swift */,
+				3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */,
+				72295BCC7A05744D102D54C5 /* UndoToastView.swift */,
 				F24BDAB19C48AA4D154CDD90 /* UnplannedTasksSection.swift */,
 				8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */,
 			);
@@ -611,12 +591,12 @@
 				4E9640BA4177989BECE15EB0 /* DescriptionFieldView.swift */,
 				BEA4C16C810095ADD5FFA999 /* FloatingPanel.swift */,
 				0A18402BDB45EF8239974AF7 /* MenuBarDisplayState.swift */,
-				CCDD1234567890ABCDEF0001 /* MenuBarIconRenderer.swift */,
+				C187B2025BF397B94B0F8B72 /* MenuBarIconRenderer.swift */,
 				7CF763622F55B4F2F3B24674 /* PanelContentView.swift */,
 				5973648FAF93E8A684598A9F /* PanelController.swift */,
+				259B61E27F0D689549B9F1E8 /* QuickEntryContracts.swift */,
+				21F6C6071BDFB765C9A948C4 /* QuickEntryProtocols.swift */,
 				2EA4BC4688D7148D30A005AA /* QuickEntryStateMachine.swift */,
-				2EA4BC4688D7148D30A005AB /* QuickEntryProtocols.swift */,
-				D1D1D1D1D1D1D1D1D1D1D100 /* QuickEntryContracts.swift */,
 				4B089F7F88ED3724439EF40B /* QuickEntryStatusViews.swift */,
 				4D5A3A92C13A43DF304A0254 /* QuickEntryView.swift */,
 				81BC1A4F9EC3400AB3F43929 /* SearchFieldView.swift */,
@@ -643,6 +623,8 @@
 			dependencies = (
 			);
 			name = MocoCompanion;
+			packageProductDependencies = (
+			);
 			productName = MocoCompanion;
 			productReference = 2D280BBA036682BB1D8A44F0 /* MocoCompanion.app */;
 			productType = "com.apple.product-type.application";
@@ -652,13 +634,15 @@
 			buildConfigurationList = DE926EB60047B8B4F457F188 /* Build configuration list for PBXNativeTarget "MocoCompanionTests" */;
 			buildPhases = (
 				DE9AD48EFBDB5560300E3B35 /* Sources */,
-				38141C44846A3A93D8D420D9 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5874CF48A12B69C2869D51BE /* PBXTargetDependency */,
 			);
 			name = MocoCompanionTests;
+			packageProductDependencies = (
+			);
 			productName = MocoCompanionTests;
 			productReference = A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -703,17 +687,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A6BEE81E03F3E085106C3697 /* Assets.xcassets in Resources */,
 				939938CB4E5F5C976BCD0CB0 /* Localizable.xcstrings in Resources */,
-				A1A1A1A1A1A1A1A1A1A1A101 /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		38141C44846A3A93D8D420D9 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				4113ED48535E1ECD63D12F74 /* Localizable.xcstrings in Resources */,
-				A1A1A1A1A1A1A1A1A1A1A102 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -724,38 +699,44 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0823CF78EC092753534D4779 /* APIRateGate.swift in Sources */,
+				A49550582285D68A6E703CC7 /* AboutSettingsTab.swift in Sources */,
 				55BFCCE8A8F6D2773356887C /* AccountSettingsTab.swift in Sources */,
 				AF05B1ABCD10E9756A49D72F /* ActivityDurationText.swift in Sources */,
 				7D3C41AAA4948CEE74F50A29 /* ActivityEditOverlay.swift in Sources */,
 				585C793D185FA7EDD6CAE07E /* ActivityService.swift in Sources */,
-				AA21AA21AA21AA21AA21AA01 /* PlanningStore.swift in Sources */,
-				AA21AA21AA21AA21AA21AA02 /* DeleteUndoManager.swift in Sources */,
-				58A1B2C3D4E5F60718293A4B /* BudgetService.swift in Sources */,
-				B1B1B1B1B1B1B1B1B1B1B101 /* BudgetCalculator.swift in Sources */,
-				B3B3B3B3B3B3B3B3B3B3B301 /* BudgetTypes.swift in Sources */,
-				B2C3D4E5F60718293A415263 /* BudgetDepletionMonitor.swift in Sources */,
 				6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */,
 				A3BDDE0EF4F878359653C870 /* AppLogger.swift in Sources */,
+				7C7BE8734AF946E95C228D49 /* AppRecord.swift in Sources */,
+				B0CF016F487AFC1F39D849B2 /* AppRecordStore.swift in Sources */,
+				9396109485871986242B0AB2 /* AppRecorder.swift in Sources */,
 				C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */,
+				D93FD86778FD04E04DFBB527 /* BudgetCalculator.swift in Sources */,
+				9F783D67EAAA25F000D14065 /* BudgetDepletionMonitor.swift in Sources */,
+				944023A464965603EFD6E625 /* BudgetService.swift in Sources */,
+				5D46FA960D89E5846D6AC910 /* BudgetTypes.swift in Sources */,
 				F35396DD2EAAAC57711F8821 /* DateUtilities.swift in Sources */,
+				BF8D61D1C973ADFF199B9834 /* DaySelection.swift in Sources */,
 				355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */,
-				AB01AB01AB01AB01AB01AB01 /* AboutSettingsTab.swift in Sources */,
+				78AC96CCF33BF54D054A8BB3 /* DedupLedger.swift in Sources */,
+				109BE65F64B17168422C11BD /* DeleteUndoManager.swift in Sources */,
 				C3CE3CB6721A57A72FA83671 /* DescriptionFieldView.swift in Sources */,
+				35A84AB923D02624568F7C8A /* DescriptionMatcher.swift in Sources */,
 				ED34548F2AFA3BBEFDC097FC /* DescriptionStore.swift in Sources */,
-				F1F1F1F1F1F1F1F1F1F1F101 /* DescriptionMatcher.swift in Sources */,
+				A7109E76E8E3AB2B124D79CD /* EntryQueue.swift in Sources */,
 				A60540232EF6ECBE07ADEDDA /* EntryRow.swift in Sources */,
 				E7A2F1510719C6720F9B1DE8 /* FavoritesManager.swift in Sources */,
+				FEDA0FB7F7ACE340F0D1C674 /* FavoritesSettingsTab.swift in Sources */,
+				0AEFBFC907D75EB14A951A13 /* FirstUseHintView.swift in Sources */,
 				23618893A4088D259A66FCBF /* FloatingPanel.swift in Sources */,
 				7B908F83CA18C421EE81E2B8 /* FuzzyMatcher.swift in Sources */,
 				F8CA65F8458F1BBA51C8D296 /* GeneralSettingsTab.swift in Sources */,
-				20LACRNL9WPN0O1511DHZ43M /* FavoritesSettingsTab.swift in Sources */,
 				4C34B11A5355433709DCF33D /* GreetingHelper.swift in Sources */,
 				B4E321592FDB627C6024C396 /* HotKey.swift in Sources */,
 				DCB20DC8FE63342998B36876 /* HotKeysController.swift in Sources */,
 				40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */,
+				166449E65014D689EF8978D0 /* IdleReminderMonitor.swift in Sources */,
 				9911AB76B69B019E2E4F05E8 /* JSONStore.swift in Sources */,
-				710D6297507095C7FB7DCA1A /* StorageBackend.swift in Sources */,
-				9911AB76B69B019E2E4F05E9 /* ValueBox.swift in Sources */,
 				18D3B37B9D51AF9DA77B0CB3 /* Key.swift in Sources */,
 				AD81C4D9CFCEF08DC91800B5 /* KeyCombo+System.swift in Sources */,
 				D869DB32B7DC7B34FC469399 /* KeyCombo.swift in Sources */,
@@ -763,11 +744,10 @@
 				8498015E58D696514349E1F6 /* LaunchAtLoginHelper.swift in Sources */,
 				315EB06AA452780517B9D348 /* Logger+App.swift in Sources */,
 				562A51F5995FF5276226C46F /* MenuBarDisplayState.swift in Sources */,
-				CCDD1234567890ABCDEF0003 /* MenuBarIconRenderer.swift in Sources */,
+				0046EA285DD92D7A9E7745D4 /* MenuBarIconRenderer.swift in Sources */,
 				6E39DF30FC9E0F6AEB54C3BB /* MocoActivityModels.swift in Sources */,
-				0B25A1C3D7E4F8901A2B3C4D /* MocoBudgetModels.swift in Sources */,
+				03952E1AED6BF91DD2094043 /* MocoBudgetModels.swift in Sources */,
 				7C56CDAD059F01010B844ADB /* MocoClient.swift in Sources */,
-				C1C1C1C1C1C1C1C1C1C1C101 /* APIRateGate.swift in Sources */,
 				359B0662EED0F0675AC14426 /* MocoClientProtocol.swift in Sources */,
 				F57D58E78894B0A9E2B4783D /* MocoCompanionApp.swift in Sources */,
 				CD075754355EAFBC2A8B85AD /* MocoError.swift in Sources */,
@@ -775,68 +755,68 @@
 				02DC858B75C35F5AB265A2A7 /* MocoProjectModels.swift in Sources */,
 				672C8702F9B2AFC75594A767 /* MocoSession.swift in Sources */,
 				99B818C878F5A3B6BBE4C533 /* MocoWorkModels.swift in Sources */,
+				06E592DA8395B337443574D0 /* MonitorEngine.swift in Sources */,
 				52C84A535CCCE17A696E811D /* NSEventModifierFlags+HotKey.swift in Sources */,
+				28E335CFF816ED03D71350CB /* NetworkMonitor.swift in Sources */,
 				95162FD161C5CD76A550CD9A /* NotificationCatalog.swift in Sources */,
 				5074A69F78980BA7C306B6DF /* NotificationDispatcher.swift in Sources */,
 				B50DE05C488BBB2EABEC74E9 /* NotificationsSettingsTab.swift in Sources */,
+				5E075D2D85D9CA132E0B39AE /* OfflineBannerView.swift in Sources */,
+				78E77753543F2E2ED0503527 /* OfflineSyncService.swift in Sources */,
 				1F4DFDB934DB37FE1F7693AC /* PanelContentView.swift in Sources */,
 				E80CC1D361139172B07EE02C /* PanelController.swift in Sources */,
+				F9CEA892429B87DB7E14F171 /* PanelDismissPolicy.swift in Sources */,
 				DB0A9BDDE56C2D11B975C81E /* PanelTabSwitcher.swift in Sources */,
+				CDE43F20A94383A18DCB527A /* PersistedState.swift in Sources */,
+				85FF9F731D2B2889647F8E40 /* PlanningStore.swift in Sources */,
+				1C0660D37287CE81ED91B26A /* ProjectCache.swift in Sources */,
+				8CC9B1A620F6577ADDDF4682 /* ProjectCatalog.swift in Sources */,
 				C45A386412B8D01E4DB25BBB /* ProjectSearchField.swift in Sources */,
 				792BF98FAD94EBD8FE00F1E9 /* ProjectTaskRef.swift in Sources */,
 				A21E70EFA52719A54390639E /* ProjectsSettingsTab.swift in Sources */,
+				82C82D0F4DAF8A4BFFFF946E /* QuickEntryContracts.swift in Sources */,
+				DAD761F9AF3F05CEA5AABBA1 /* QuickEntryProtocols.swift in Sources */,
 				EAA2B90C588F613E7FB72B67 /* QuickEntryStateMachine.swift in Sources */,
-				EAA2B90C588F613E7FB72B68 /* QuickEntryProtocols.swift in Sources */,
-				D1D1D1D1D1D1D1D1D1D1D101 /* QuickEntryContracts.swift in Sources */,
 				E91141A00ED352E41837844E /* QuickEntryStatusViews.swift in Sources */,
 				A37C403B6686B228EB87F2DE /* QuickEntryView.swift in Sources */,
 				B37F973122A37C765EF8D154 /* RecencyTracker.swift in Sources */,
 				712210B5065C630BCBB0889A /* RecentEntriesTracker.swift in Sources */,
+				3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */,
 				BF6653A261485E2ED9A95147 /* SearchEntry.swift in Sources */,
 				B1CF740E6AC2F20DBA23CC3E /* SearchFieldView.swift in Sources */,
 				4D944346A9F4FE79D87232FA /* SearchResultsListView.swift in Sources */,
 				D2747CFDD0929DB3D551AE6A /* SelectedEntryBannerView.swift in Sources */,
+				FFC05799ACCF9800C54E0956 /* SessionManager.swift in Sources */,
 				4A20E21C7A7D9F017FFB64F3 /* SettingsStore.swift in Sources */,
 				907F693566D37220983C0CC0 /* SettingsView.swift in Sources */,
-				A1F2B3C4D5E6F70819203143 /* SetupWizardView.swift in Sources */,
+				C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */,
+				C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */,
 				EF0832E0F708C9A6295E651C /* ShortcutRecorderView.swift in Sources */,
 				2679E42A2F31F9493E969662 /* SoundFeedback.swift in Sources */,
 				967D11BA9BF5164E96EB85B5 /* StatusActivityRow.swift in Sources */,
 				A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */,
 				790B32F7F8BA74CE06DF3F3C /* StatusPopoverView.swift in Sources */,
 				D9B0ABB2AD904F9ACE53445E /* StatusTimerSection.swift in Sources */,
+				16B0D3B093CA49FA24F4F466 /* StorageBackend.swift in Sources */,
 				41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */,
 				8031ACA863899456340F6371 /* Theme.swift in Sources */,
 				473C7AE9F85AD11EA306F0A4 /* TimerHintSection.swift in Sources */,
 				0A632BF04D48364FF8B71E47 /* TimerService.swift in Sources */,
 				0D0499ADA7BB50F41B1E6FE7 /* TimerSideEffects.swift in Sources */,
-				0D0499ADA7BB50F41B1E6FE9 /* MonitorEngine.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E101 /* DedupLedger.swift in Sources */,
-				0D0499ADA7BB50F41B1EF000 /* IdleReminderMonitor.swift in Sources */,
 				A2EE040BD8DE6FEC171CED05 /* TimerState.swift in Sources */,
-				B2E3C4D5F6A708192A3B4C5E /* UpdateChecker.swift in Sources */,
+				CDFE23B60C327F8005573356 /* TimerStopProvider.swift in Sources */,
 				10801DD06650FE31DF737CF2 /* TodayActivityRow.swift in Sources */,
 				7577075485A39F41BA5BEC5C /* TodayEmptyState.swift in Sources */,
-				06C1928DB253469A95521AE9 /* FirstUseHintView.swift in Sources */,
-				DA5585EC97CF4A058E9779E7 /* UndoToastView.swift in Sources */,
-				C3F446409F60477E8FB83009 /* OfflineBannerView.swift in Sources */,
 				431F1AE5B1C92CEB1E74C3F6 /* TodayStatsFooter.swift in Sources */,
 				57A488D95CF124D65F67A159 /* TodayView.swift in Sources */,
-				3CB31F5EAABD709C2096CB4F /* DaySelection.swift in Sources */,
-				ABCD1234567890ABCDEF0002 /* TodayViewModel.swift in Sources */,
-				ABCD1234567890ABCDEF0004 /* PanelDismissPolicy.swift in Sources */,
+				7F3F53A76F22D7C4C7092433 /* TodayViewModel.swift in Sources */,
+				5C84E168B69BB67963553E2E /* UndoToastView.swift in Sources */,
 				7A2070E4D6F30DCF671805F4 /* UnplannedTasksSection.swift in Sources */,
+				659A93C5D86E17A5DFDE5B45 /* UpdateChecker.swift in Sources */,
+				8346AB40F0FA5721FEBA4D2C /* ValueBox.swift in Sources */,
 				003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */,
 				129BCB84138D649D7723A2FC /* YesterdayBannerView.swift in Sources */,
-				B667E20B8ADE4940BBAB3402 /* EntryQueue.swift in Sources */,
-				F76CE5FDDA7745A383944B76 /* ProjectCache.swift in Sources */,
-				6CF95DEDD858424FB9D6E65B /* NetworkMonitor.swift in Sources */,
-				A83CE5B5CD599CD6F0C7F3B4 /* ProjectCatalog.swift in Sources */,
-				EAB431DCC1B765064DA90E65 /* SessionManager.swift in Sources */,
-				0FF10FF10FF10FF10FF10FF1 /* OfflineSyncService.swift in Sources */,
-				3D8D6BA429FD7C7791F34307 /* TimerStopProvider.swift in Sources */,
-				05A034685C5B7EAEA6B2362F /* PersistedState.swift in Sources */,
-				E3F16EF456736A5477D7CCD0 /* YesterdayService.swift in Sources */,
+				C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -844,109 +824,60 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0F2B6305842E37234BD9F69B /* DateUtilities.swift in Sources */,
+				9431BDDC2C4708214FEE803B /* ActivityServiceTests.swift in Sources */,
+				0FC9EB693CF6614A19EB1AA8 /* AppRecordStoreTests.swift in Sources */,
+				A3CC383E4848A5A2927E573B /* AppRecorderTests.swift in Sources */,
+				7B86FB0010B3E33AF6CCC0D7 /* BudgetCalculatorTests.swift in Sources */,
+				13E10A450FBB90887A7A5C7F /* BudgetServiceTests.swift in Sources */,
 				1A7A8344ED8EDF161694D53B /* DateUtilitiesTests.swift in Sources */,
-				B74CD343081776AE6E8F90C8 /* FuzzyMatcher.swift in Sources */,
+				B7E1B930A9AF082E40496274 /* DedupLedgerTests.swift in Sources */,
+				FEFF30C288FC79963E39D644 /* DeleteUndoManagerTests.swift in Sources */,
+				D6F0A6407E85ECBC061325AF /* DescriptionMatcherTests.swift in Sources */,
 				17E5FECB5CC9EB2B45A99C8C /* FuzzyMatcherTests.swift in Sources */,
-				5F7AD97C28DB87C54801F598 /* GreetingHelper.swift in Sources */,
 				0187C4FB77154F5FCD841007 /* GreetingHelperTests.swift in Sources */,
-				94D5E8B0802AA1F80905574F /* Logger+App.swift in Sources */,
-				1749D7A7F57137067859014E /* MenuBarDisplayState.swift in Sources */,
-				CCDD1234567890ABCDEF0002 /* MenuBarIconRenderer.swift in Sources */,
+				FD6B58393AD52B2989AF6402 /* ManualMonitorScheduler.swift in Sources */,
 				E3659E74CFEEBDA3B42DD871 /* MenuBarDisplayStateTests.swift in Sources */,
-				BBCC1234567890ABCDEF0002 /* PanelDismissPolicyTests.swift in Sources */,
-				BBCC1234567890ABCDEF0003 /* PanelDismissPolicy.swift in Sources */,
-				9F7F0BF1AE9C2E3C02C85663 /* MocoActivityModels.swift in Sources */,
-				7A83E52C94179E8ED15D37F6 /* MocoProjectModels.swift in Sources */,
-				CD5E2A12D085BF8381BAB5DE /* ProjectTaskRef.swift in Sources */,
-				142F473C20CF0D241E00A4A3 /* SearchEntry.swift in Sources */,
-				256FC725D793DEBBD2CEF0F1 /* TagExtractor.swift in Sources */,
+				AC06679248047DEE5547D1A7 /* MockActivityAPI.swift in Sources */,
+				A47328DA18D0A76C02223FEC /* MockBudgetAPI.swift in Sources */,
+				855F05C4769B8D5C0FDE21B1 /* MockMocoClient.swift in Sources */,
+				B9EE677E8EFF9E807CA7C847 /* MockTimerAPI.swift in Sources */,
+				FBD51B48A7B040A332953187 /* MockYesterdayAPI.swift in Sources */,
+				F86776B2F41AAE54D1121EBF /* MonitorEngineTests.swift in Sources */,
+				A41228181FD57B065E7A0576 /* NotificationDispatcherTests.swift in Sources */,
+				9D97044DF3117A9C6C5BF32A /* OfflineSyncServiceTests.swift in Sources */,
+				CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */,
+				F7349612CD66027955DF7822 /* PlanningStoreTests.swift in Sources */,
+				CEA9890A20524E058034EFBD /* ProjectCatalogTests.swift in Sources */,
+				99DA72D0C90207BB51C92A30 /* QuickEntryStateMachineTests.swift in Sources */,
+				4C9ED8D96E4EA2DF2091F006 /* SecurityAuditTests.swift in Sources */,
+				EABC473DB3DCD76D67F5FD67 /* SessionManagerTests.swift in Sources */,
 				58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */,
-				B2B2B2B2B2B2B2B2B2B2B201 /* BudgetCalculatorTests.swift in Sources */,
-				B2B2B2B2B2B2B2B2B2B2B202 /* BudgetCalculator.swift in Sources */,
-				B2B2B2B2B2B2B2B2B2B2B203 /* MocoBudgetModels.swift in Sources */,
-				B3B3B3B3B3B3B3B3B3B3B302 /* BudgetTypes.swift in Sources */,
-				69F31CA5F96D5AD82E759D9B /* TimerState.swift in Sources */,
-				D1D1D1D1D1D1D1D1D1D1D102 /* QuickEntryContracts.swift in Sources */,
-				D2D2D2D2D2D2D2D2D2D2D201 /* QuickEntryStateMachineTests.swift in Sources */,
-				D2D2D2D2D2D2D2D2D2D2D202 /* QuickEntryStateMachine.swift in Sources */,
-				D2D2D2D2D2D2D2D2D2D2D203 /* FavoritesManager.swift in Sources */,
-				D2D2D2D2D2D2D2D2D2D2D204 /* RecentEntriesTracker.swift in Sources */,
-				D2D2D2D2D2D2D2D2D2D2D205 /* JSONStore.swift in Sources */,
-				A365B00C697640B2EACF233D /* StorageBackend.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E102 /* DedupLedger.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E103 /* DedupLedgerTests.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E105 /* MonitorEngine.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E106 /* NotificationCatalog.swift in Sources */,
-				E1E1E1E1E1E1E1E1E1E1E107 /* NotificationDispatcher.swift in Sources */,
-				F1F1F1F1F1F1F1F1F1F1F102 /* DescriptionMatcher.swift in Sources */,
-				F1F1F1F1F1F1F1F1F1F1F103 /* DescriptionMatcherTests.swift in Sources */,
-				F1F1F1F1F1F1F1F1F1F1F105 /* DescriptionStore.swift in Sources */,
-				BB01BB01BB01BB01BB01BB01 /* MockTimerAPI.swift in Sources */,
-				BB02BB02BB02BB02BB02BB02 /* MockActivityAPI.swift in Sources */,
-				BB03BB03BB03BB03BB03BB03 /* MockBudgetAPI.swift in Sources */,
-				BB04BB04BB04BB04BB04BB04 /* MockYesterdayAPI.swift in Sources */,
-				BB06BB06BB06BB06BB06BB06 /* TestFactories.swift in Sources */,
-				BB07BB07BB07BB07BB07BB07 /* TimerServiceTests.swift in Sources */,
-				BB08BB08BB08BB08BB08BB08 /* ActivityServiceTests.swift in Sources */,
-				BB09BB09BB09BB09BB09BB09 /* YesterdayServiceTests.swift in Sources */,
-				BB10BB10BB10BB10BB10BB10 /* BudgetServiceTests.swift in Sources */,
-				BB11BB11BB11BB11BB11BB11 /* NotificationDispatcherTests.swift in Sources */,
-				BB12BB12BB12BB12BB12BB12 /* TimerSideEffectsTests.swift in Sources */,
-				BB13BB13BB13BB13BB13BB13 /* TodayViewModelTests.swift in Sources */,
-				0C3A0C21E74AE69182EDE1E5 /* TodayViewModel.swift in Sources */,
-				7A6B41BB7BCD800A7F1635EB /* DaySelection.swift in Sources */,
-				DD01DD01DD01DD01DD01DD01 /* SecurityAuditTests.swift in Sources */,
-				CC20CC20CC20CC20CC20CC20 /* ActivityService.swift in Sources */,
-				AA22AA22AA22AA22AA22AA01 /* PlanningStore.swift in Sources */,
-				AA22AA22AA22AA22AA22AA02 /* DeleteUndoManager.swift in Sources */,
-				CC21CC21CC21CC21CC21CC21 /* BuildFile in Sources */,
-				CC22CC22CC22CC22CC22CC22 /* BudgetService.swift in Sources */,
-				CC01CC01CC01CC01CC01CC01 /* TimerService.swift in Sources */,
-				CC02CC02CC02CC02CC02CC02 /* TimerSideEffects.swift in Sources */,
-				CC03CC03CC03CC03CC03CC03 /* MocoError.swift in Sources */,
-				CC04CC04CC04CC04CC04CC04 /* MocoClientProtocol.swift in Sources */,
-				CC05CC05CC05CC05CC05CC05 /* SoundFeedback.swift in Sources */,
-				CC06CC06CC06CC06CC06CC06 /* AppLogger.swift in Sources */,
-				CC07CC07CC07CC07CC07CC07 /* SettingsStore.swift in Sources */,
-				CC08CC08CC08CC08CC08CC08 /* RecencyTracker.swift in Sources */,
-				CC09CC09CC09CC09CC09CC09 /* KeychainHelper.swift in Sources */,
-				CC10CC10CC10CC10CC10CC10 /* MocoSession.swift in Sources */,
-				CC11CC11CC11CC11CC11CC11 /* MocoWorkModels.swift in Sources */,
-				CC12CC12CC12CC12CC12CC12 /* MocoPlanningModels.swift in Sources */,
-				CC13CC13CC13CC13CC13CC13 /* MocoProjectModels.swift in Sources */,
-				5BF73E2AE5DF1BCF744BB90C /* TimerStopProvider.swift in Sources */,
-				D32E0800CC8E42D4B360A535 /* PersistedState.swift in Sources */,
-				18B4B7D205E50F5772BF4C92 /* YesterdayService.swift in Sources */,
-				DD2EF314777AA30B92F2113B /* ProjectCatalog.swift in Sources */,
-				EFB4B73B38803BBAFF3C432F /* SessionManager.swift in Sources */,
-				235C727E153F9DC4FFACD8FE /* ValueBox.swift in Sources */,
-				5A8CFDDB90A303DC099FBED1 /* EntryQueue.swift in Sources */,
-				08F610420048672DC2A1517F /* DeleteUndoManagerTests.swift in Sources */,
-				2874B287493A1043D0B6C889 /* PlanningStoreTests.swift in Sources */,
-				D21FF350EE3378E6838ED3C8 /* ProjectCatalogTests.swift in Sources */,
-				6C7925ED67506613173AD21C /* SessionManagerTests.swift in Sources */,
-				0FF30FF30FF30FF30FF30FF3 /* OfflineSyncServiceTests.swift in Sources */,
-				0FF50FF50FF50FF50FF50FF5 /* MonitorEngineTests.swift in Sources */,
-				0FF70FF70FF70FF70FF70FF7 /* ManualMonitorScheduler.swift in Sources */,
-				0FF20FF20FF20FF20FF20FF2 /* OfflineSyncService.swift in Sources */,
-				8B12AAC47B196079731A750B /* MockMocoClient.swift in Sources */,
-				435FE392A273DE661799D8BF /* ProjectCache.swift in Sources */,
+				688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */,
+				2090FAE2EAF59A9B59A524C9 /* TimerServiceTests.swift in Sources */,
+				6E3875216B6FEE549CDDE8FB /* TimerSideEffectsTests.swift in Sources */,
+				7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */,
+				C29E1BFC01BCF68B89836A81 /* YesterdayServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5874CF48A12B69C2869D51BE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A4BA7AE95B5D7426B57E9C4 /* MocoCompanion */;
+			targetProxy = 85417E388C1AB32892C13902 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		06ECF403328C7A088417005B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = MocoCompanion/MocoCompanion.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MocoCompanion/Info.plist;
@@ -956,7 +887,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -968,11 +899,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = MocoCompanion/MocoCompanion.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MocoCompanion/Info.plist;
@@ -982,7 +911,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.4.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1004,6 +933,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.tests;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MocoCompanion.app/Contents/MacOS/MocoCompanion";
 			};
 			name = Release;
 		};
@@ -1018,13 +948,10 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				OTHER_LDFLAGS = (
-					"-framework",
-					SwiftUI,
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.tests;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MocoCompanion.app/Contents/MacOS/MocoCompanion";
 			};
 			name = Debug;
 		};

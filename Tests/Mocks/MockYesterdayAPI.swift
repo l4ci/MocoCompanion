@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Closure-based mock for YesterdayAPI (activities, employments, schedules).
 struct MockYesterdayAPI: YesterdayAPI, @unchecked Sendable {

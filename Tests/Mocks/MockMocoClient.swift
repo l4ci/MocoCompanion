@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Closure-based mock for the full MocoClientProtocol (SessionAPI + TimerAPI + ActivityAPI + BudgetAPI + YesterdayAPI).
 /// Used by SessionManager and ProjectCatalog tests that require the composite protocol.

@@ -1,4 +1,5 @@
 import Testing
+@testable import MocoCompanion
 
 @Suite("TagExtractor")
 struct TagExtractorTests {

@@ -18,17 +18,40 @@ struct MocoActivity: Codable, Identifiable, Sendable, Equatable {
     let user: MocoUser
     let hourlyRate: Double
     let timerStartedAt: String?
+    let locked: Bool
     let createdAt: String
     let updatedAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, date, hours, seconds, description, billed, billable, tag
-        case project, task, customer, user
+        case project, task, customer, user, locked
         case workedSeconds = "worked_seconds"
         case hourlyRate = "hourly_rate"
         case timerStartedAt = "timer_started_at"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        date = try container.decode(String.self, forKey: .date)
+        hours = try container.decode(Double.self, forKey: .hours)
+        seconds = try container.decode(Int.self, forKey: .seconds)
+        workedSeconds = try container.decode(Int.self, forKey: .workedSeconds)
+        description = try container.decode(String.self, forKey: .description)
+        billed = try container.decode(Bool.self, forKey: .billed)
+        billable = try container.decode(Bool.self, forKey: .billable)
+        tag = try container.decode(String.self, forKey: .tag)
+        project = try container.decode(ActivityProject.self, forKey: .project)
+        task = try container.decode(ActivityTask.self, forKey: .task)
+        customer = try container.decode(MocoCustomer.self, forKey: .customer)
+        user = try container.decode(MocoUser.self, forKey: .user)
+        hourlyRate = try container.decode(Double.self, forKey: .hourlyRate)
+        timerStartedAt = try container.decodeIfPresent(String.self, forKey: .timerStartedAt)
+        locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
     }
 
     /// Whether the timer is currently running on this activity.

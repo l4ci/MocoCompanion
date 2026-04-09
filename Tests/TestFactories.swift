@@ -1,4 +1,5 @@
 import Foundation
+@testable import MocoCompanion
 
 /// Factory helpers for creating test data. All methods return fully-formed model
 /// instances with sensible defaults — override only the fields your test cares about.
@@ -18,7 +19,8 @@ enum TestFactories {
         description: String = "",
         billable: Bool = true,
         tag: String = "",
-        timerStartedAt: String? = nil
+        timerStartedAt: String? = nil,
+        locked: Bool = false
     ) -> MocoActivity {
         let resolvedDate = date ?? todayString()
         let json: [String: Any] = [
@@ -37,11 +39,65 @@ enum TestFactories {
             "user": ["id": 42, "firstname": "Test", "lastname": "User"],
             "hourly_rate": 100.0,
             "timer_started_at": timerStartedAt as Any,
+            "locked": locked,
             "created_at": "2025-01-01T00:00:00Z",
             "updated_at": "2025-01-01T00:00:00Z",
         ]
         let data = try! JSONSerialization.data(withJSONObject: json)
         return try! JSONDecoder().decode(MocoActivity.self, from: data)
+    }
+
+    // MARK: - ShadowEntry
+
+    static func makeShadowEntry(
+        id: Int = 1,
+        localId: String? = nil,
+        date: String? = nil,
+        projectId: Int = 100,
+        projectName: String = "Test Project",
+        taskId: Int = 200,
+        taskName: String = "Test Task",
+        customerId: Int = 300,
+        customerName: String = "Test Customer",
+        seconds: Int = 3600,
+        hours: Double = 1.0,
+        description: String = "",
+        locked: Bool = false,
+        syncStatus: SyncStatus = .synced
+    ) -> ShadowEntry {
+        let resolvedDate = date ?? todayString()
+        return ShadowEntry(
+            id: id,
+            localId: localId,
+            date: resolvedDate,
+            hours: hours,
+            seconds: seconds,
+            workedSeconds: seconds,
+            description: description,
+            billed: false,
+            billable: true,
+            tag: "",
+            projectId: projectId,
+            projectName: projectName,
+            projectBillable: true,
+            taskId: taskId,
+            taskName: taskName,
+            taskBillable: true,
+            customerId: customerId,
+            customerName: customerName,
+            userId: 42,
+            userFirstname: "Test",
+            userLastname: "User",
+            hourlyRate: 100.0,
+            timerStartedAt: nil,
+            locked: locked,
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z",
+            syncStatus: syncStatus,
+            localUpdatedAt: "2025-01-01T00:00:00Z",
+            serverUpdatedAt: "2025-01-01T00:00:00Z",
+            conflictFlag: false
+        )
     }
 
     // MARK: - MocoEmployment
