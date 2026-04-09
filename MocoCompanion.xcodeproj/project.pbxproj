@@ -37,6 +37,7 @@
 		355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */; };
 		359B0662EED0F0675AC14426 /* MocoClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */; };
 		35A84AB923D02624568F7C8A /* DescriptionMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB67C9BF94CA9E55B76E7403 /* DescriptionMatcher.swift */; };
+		393C9D7D30979342F260B138 /* ShadowEntryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A88696E2E8B7B27A41E1DBE /* ShadowEntryStore.swift */; };
 		3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */; };
 		40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */; };
 		41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
@@ -63,6 +64,7 @@
 		6E3875216B6FEE549CDDE8FB /* TimerSideEffectsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */; };
 		6E39DF30FC9E0F6AEB54C3BB /* MocoActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */; };
 		6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0707079AFDBAE016F65B7B5D /* AppDelegate.swift */; };
+		7010C7AC55A2D772AC9E01DD /* ShadowEntryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88E848494BEBDFFA8CC2A5F /* ShadowEntryStoreTests.swift */; };
 		712210B5065C630BCBB0889A /* RecentEntriesTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */; };
 		7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */; };
 		7577075485A39F41BA5BEC5C /* TodayEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD4F63924DB4A2978661182 /* TodayEmptyState.swift */; };
@@ -248,6 +250,7 @@
 		71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayStateTests.swift; sourceTree = "<group>"; };
 		72295BCC7A05744D102D54C5 /* UndoToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToastView.swift; sourceTree = "<group>"; };
 		7920563D8DACABBBDEC8892C /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
+		7A88696E2E8B7B27A41E1DBE /* ShadowEntryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowEntryStore.swift; sourceTree = "<group>"; };
 		7BC062BBBB9150B6BE5486BE /* ProjectCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCache.swift; sourceTree = "<group>"; };
 		7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtilitiesTests.swift; sourceTree = "<group>"; };
 		7CF763622F55B4F2F3B24674 /* PanelContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelContentView.swift; sourceTree = "<group>"; };
@@ -327,6 +330,7 @@
 		F24BDAB19C48AA4D154CDD90 /* UnplannedTasksSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnplannedTasksSection.swift; sourceTree = "<group>"; };
 		F6181F86BFE3D1C108365BF3 /* MocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoClient.swift; sourceTree = "<group>"; };
 		F7039A8A3711BD16FFBB95D4 /* TodayActivityRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayActivityRow.swift; sourceTree = "<group>"; };
+		F88E848494BEBDFFA8CC2A5F /* ShadowEntryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowEntryStoreTests.swift; sourceTree = "<group>"; };
 		F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
 		FADCE30AE9D6424AECC826D2 /* FuzzyMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyMatcher.swift; sourceTree = "<group>"; };
 		FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculatorTests.swift; sourceTree = "<group>"; };
@@ -374,6 +378,7 @@
 				AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */,
 				2644CC1AD406CCF9B26CA0D4 /* SecurityAuditTests.swift */,
 				B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */,
+				F88E848494BEBDFFA8CC2A5F /* ShadowEntryStoreTests.swift */,
 				2571D3B463887787904F8C7E /* TagExtractorTests.swift */,
 				9EF68317E12950934C6A45E4 /* TestFactories.swift */,
 				2267149EA97C64826FBFF558 /* TimerServiceTests.swift */,
@@ -442,6 +447,7 @@
 			isa = PBXGroup;
 			children = (
 				155477772B61048004E7FA09 /* ShadowEntry.swift */,
+				7A88696E2E8B7B27A41E1DBE /* ShadowEntryStore.swift */,
 				6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */,
 			);
 			path = Database;
@@ -791,6 +797,7 @@
 				907F693566D37220983C0CC0 /* SettingsView.swift in Sources */,
 				C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */,
 				C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */,
+				393C9D7D30979342F260B138 /* ShadowEntryStore.swift in Sources */,
 				EF0832E0F708C9A6295E651C /* ShortcutRecorderView.swift in Sources */,
 				2679E42A2F31F9493E969662 /* SoundFeedback.swift in Sources */,
 				967D11BA9BF5164E96EB85B5 /* StatusActivityRow.swift in Sources */,
@@ -851,6 +858,7 @@
 				99DA72D0C90207BB51C92A30 /* QuickEntryStateMachineTests.swift in Sources */,
 				4C9ED8D96E4EA2DF2091F006 /* SecurityAuditTests.swift in Sources */,
 				EABC473DB3DCD76D67F5FD67 /* SessionManagerTests.swift in Sources */,
+				7010C7AC55A2D772AC9E01DD /* ShadowEntryStoreTests.swift in Sources */,
 				58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */,
 				688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */,
 				2090FAE2EAF59A9B59A524C9 /* TimerServiceTests.swift in Sources */,
