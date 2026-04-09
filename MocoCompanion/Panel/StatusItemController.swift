@@ -13,6 +13,7 @@ final class StatusItemController {
     private let onShowPanel: () -> Void
     private let onNewTimer: () -> Void
     private let onShowSettings: () -> Void
+    private let onShowAutotracker: () -> Void
 
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -20,12 +21,13 @@ final class StatusItemController {
     private var observationTask: Task<Void, Never>?
     private var elapsedTimerTask: Task<Void, Never>?
 
-    init(timerService: TimerService, appState: AppState, onShowPanel: @escaping () -> Void, onNewTimer: @escaping () -> Void, onShowSettings: @escaping () -> Void) {
+    init(timerService: TimerService, appState: AppState, onShowPanel: @escaping () -> Void, onNewTimer: @escaping () -> Void, onShowSettings: @escaping () -> Void, onShowAutotracker: @escaping () -> Void) {
         self.timerService = timerService
         self.appState = appState
         self.onShowPanel = onShowPanel
         self.onNewTimer = onNewTimer
         self.onShowSettings = onShowSettings
+        self.onShowAutotracker = onShowAutotracker
     }
 
     func setup() {
@@ -107,6 +109,10 @@ final class StatusItemController {
         openMocoItem.target = self
         menu.addItem(openMocoItem)
 
+        let autotrackerItem = NSMenuItem(title: String(localized: "menu.autotracker"), action: #selector(menuAutotracker), keyEquivalent: "t")
+        autotrackerItem.target = self
+        menu.addItem(autotrackerItem)
+
         menu.addItem(.separator())
 
         let settingsItem = NSMenuItem(title: String(localized: "menu.settings"), action: #selector(menuSettings), keyEquivalent: ",")
@@ -145,6 +151,10 @@ final class StatusItemController {
 
     @objc private func menuNewTimer() {
         onNewTimer()
+    }
+
+    @objc private func menuAutotracker() {
+        onShowAutotracker()
     }
 
     @objc private func menuSettings() {

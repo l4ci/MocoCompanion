@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var hotKey: HotKey?
     private var settingsWindow: NSWindow?
     private var setupWizardWindow: NSWindow?
+    private var autotrackerWindow: NSWindow?
     private let updateChecker = UpdateChecker()
 
     // Background tasks
@@ -58,7 +59,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             appState: appState,
             onShowPanel: { [weak self] in self?.panelController.toggle() },
             onNewTimer: { [weak self] in self?.panelController.showFresh() },
-            onShowSettings: { [weak self] in self?.showSettings() }
+            onShowSettings: { [weak self] in self?.showSettings() },
+            onShowAutotracker: { [weak self] in self?.showAutotrackerWindow() }
         )
         sic.setup()
         statusItemController = sic
@@ -265,6 +267,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         settingsWindow = window
         Self.logger.info("Settings window opened")
+    }
+
+    // MARK: - Autotracker Window
+
+    func showAutotrackerWindow() {
+        if let existing = autotrackerWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let timelineView = TimelineWindow(
+            shadowEntryStore: appState.shadowEntryStore,
+            appRecordStore: appState.appRecordStore,
+            syncState: appState.syncState
+        )
+
+        let hostingView = NSHostingController(rootView: timelineView)
+
+        let window = NSWindow(contentViewController: hostingView)
+        window.title = "Autotracker"
+        window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
+        window.setContentSize(NSSize(width: 900, height: 700))
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        autotrackerWindow = window
+        Self.logger.info("Autotracker window opened")
     }
 
     // MARK: - Hotkey

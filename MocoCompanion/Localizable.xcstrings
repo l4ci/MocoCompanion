@@ -2372,6 +2372,22 @@
         }
       }
     },
+    "menu.autotracker" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
+          }
+        }
+      }
+    },
     "menu.settings" : {
       "localizations" : {
         "de" : {

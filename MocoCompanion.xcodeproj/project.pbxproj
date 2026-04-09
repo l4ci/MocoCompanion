@@ -166,6 +166,10 @@
 		FEDA0FB7F7ACE340F0D1C674 /* FavoritesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */; };
 		FEFF30C288FC79963E39D644 /* DeleteUndoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D614C0994FEB7F5C71E22F5A /* DeleteUndoManagerTests.swift */; };
 		FFC05799ACCF9800C54E0956 /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E467B55E6F7835D8A4B8318 /* SessionManager.swift */; };
+		AA0C0901A1B2C3D4E5F60002 /* TimelineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60001 /* TimelineViewModel.swift */; };
+		AA0C0901A1B2C3D4E5F60004 /* DateNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60003 /* DateNavigationView.swift */; };
+		AA0C0901A1B2C3D4E5F60006 /* TimelineWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60005 /* TimelineWindow.swift */; };
+		AA0C0901A1B2C3D4E5F60008 /* TimelineViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60007 /* TimelineViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -342,6 +346,10 @@
 		F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
 		FADCE30AE9D6424AECC826D2 /* FuzzyMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyMatcher.swift; sourceTree = "<group>"; };
 		FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculatorTests.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60001 /* TimelineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineViewModel.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60003 /* DateNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateNavigationView.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60005 /* TimelineWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineWindow.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60007 /* TimelineViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -390,6 +398,7 @@
 				E042974644A9A957C240ADD7 /* SyncEngineTests.swift */,
 				2571D3B463887787904F8C7E /* TagExtractorTests.swift */,
 				9EF68317E12950934C6A45E4 /* TestFactories.swift */,
+				AA0C0901A1B2C3D4E5F60007 /* TimelineViewModelTests.swift */,
 				2267149EA97C64826FBFF558 /* TimerServiceTests.swift */,
 				94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */,
 				E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */,
@@ -564,12 +573,23 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		AA0C0901A1B2C3D4E5F60009 /* Autotracker */ = {
+			isa = PBXGroup;
+			children = (
+				AA0C0901A1B2C3D4E5F60003 /* DateNavigationView.swift */,
+				AA0C0901A1B2C3D4E5F60001 /* TimelineViewModel.swift */,
+				AA0C0901A1B2C3D4E5F60005 /* TimelineWindow.swift */,
+			);
+			path = Autotracker;
+			sourceTree = "<group>";
+		};
 		F7CDD8A64A58FDD9FC29AAA5 /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */,
 				03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */,
 				C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */,
+				AA0C0901A1B2C3D4E5F60009 /* Autotracker */,
 				B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */,
 				F1CE438DC586E0B8BDB2776F /* DaySelection.swift */,
 				AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */,
@@ -734,6 +754,7 @@
 				944023A464965603EFD6E625 /* BudgetService.swift in Sources */,
 				5D46FA960D89E5846D6AC910 /* BudgetTypes.swift in Sources */,
 				F35396DD2EAAAC57711F8821 /* DateUtilities.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60004 /* DateNavigationView.swift in Sources */,
 				BF8D61D1C973ADFF199B9834 /* DaySelection.swift in Sources */,
 				355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */,
 				78AC96CCF33BF54D054A8BB3 /* DedupLedger.swift in Sources */,
@@ -822,6 +843,8 @@
 				16B0D3B093CA49FA24F4F466 /* StorageBackend.swift in Sources */,
 				41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */,
 				8031ACA863899456340F6371 /* Theme.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60002 /* TimelineViewModel.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60006 /* TimelineWindow.swift in Sources */,
 				473C7AE9F85AD11EA306F0A4 /* TimerHintSection.swift in Sources */,
 				0A632BF04D48364FF8B71E47 /* TimerService.swift in Sources */,
 				0D0499ADA7BB50F41B1E6FE7 /* TimerSideEffects.swift in Sources */,
@@ -877,6 +900,7 @@
 				B5EA434E7DDB36579507712A /* SyncEngineTests.swift in Sources */,
 				58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */,
 				688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60008 /* TimelineViewModelTests.swift in Sources */,
 				2090FAE2EAF59A9B59A524C9 /* TimerServiceTests.swift in Sources */,
 				6E3875216B6FEE549CDDE8FB /* TimerSideEffectsTests.swift in Sources */,
 				7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */,
