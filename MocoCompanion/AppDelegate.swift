@@ -26,6 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     var timerService: TimerService { appState.timerService }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Hide from Dock by default. Using setActivationPolicy instead of LSUIElement
+        // so macOS registers the bundle properly — which is required for Notification
+        // Center to resolve and display the app icon in notification banners.
+        NSApp.setActivationPolicy(.accessory)
+
         // Enforce single instance
         let runningInstances = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
         if runningInstances.count > 1 {
@@ -40,13 +45,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         Task {
             await AppLogger.shared.updateLogLevels(api: appState.settings.apiLogLevel, app: appState.settings.appLogLevel)
             await AppLogger.shared.app("Application launched", level: .info, context: "Lifecycle")
-        }
-
-        // LSUIElement apps have no dock icon, so macOS won't derive the
-        // notification icon from the bundle automatically. Set it explicitly
-        // so Notification Center shows our app icon on every banner.
-        if let iconImage = NSImage(named: "AppIcon") {
-            NSApp.applicationIconImage = iconImage
         }
 
         panelController.appState = appState
@@ -127,6 +125,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             guard case .running = await self.timerService.timerState else { return }
             await self.timerService.sync()
         }
+    }
+
+    /// Prevent the app from quitting when the last window closes — it lives in the menu bar.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    /// Show the Dock icon while any regular window (settings, wizard) is open,
+    /// hide it again when all windows are closed.
+    func applicationDidBecomeActive(_ notification: Notification) {
+        if hasVisibleRegularWindows {
+            NSApp.setActivationPolicy(.regular)
+        }
+    }
+
+    func applicationWillResignActive(_ notification: Notification) {
+        if !hasVisibleRegularWindows {
+            NSApp.setActivationPolicy(.accessory)
+        }
+    }
+
+    /// Returns true if any regular (non-NSPanel) window is currently visible.
+    /// NSPanel is used for the floating quick-entry panel — it never counts as a "real" window.
+    private var hasVisibleRegularWindows: Bool {
+        NSApp.windows.contains { $0.isVisible && !($0 is NSPanel) }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
