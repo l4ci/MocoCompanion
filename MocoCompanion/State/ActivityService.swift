@@ -42,6 +42,9 @@ final class ActivityService: ActivitySyncing {
     /// Rechecks yesterday warning when yesterday activities change locally.
     weak var yesterdayService: YesterdayService?
 
+    /// Shadow DB sync engine — when set, reads go through the local DB instead of API.
+    var syncEngine: SyncEngine?
+
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
         notificationDispatcher: NotificationDispatcher,
@@ -75,12 +78,20 @@ final class ActivityService: ActivitySyncing {
     // MARK: - Data Refresh (full fetch — for periodic sync)
 
     func refreshTodayStats() async {
+        let today = DateUtilities.todayString()
+
+        if let syncEngine {
+            await syncEngine.sync(dates: [today])
+            let activities = await syncEngine.entriesForUI(date: today)
+            applyFetchedTodayActivities(activities)
+            return
+        }
+
         guard let client = clientFactory() else { return }
         guard let userId = userIdProvider() else {
             logger.warning("refreshTodayStats skipped — userId not available yet")
             return
         }
-        let today = DateUtilities.todayString()
 
         do {
             let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
@@ -100,6 +111,16 @@ final class ActivityService: ActivitySyncing {
     }
 
     func refreshYesterdayActivities() async {
+        if let syncEngine, let yesterday = DateUtilities.yesterdayString() {
+            await syncEngine.sync(dates: [yesterday])
+            let activities = await syncEngine.entriesForUI(date: yesterday)
+            yesterdayActivities = activities
+            _sortedYesterday = nil
+            yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
+            logger.info("Yesterday sync: \(activities.count) entries")
+            return
+        }
+
         guard let client = clientFactory() else { return }
         guard let userId = userIdProvider() else {
             logger.warning("refreshYesterdayActivities skipped — userId not available yet")

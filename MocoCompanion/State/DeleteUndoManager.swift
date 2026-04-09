@@ -46,12 +46,17 @@ final class DeleteUndoManager {
     func deleteActivity(activityId: Int) async {
         guard clientFactory() != nil else { return }
 
+        // Check if the activity is locked — reject deletion
+        let activity = activityService.todayActivities.first(where: { $0.id == activityId })
+            ?? activityService.yesterdayActivities.first(where: { $0.id == activityId })
+        if let activity, activity.locked {
+            logger.warning("Cannot delete locked entry \(activityId)")
+            return
+        }
+
         // Stop timer if this activity is being timed
         await timerStopProvider?.stopTimerIfActive(activityId: activityId)
 
-        // Capture the activity before removing it locally
-        let activity = activityService.todayActivities.first(where: { $0.id == activityId })
-            ?? activityService.yesterdayActivities.first(where: { $0.id == activityId })
         let wasYesterday = activityService.yesterdayActivities.contains { $0.id == activityId }
 
         // Cancel any existing pending delete (execute it immediately)

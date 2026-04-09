@@ -85,6 +85,12 @@ struct TodayActivityRow: View {
                             isSelected: isSelected
                         )
 
+                        if activity.locked {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: captionSize))
+                                .foregroundStyle(.secondary)
+                        }
+
                         if let planned = plannedHours {
                             Text("of \(String(format: "%.0fh", planned))")
                                 .font(.system(size: captionSize, weight: .medium))
@@ -108,6 +114,9 @@ struct TodayActivityRow: View {
     }
 
     private var rowHints: [String] {
+        if activity.locked {
+            return [String(localized: "hint.enterContinue"), String(localized: "hint.favorite")]
+        }
         if isYesterday {
             return [String(localized: "hint.enterContinue"), String(localized: "hint.edit"), String(localized: "hint.delete"), String(localized: "hint.favorite")]
         }

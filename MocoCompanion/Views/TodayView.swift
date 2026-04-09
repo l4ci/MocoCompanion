@@ -29,13 +29,15 @@ struct TodayView: View {
         self.onTabSwitch = onTabSwitch
         self.onTypeToSearch = onTypeToSearch
         self.onStartEntry = onStartEntry
-        self._vm = State(initialValue: TodayViewModel(
+        let viewModel = TodayViewModel(
             timerService: appState.timerService,
             activityService: appState.activityService,
             planningStore: appState.planningStore,
             deleteUndoManager: appState.deleteUndoManager,
             favoritesManager: appState.favoritesManager
-        ))
+        )
+        viewModel.syncState = appState.syncState
+        self._vm = State(initialValue: viewModel)
     }
 
     // DaySelection extracted to DaySelection.swift for test target independence

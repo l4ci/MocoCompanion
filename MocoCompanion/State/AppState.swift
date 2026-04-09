@@ -28,6 +28,9 @@ final class AppState {
     let networkMonitor: NetworkMonitor
     let entryQueue: EntryQueue
     let offlineSyncService: OfflineSyncService
+    let shadowEntryStore: ShadowEntryStore
+    let syncEngine: SyncEngine
+    let syncState: SyncState
 
     let yesterdayService: YesterdayService
 
@@ -104,6 +107,29 @@ final class AppState {
 
         let userIdProvider: () -> Int? = { userIdBox.value }
 
+        // Shadow DB + sync engine
+        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("MocoCompanion")
+        try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+        let db = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
+        let shadowStore = try! ShadowEntryStore(database: db)
+        let sState = SyncState()
+        // SyncEngine is a non-MainActor actor. These closures access @MainActor state
+        // but SyncEngine calls them synchronously from its actor context.
+        // nonisolated(unsafe) suppresses the sending diagnostic — safe because
+        // the closures only read Sendable values (String, Int, Bool) from settings/userIdBox.
+        nonisolated(unsafe) let existingClientFactory = clientFactory
+        nonisolated(unsafe) let existingUserIdProvider = userIdProvider
+        let sEngine = SyncEngine(
+            store: shadowStore,
+            clientFactory: { existingClientFactory() as (any ActivityAPI & TimerAPI)? },
+            userIdProvider: existingUserIdProvider,
+            syncState: sState
+        )
+        self.shadowEntryStore = shadowStore
+        self.syncState = sState
+        self.syncEngine = sEngine
+
         let budgetSvc = BudgetService(
             clientFactory: clientFactory,
             userIdProvider: userIdProvider
@@ -132,6 +158,7 @@ final class AppState {
             userIdProvider: userIdProvider
         )
         self.activityService = activitySvc
+        activitySvc.syncEngine = sEngine
 
         // Create TimerService with activity sync target (replaces TimerActivityCoordinator)
         let timerSvc = TimerService(

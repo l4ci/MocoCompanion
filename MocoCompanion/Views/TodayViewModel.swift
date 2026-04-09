@@ -22,6 +22,7 @@ final class TodayViewModel {
     let deleteUndoManager: DeleteUndoManager
     let planningStore: PlanningStore
     let favoritesManager: FavoritesManager
+    var syncState: SyncState?
 
     // MARK: - Navigation State
 
@@ -42,7 +43,12 @@ final class TodayViewModel {
     var dataVersion = 0
 
     /// When the last successful data sync completed. Drives the "Xm ago" label.
-    var lastSyncedAt: Date?
+    /// Prefers SyncState (shadow DB) when available, falls back to local timestamp.
+    var lastSyncedAt: Date? {
+        get { syncState?.lastSyncedAt ?? _lastSyncedAt }
+        set { _lastSyncedAt = newValue }
+    }
+    private var _lastSyncedAt: Date?
 
     /// Whether a manual refresh is in progress.
     var isRefreshing = false
@@ -298,13 +304,17 @@ final class TodayViewModel {
     func startEditingSelected() {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
-        editingActivityId = sortedActivities[selectedIndex].id
+        let activity = sortedActivities[selectedIndex]
+        guard !activity.locked else { return }
+        editingActivityId = activity.id
     }
 
     func startDeletingSelected() {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
-        deletingActivityId = sortedActivities[selectedIndex].id
+        let activity = sortedActivities[selectedIndex]
+        guard !activity.locked else { return }
+        deletingActivityId = activity.id
     }
 
     func favoriteSelected() {
