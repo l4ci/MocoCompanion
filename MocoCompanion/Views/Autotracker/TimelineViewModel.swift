@@ -1,55 +1,6 @@
 import Foundation
 import os
 
-// MARK: - Timeline Geometry
-
-/// Pure time-and-grid math for the autotracker timeline. Lives outside
-/// `TimelineViewModel` so views don't depend on a `@MainActor` type just to
-/// format a time string or snap a pixel coordinate. All methods are
-/// `nonisolated` and safe to call from any isolation domain.
-enum TimelineGeometry {
-
-    /// Snap a fractional minute value to the nearest grid boundary, clamped to 0...1439.
-    static func snapToGrid(minutes: Double, gridMinutes: Int = 5) -> Int {
-        let snapped = Int(round(minutes / Double(gridMinutes))) * gridMinutes
-        return min(max(snapped, 0), 1439)
-    }
-
-    /// Convert an "HH:mm" time string to minutes since midnight.
-    static func minutesSinceMidnight(from timeString: String) -> Int? {
-        guard timeString.count >= 5 else { return nil }
-        let parts = timeString.prefix(5).split(separator: ":")
-        guard parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) else { return nil }
-        return h * 60 + m
-    }
-
-    /// Convert minutes since midnight to "HH:mm" format.
-    static func timeString(fromMinutes minutes: Int) -> String {
-        let clamped = min(max(minutes, 0), 1439)
-        return String(format: "%02d:%02d", clamped / 60, clamped % 60)
-    }
-
-    /// "HH:mm" for the hour/minute components of a `Date` in the current calendar.
-    static func timeString(from date: Date) -> String {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: date)
-        return String(format: "%02d:%02d", components.hour ?? 0, components.minute ?? 0)
-    }
-
-    /// "yyyy-MM-dd" in POSIX locale. Used as the canonical date key across the
-    /// shadow entry store and the rule engine.
-    static func dateString(from date: Date) -> String {
-        dateFormatter.string(from: date)
-    }
-
-    nonisolated(unsafe) private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
-}
-
 // MARK: - Timeline ViewModel
 
 /// Drives the Autotracker timeline window: loads shadow entries and app records

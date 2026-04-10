@@ -17,14 +17,8 @@ struct AppUsageBlockView: View {
         max(CGFloat(block.durationSeconds / 60) * TimelineLayout.pixelsPerMinute, 12)
     }
 
-    private var durationLabel: String {
-        let totalMinutes = Int(block.durationSeconds) / 60
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        if hours > 0 {
-            return "\(block.appName) — \(hours)h \(minutes)m"
-        }
-        return "\(block.appName) — \(minutes)m"
+    private var helpLabel: String {
+        "\(block.appName) — \(block.durationLabel)"
     }
 
     var body: some View {
@@ -50,7 +44,7 @@ struct AppUsageBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected ? 1 : 0)
         )
-        .help(durationLabel)
+        .help(helpLabel)
         .opacity(isDragging ? 0.5 : 1.0)
         .gesture(
             DragGesture(minimumDistance: 8, coordinateSpace: .global)
