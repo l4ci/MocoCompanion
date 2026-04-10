@@ -126,6 +126,37 @@ struct TimelinePaneView: View {
         )
     }
 
+    // MARK: - Empty-Area Drag Gesture
+
+    private var emptyAreaDragGesture: some Gesture {
+        DragGesture(minimumDistance: 4)
+            .onChanged { value in
+                let startMinute = Int(Double(value.startLocation.y) / Double(TimelineLayout.pixelsPerMinute))
+                let currentMinute = Int(Double(value.location.y) / Double(TimelineLayout.pixelsPerMinute))
+                if viewModel.dragCreationState == nil {
+                    viewModel.beginEmptyAreaDrag(atMinutes: startMinute)
+                }
+                viewModel.extendEmptyAreaDrag(toMinutes: currentMinute)
+            }
+            .onEnded { _ in
+                guard let drag = viewModel.dragCreationState,
+                      drag.sourceBlockIds.isEmpty,
+                      !drag.isOverlapping
+                else {
+                    viewModel.cancelDragCreation()
+                    return
+                }
+                let startMinutes = drag.startMinutes
+                let durationMinutes = drag.durationMinutes
+                viewModel.cancelDragCreation()
+                pendingCreation = (
+                    startMinutes: startMinutes,
+                    durationMinutes: durationMinutes,
+                    appName: ""
+                )
+            }
+    }
+
     // MARK: - Unassigned Section
 
     private var unassignedSection: some View {
@@ -155,6 +186,21 @@ struct TimelinePaneView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+                .help("Drag onto the timeline to set a start time")
+                // Make the row draggable so the user can drop it onto the
+                // timeline to assign a start time. We pass the entry id as
+                // a plain Int payload; the drop handler looks it up.
+                .draggable(String(entry.id ?? 0)) {
+                    // Drag preview: a simple compact label.
+                    HStack(spacing: 4) {
+                        Text(entry.projectName)
+                            .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        Text(entry.taskName)
+                            .font(.system(size: Theme.FontSize.caption))
+                    }
+                    .padding(6)
+                    .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+                }
             }
         }
         .padding(.horizontal, 12)
@@ -259,6 +305,12 @@ struct TimelinePaneView: View {
                     onCreateRule: { bundleId, appName in
                         ruleEditorConfig = RuleEditorConfig(prefillBundleId: bundleId, prefillAppName: appName)
                     },
+                    onCreateEntry: { block in
+                        let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
+                        let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+                        let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
+                        pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName)
+                    },
                     onDragStarted: {
                         viewModel.startDragCreation(blockId: block.id)
                     },
@@ -280,6 +332,16 @@ struct TimelinePaneView: View {
 
     private var entryColumn: some View {
         ZStack(alignment: .topLeading) {
+            // Background drag-to-create layer. Rendered first so entry
+            // blocks and suggestion blocks layer on top and take gesture
+            // priority when the user drags on them directly. Dragging in
+            // empty space between blocks hits this layer and begins a
+            // drag-to-create.
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(height: TimelineLayout.totalHeight)
+                .gesture(emptyAreaDragGesture)
+
             ForEach(positionedEntries, id: \.id) { entry in
                 EntryBlockView(
                     entry: entry,
@@ -303,6 +365,25 @@ struct TimelinePaneView: View {
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
+        .dropDestination(for: String.self) { items, location in
+            // Drop payload is the entry id as a String. Convert the local
+            // y into minutes-since-midnight, snap to grid, and ask the view
+            // model to move the entry there. Works for any ShadowEntry with
+            // a server id (unpositioned entries qualify after their first
+            // sync round-trip).
+            guard let idString = items.first,
+                  let id = Int(idString),
+                  let entry = viewModel.shadowEntries.first(where: { $0.id == id })
+            else { return false }
+            let rawMinutes = Double(location.y) / Double(TimelineLayout.pixelsPerMinute)
+            let snapped = TimelineGeometry.snapToGrid(
+                minutes: rawMinutes,
+                gridMinutes: TimelineLayout.snapMinutes
+            )
+            let timeStr = TimelineGeometry.timeString(fromMinutes: snapped)
+            Task { await viewModel.moveEntry(entry, toStartTime: timeStr) }
+            return true
+        }
         .background(
             GeometryReader { geo in
                 Color.clear.preference(

@@ -20,6 +20,7 @@ struct DateNavigationView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: Theme.FontSize.body, weight: .medium))
             }
+            .disabled(!viewModel.canSelectPreviousDay)
             .buttonStyle(.plain)
             .foregroundStyle(theme.textSecondary)
 
@@ -44,6 +45,10 @@ struct DateNavigationView: View {
                                 showingDatePicker = false
                             }
                         ),
+                        // Clamp to the retention window: no data exists
+                        // before the autotracker deletion threshold, and
+                        // we don't let the user navigate into the future.
+                        in: viewModel.autotracker.earliestRetainedDate...Date(),
                         displayedComponents: .date
                     )
                     .datePickerStyle(.graphical)

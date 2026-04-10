@@ -270,6 +270,15 @@ final class Autotracker {
         appRecordStore.records(for: date)
     }
 
+    /// Earliest date for which the autotracker still retains app records.
+    /// Older records are deleted by `cleanup(olderThanDays:)` on launch.
+    /// Used by the timeline date picker to clamp its lower bound.
+    var earliestRetainedDate: Date {
+        let days = settings?.autotrackerRetentionDays ?? 14
+        return Calendar.current.date(byAdding: .day, value: -days, to: Date())
+            ?? Date()
+    }
+
     /// Delete app records older than the given number of days from today.
     func cleanup(olderThanDays days: Int) {
         appRecordStore.cleanup(olderThan: days)

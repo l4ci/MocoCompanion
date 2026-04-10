@@ -103,7 +103,22 @@ import os
     // MARK: - Date Navigation
 
     func selectPreviousDay() {
-        selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        // Don't navigate past the autotracker retention window — there's
+        // no data there anyway.
+        let earliest = Calendar.current.startOfDay(for: autotracker.earliestRetainedDate)
+        if candidate >= earliest {
+            selectedDate = candidate
+        }
+    }
+
+    /// True when the user can still navigate one day further into the past
+    /// without crossing the retention boundary. Used to disable the left
+    /// arrow button.
+    var canSelectPreviousDay: Bool {
+        let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        let earliest = Calendar.current.startOfDay(for: autotracker.earliestRetainedDate)
+        return candidate >= earliest
     }
 
     func selectNextDay() {
@@ -309,6 +324,49 @@ import os
     /// Cancel drag creation without producing a result.
     func cancelDragCreation() {
         dragCreationState = nil
+    }
+
+    /// Begin a drag-to-create on empty entry-column space. No source block —
+    /// `sourceBlockIds` is empty so the view layer can distinguish this flow
+    /// from the app-block drag if needed. Starts with a 5-minute ghost
+    /// anchored at the clicked minute, which `extendEmptyAreaDrag` grows as
+    /// the user drags down.
+    func beginEmptyAreaDrag(atMinutes startMinutes: Int) {
+        let snapped = TimelineGeometry.snapToGrid(
+            minutes: Double(startMinutes),
+            gridMinutes: TimelineLayout.snapMinutes
+        )
+        let duration = TimelineLayout.snapMinutes
+        let overlaps = !overlappingEntries(
+            startMinutes: snapped,
+            durationMinutes: duration
+        ).isEmpty
+        dragCreationState = DragCreationState(
+            sourceBlockIds: [],
+            appName: "",
+            startMinutes: snapped,
+            durationMinutes: duration,
+            isOverlapping: overlaps
+        )
+    }
+
+    /// Extend an empty-area drag to `endMinutes`. Grows from the anchor
+    /// downward — dragging upward past the anchor is clamped to the minimum
+    /// snap interval (keeps the UX predictable).
+    func extendEmptyAreaDrag(toMinutes endMinutes: Int) {
+        guard let state = dragCreationState, state.sourceBlockIds.isEmpty else { return }
+        let snapped = TimelineGeometry.snapToGrid(
+            minutes: Double(endMinutes),
+            gridMinutes: TimelineLayout.snapMinutes
+        )
+        let newEnd = max(state.startMinutes + TimelineLayout.snapMinutes, snapped)
+        let newDuration = newEnd - state.startMinutes
+        let overlaps = !overlappingEntries(
+            startMinutes: state.startMinutes,
+            durationMinutes: newDuration
+        ).isEmpty
+        dragCreationState?.durationMinutes = newDuration
+        dragCreationState?.isOverlapping = overlaps
     }
 
     // MARK: - Entry Creation

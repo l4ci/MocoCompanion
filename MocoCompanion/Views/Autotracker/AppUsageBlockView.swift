@@ -7,6 +7,7 @@ struct AppUsageBlockView: View {
     let isSelected: Bool
     var onSelect: (_ shiftHeld: Bool) -> Void = { _ in }
     var onCreateRule: ((_ bundleId: String, _ appName: String) -> Void)?
+    var onCreateEntry: ((AppUsageBlock) -> Void)?
     var onDragStarted: () -> Void = {}
     var onDragUpdated: (_ targetY: CGFloat) -> Void = { _ in }
     var onDragEnded: () -> Void = {}
@@ -72,6 +73,9 @@ struct AppUsageBlockView: View {
             onSelect(NSEvent.modifierFlags.contains(.shift))
         }
         .contextMenu {
+            Button("Create entry from this block…") {
+                onCreateEntry?(block)
+            }
             Button("Create rule for \"\(block.appName)\"…") {
                 onCreateRule?(block.appBundleId, block.appName)
             }
