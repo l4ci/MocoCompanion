@@ -52,6 +52,9 @@ struct EntryBlockView: View {
     @State private var bottomResizeOffset: CGFloat = 0
     @State private var isResizingBottom: Bool = false
     @State private var showDeleteConfirm: Bool = false
+    /// Set to true while a resize Task is in flight so onChange(of: entry.seconds)
+    /// doesn't zero the offset before the VM's updated entry.seconds is observed.
+    @State private var isApplyingResize: Bool = false
 
     private var isGestureActive: Bool {
         isDragging || isResizingTop || isResizingBottom
@@ -297,6 +300,10 @@ struct EntryBlockView: View {
             isResizingTop = false
         }
         .onChange(of: entry.seconds) { _, _ in
+            // Only clear resize offsets when no resize task is in flight.
+            // The onEnded handlers clear them after the await returns,
+            // which prevents the snap-back flicker.
+            guard !isApplyingResize else { return }
             topResizeOffset = 0
             bottomResizeOffset = 0
             isResizingTop = false
@@ -367,8 +374,12 @@ struct EntryBlockView: View {
                 let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
                 topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
-                Task {
+                isApplyingResize = true
+                Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
+                    topResizeOffset = 0
+                    isResizingTop = false
+                    isApplyingResize = false
                 }
             }
     }
@@ -397,8 +408,12 @@ struct EntryBlockView: View {
                 )
                 let newDurationSeconds = newDurationMinutes * 60
                 bottomResizeOffset = CGFloat(newDurationMinutes - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
-                Task {
+                isApplyingResize = true
+                Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
+                    bottomResizeOffset = 0
+                    isResizingBottom = false
+                    isApplyingResize = false
                 }
             }
     }
