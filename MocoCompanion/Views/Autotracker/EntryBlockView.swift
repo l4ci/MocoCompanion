@@ -45,14 +45,9 @@ struct EntryBlockView: View {
 
     // MARK: - Gesture State
 
-    /// Gesture target state. When non-nil, overrides the values derived
-    /// from the `entry` prop. The key design point: these are cleared
-    /// ONLY after the underlying entry has caught up to the target, so
-    /// the effective (displayed) value is identical before and after
-    /// the clear — eliminating the resize/drag flicker that plagued
-    /// offset-based approaches.
-    @State private var dragTargetMinutes: Int?
-    @State private var resizeTargetSeconds: Int?
+    /// Styling flags only — the visible preview during a gesture is
+    /// drawn as a ghost overlay by `TimelinePaneView`, not by this
+    /// view. See `TimelineViewModel.gesturePreviewState`.
     @State private var isDragging: Bool = false
     @State private var isResizingTop: Bool = false
     @State private var isResizingBottom: Bool = false
@@ -68,48 +63,24 @@ struct EntryBlockView: View {
         entry.timerStartedAt != nil
     }
 
-    /// Start minutes for layout — either the gesture target or the
-    /// entry's current value if no gesture is in flight.
-    private var effectiveStartMinutes: Int {
-        dragTargetMinutes ?? entryStartMinutes
-    }
-
     private var entryStartMinutes: Int {
         TimelineGeometry.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
     }
 
-    /// Duration in seconds — gesture target wins while a resize is live
-    /// or pending the VM round-trip.
-    private var effectiveSeconds: Int {
-        resizeTargetSeconds ?? entry.seconds
-    }
-
     /// Height in points. During a running timer, grows with elapsed
-    /// wall-clock seconds; otherwise derived from `effectiveSeconds`.
+    /// wall-clock seconds; otherwise derived from `entry.seconds`.
     private var baseHeight: CGFloat {
         let seconds: CGFloat
         if isRunning, let startedAt = parsedTimerStart {
             seconds = CGFloat(max(Date().timeIntervalSince(startedAt), 60))
         } else {
-            seconds = CGFloat(effectiveSeconds)
+            seconds = CGFloat(entry.seconds)
         }
         return max(seconds / 60 * TimelineLayout.pixelsPerMinute, 20)
     }
 
-    /// Display height — alias for baseHeight now that resize uses
-    /// target-based seconds instead of an offset overlay.
     private var displayHeight: CGFloat {
         max(baseHeight, TimelineLayout.pixelsPerMinute * CGFloat(TimelineLayout.snapMinutes))
-    }
-
-    /// Visual Y offset applied on top of the parent's `entry.startTime`-
-    /// based position. Computed as the delta between the gesture's
-    /// intended start and the entry's current start — it decays to zero
-    /// automatically as the entry catches up to the target, so the
-    /// clear in `onChange` is a no-op visually.
-    private var visualYOffset: CGFloat {
-        let delta = effectiveStartMinutes - entryStartMinutes
-        return CGFloat(delta) * TimelineLayout.pixelsPerMinute
     }
 
     private var parsedTimerStart: Date? {
@@ -274,16 +245,6 @@ struct EntryBlockView: View {
             }
         }
         .help(tooltipLabel)
-        .offset(y: visualYOffset)
-        // Never animate positional/size changes on this block — the
-        // preview-target state uses identity math (visualYOffset reaches
-        // zero the instant entry.startTime catches up), so any implicit
-        // animation would tween across correct identical values and
-        // visibly wobble.
-        .animation(nil, value: visualYOffset)
-        .animation(nil, value: displayHeight)
-        .animation(nil, value: dragTargetMinutes)
-        .animation(nil, value: resizeTargetSeconds)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
@@ -319,24 +280,6 @@ struct EntryBlockView: View {
         } message: {
             Text("You can undo this for 5 seconds.")
         }
-        // Clear the gesture targets once the underlying entry has caught
-        // up to them. Because `effectiveStartMinutes` and `effectiveSeconds`
-        // fall back to the entry when the target matches, the visual is
-        // byte-for-byte identical before and after the clear — no flicker.
-        .onChange(of: entry.startTime) { _, _ in
-            if dragTargetMinutes == entryStartMinutes {
-                dragTargetMinutes = nil
-            }
-            isDragging = false
-            isResizingTop = false
-        }
-        .onChange(of: entry.seconds) { _, _ in
-            if resizeTargetSeconds == entry.seconds {
-                resizeTargetSeconds = nil
-            }
-            isResizingTop = false
-            isResizingBottom = false
-        }
 
         if isRunning {
             TimelineView(.periodic(from: .now, by: 60)) { _ in
@@ -354,14 +297,16 @@ struct EntryBlockView: View {
             .onChanged { value in
                 isDragging = true
                 let newMinutes = snappedStartMinutes(gestureDelta: value.translation.height)
-                dragTargetMinutes = newMinutes
+                let durationMinutes = max(entry.seconds / 60, TimelineLayout.snapMinutes)
+                pushPreview(startMinutes: newMinutes, durationMinutes: durationMinutes)
             }
             .onEnded { value in
                 let newMinutes = snappedStartMinutes(gestureDelta: value.translation.height)
-                dragTargetMinutes = newMinutes
                 let newTime = TimelineGeometry.timeString(fromMinutes: newMinutes)
-                Task {
+                Task { @MainActor in
                     await viewModel.moveEntry(entry, toStartTime: newTime)
+                    viewModel.clearGesturePreview()
+                    isDragging = false
                 }
             }
     }
@@ -373,17 +318,16 @@ struct EntryBlockView: View {
             .onChanged { value in
                 isResizingTop = true
                 let (newStart, newDurationMinutes) = snappedTopResize(gestureDelta: value.translation.height)
-                dragTargetMinutes = newStart
-                resizeTargetSeconds = newDurationMinutes * 60
+                pushPreview(startMinutes: newStart, durationMinutes: newDurationMinutes)
             }
             .onEnded { value in
                 let (newStart, newDurationMinutes) = snappedTopResize(gestureDelta: value.translation.height)
-                dragTargetMinutes = newStart
-                resizeTargetSeconds = newDurationMinutes * 60
                 let newTime = TimelineGeometry.timeString(fromMinutes: newStart)
                 let newDurationSeconds = newDurationMinutes * 60
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
+                    viewModel.clearGesturePreview()
+                    isResizingTop = false
                 }
             }
     }
@@ -395,16 +339,30 @@ struct EntryBlockView: View {
             .onChanged { value in
                 isResizingBottom = true
                 let newDurationMinutes = snappedBottomDuration(gestureDelta: value.translation.height)
-                resizeTargetSeconds = newDurationMinutes * 60
+                pushPreview(startMinutes: entryStartMinutes, durationMinutes: newDurationMinutes)
             }
             .onEnded { value in
                 let newDurationMinutes = snappedBottomDuration(gestureDelta: value.translation.height)
-                resizeTargetSeconds = newDurationMinutes * 60
                 let newDurationSeconds = newDurationMinutes * 60
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
+                    viewModel.clearGesturePreview()
+                    isResizingBottom = false
                 }
             }
+    }
+
+    // MARK: - Preview Helpers
+
+    /// Push the gesture target into the VM's shared preview slot. The
+    /// ghost block rendered by `TimelinePaneView` picks it up and
+    /// draws the live preview at the given coordinates.
+    private func pushPreview(startMinutes: Int, durationMinutes: Int) {
+        if viewModel.gesturePreviewState == nil {
+            viewModel.beginGesturePreview(for: entry, startMinutes: startMinutes, durationMinutes: durationMinutes)
+        } else {
+            viewModel.updateGesturePreview(startMinutes: startMinutes, durationMinutes: durationMinutes)
+        }
     }
 
     // MARK: - Snap Helpers

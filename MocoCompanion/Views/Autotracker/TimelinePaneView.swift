@@ -458,6 +458,8 @@ struct TimelinePaneView: View {
                     ? availableWidth / CGFloat(layout.columnCount)
                     : availableWidth
                 let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
+                let entryKey = TimelineViewModel.entryKey(for: entry)
+                let isPreviewing = viewModel.gesturePreviewState?.entryKey == entryKey
                 EntryBlockView(
                     entry: entry,
                     viewModel: viewModel,
@@ -472,16 +474,15 @@ struct TimelinePaneView: View {
                         x: 4 + columnWidth * CGFloat(layout.columnIndex),
                         y: yOffsetFromTimeString(entry.startTime)
                     )
-                    // Suppress implicit animation on the parent-applied
-                    // .offset(y:) and .frame(width:) when entry.startTime
-                    // or entry.seconds changes — otherwise SwiftUI tweens
-                    // the positional change after a resize/move, which
-                    // visually competes with the child's own preview
-                    // offset and produces the flicker.
-                    .animation(nil, value: entry.startTime)
-                    .animation(nil, value: entry.seconds)
-                    .animation(nil, value: layout.columnIndex)
-                    .animation(nil, value: layout.columnCount)
+                    // While a drag-move or edge-resize gesture is live
+                    // on this entry, the ghost block below carries the
+                    // preview and this original block is hidden. The
+                    // ghost disappears only AFTER the VM update completes
+                    // and the entry's own position/size match the target,
+                    // so the transition from "ghost visible, original
+                    // hidden" to "ghost gone, original visible at new
+                    // position" is a pixel-identical swap — no flicker.
+                    .opacity(isPreviewing ? 0 : 1)
             }
 
             // Suggestion blocks
@@ -494,6 +495,14 @@ struct TimelinePaneView: View {
             // Ghost block during creation drag
             if let drag = viewModel.dragCreationState {
                 ghostBlock(for: drag)
+            }
+
+            // Ghost block for in-flight drag-move / resize on an
+            // existing entry. Mirrors the drag-create ghost pattern
+            // (dragCreationState) — draws a preview at the gesture
+            // target without disturbing the real entry's layout state.
+            if let preview = viewModel.gesturePreviewState {
+                gesturePreviewBlock(for: preview)
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
@@ -568,6 +577,53 @@ struct TimelinePaneView: View {
         .padding(.horizontal, 4)
         .allowsHitTesting(false)
         .animation(.easeOut(duration: 0.08), value: drag.startMinutes)
+    }
+
+    // MARK: - Gesture Preview Block
+
+    /// Live preview for an in-flight drag-move / edge-resize. Drawn on
+    /// top of the hidden original so the user sees the target
+    /// position/size without touching the original view's layout
+    /// state. The ghost disappears (and the original reappears) only
+    /// after the VM mutation completes and the original's entry data
+    /// matches the target — so the swap is pixel-identical.
+    private func gesturePreviewBlock(for preview: TimelineViewModel.GesturePreviewState) -> some View {
+        let yPos = CGFloat(preview.startMinutes) * TimelineLayout.pixelsPerMinute
+        let height = max(CGFloat(preview.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
+        let availableWidth = max(entryColumnWidth - 8, 0)
+        let columnWidth = preview.columnCount > 0
+            ? availableWidth / CGFloat(preview.columnCount)
+            : availableWidth
+        let gap: CGFloat = preview.columnCount > 1 ? 2 : 0
+        let startLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes)
+        let endLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes + preview.durationMinutes)
+        let tint: Color = .accentColor
+
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("\(startLabel) – \(endLabel)")
+                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+            Text(preview.durationLabel)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(tint.opacity(0.8))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .frame(width: max(columnWidth - gap, 14), height: height, alignment: .topLeading)
+        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+                .strokeBorder(tint.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+        )
+        .offset(
+            x: 4 + columnWidth * CGFloat(preview.columnIndex),
+            y: yPos
+        )
+        .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.08), value: preview.startMinutes)
+        .animation(.easeOut(duration: 0.08), value: preview.durationMinutes)
     }
 
     // MARK: - Empty State
