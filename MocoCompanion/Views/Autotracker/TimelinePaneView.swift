@@ -382,70 +382,9 @@ struct TimelinePaneView: View {
                 .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
                 .foregroundStyle(theme.textSecondary)
                 .padding(.leading, 8)
-
-            Spacer(minLength: 0)
-
-            // Sync indicator lives on the right edge of the header row,
-            // horizontally aligned with the column labels.
-            syncIndicator
-                .padding(.trailing, 10)
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
-    }
-
-    // MARK: - Sync Indicator
-
-    @State private var syncLabelTick = Date()
-
-    private var syncIndicator: some View {
-        HStack(spacing: 6) {
-            let _ = syncLabelTick
-            if let lastSync = viewModel.lastSyncedAt {
-                Text(Self.relativeTimeString(since: lastSync))
-                    .font(.system(size: Theme.FontSize.footnote))
-                    .foregroundStyle(theme.textTertiary)
-                    .monospacedDigit()
-            } else {
-                Text("Not synced")
-                    .font(.system(size: Theme.FontSize.footnote))
-                    .foregroundStyle(theme.textTertiary)
-            }
-
-            Button {
-                Task { await viewModel.refreshData() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: Theme.FontSize.subhead, weight: .medium))
-                    .foregroundStyle(theme.textTertiary)
-                    .rotationEffect(viewModel.isRefreshing || viewModel.isSyncing ? .degrees(360) : .zero)
-                    .animation(
-                        viewModel.isRefreshing || viewModel.isSyncing
-                            ? .linear(duration: 0.8).repeatForever(autoreverses: false)
-                            : .default,
-                        value: viewModel.isRefreshing || viewModel.isSyncing
-                    )
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isRefreshing || viewModel.isSyncing)
-            .accessibilityLabel(String(localized: "sync.refresh"))
-        }
-        .task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                syncLabelTick = Date()
-            }
-        }
-    }
-
-    private static func relativeTimeString(since date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
-        if seconds < 5 { return String(localized: "sync.now") }
-        if seconds < 60 { return "\(seconds)s" }
-        let minutes = seconds / 60
-        if minutes < 60 { return "\(minutes)m" }
-        let hours = minutes / 60
-        return "\(hours)h"
     }
 
     /// Y position for the scroll anchor: now-line on today, 8:00 AM otherwise.

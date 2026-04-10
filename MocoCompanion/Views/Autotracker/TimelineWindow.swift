@@ -7,29 +7,53 @@ struct TimelineWindow: View {
     @State private var viewModel: TimelineViewModel
     let projectCatalog: ProjectCatalog
     let autotracker: Autotracker
+    var descriptionRequired: Bool = false
+    /// Shared undo manager — when non-nil, deletes show a bottom toaster
+    /// with an Undo action for 5 seconds before the Moco API call fires.
+    var deleteUndoManager: DeleteUndoManager?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
     @State private var showRuleList = false
+    @State private var syncLabelTick = Date()
 
-    init(shadowEntryStore: ShadowEntryStore, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker) {
+    init(shadowEntryStore: ShadowEntryStore, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, workdayStartHour: Int = 8, workdayEndHour: Int = 17, descriptionRequired: Bool = false, onEntryChanged: (() async -> Void)? = nil) {
         let vm = TimelineViewModel(
             shadowEntryStore: shadowEntryStore,
             autotracker: autotracker,
-            syncState: syncState
+            syncState: syncState,
+            workdayStartHour: workdayStartHour,
+            workdayEndHour: workdayEndHour
         )
+        vm.onEntryChanged = onEntryChanged
         _viewModel = State(initialValue: vm)
         self.projectCatalog = projectCatalog
         self.autotracker = autotracker
+        self.descriptionRequired = descriptionRequired
+    }
+
+    /// Init with a pre-built ViewModel (allows external date navigation).
+    init(viewModel: TimelineViewModel, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, descriptionRequired: Bool = false, deleteUndoManager: DeleteUndoManager? = nil) {
+        _viewModel = State(initialValue: viewModel)
+        self.projectCatalog = projectCatalog
+        self.autotracker = autotracker
+        self.descriptionRequired = descriptionRequired
+        self.deleteUndoManager = deleteUndoManager
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header: date nav + sync status
             DateNavigationView(viewModel: viewModel)
 
             Divider()
 
-            // Timeline content
-            if viewModel.isLoading {
+            // Timeline content. Keep the pane rendered across subsequent
+            // loadData() calls so ScrollView scroll position survives —
+            // otherwise the view unmounts/remounts on every refresh
+            // (drag-drop, sync, resize) and the user snaps back to the
+            // top. The full-screen "Loading…" branch is reserved for the
+            // very first load before any data has arrived.
+            if viewModel.isLoading && viewModel.shadowEntries.isEmpty && viewModel.appUsageBlocks.isEmpty {
                 Spacer()
                 ProgressView()
                     .controlSize(.small)
@@ -45,35 +69,47 @@ struct TimelineWindow: View {
                     selectedDate: viewModel.selectedDate,
                     isToday: viewModel.isToday,
                     viewModel: viewModel,
-                    projectCatalog: projectCatalog
+                    projectCatalog: projectCatalog,
+                    descriptionRequired: descriptionRequired
                 )
             }
 
-            Divider()
-
-            // Status bar
-            HStack {
-                if let lastSync = viewModel.syncState.lastSyncedAt {
-                    Text("Synced \(Self.relativeTime(from: lastSync))")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                } else {
-                    Text("Not synced")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                }
-
-                Spacer()
-
-                Text("\(viewModel.shadowEntries.count) entries")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
+            // Footer stats
+            timelineStatsFooter
         }
+        .overlay(alignment: .bottom) {
+            if let manager = deleteUndoManager, manager.pendingDelete != nil {
+                undoToaster(manager: manager)
+                    .padding(.bottom, 70) // clear the stats footer
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: deleteUndoManager?.pendingDelete?.activity.id)
         .withTheme(colorScheme: colorScheme)
         .toolbar {
+            ToolbarItem(placement: .automatic) {
+                let _ = syncLabelTick
+                if let lastSync = viewModel.lastSyncedAt {
+                    Text(Self.relativeTimeString(since: lastSync))
+                        .font(.system(size: Theme.FontSize.footnote))
+                        .foregroundStyle(theme.textTertiary)
+                        .monospacedDigit()
+                } else {
+                    Text(String(localized: "Not synced"))
+                        .font(.system(size: Theme.FontSize.footnote))
+                        .foregroundStyle(theme.textTertiary)
+                }
+            }
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    Task { await viewModel.refreshData() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .help("Sync with Moco (⌘R)")
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(viewModel.isRefreshing || viewModel.isSyncing)
+            }
             ToolbarItem(placement: .automatic) {
                 Button {
                     showRuleList = true
@@ -93,6 +129,12 @@ struct TimelineWindow: View {
         .task {
             await viewModel.loadData()
         }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                syncLabelTick = Date()
+            }
+        }
         .onChange(of: viewModel.selectedDate) {
             Task {
                 await viewModel.loadData()
@@ -100,12 +142,95 @@ struct TimelineWindow: View {
         }
     }
 
-    private static func relativeTime(from date: Date) -> String {
-        let seconds = Int(-date.timeIntervalSinceNow)
-        if seconds < 60 { return "just now" }
+    private static func relativeTimeString(since date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 5 { return String(localized: "sync.now") }
+        if seconds < 60 { return "\(seconds)s" }
         let minutes = seconds / 60
-        if minutes < 60 { return "\(minutes)m ago" }
+        if minutes < 60 { return "\(minutes)m" }
         let hours = minutes / 60
-        return "\(hours)h ago"
+        return "\(hours)h"
     }
+
+    // MARK: - Stats Footer
+
+    private var timelineStatsFooter: some View {
+        VStack(spacing: 0) {
+            theme.divider.frame(height: 1)
+
+            HStack(spacing: 8) {
+                statCard(
+                    label: String(localized: "stats.total"),
+                    value: String(format: "%.1fh", viewModel.totalHours),
+                    accent: viewModel.totalHours >= 8.0 ? .green : nil
+                )
+                statCard(
+                    label: String(localized: "stats.billable"),
+                    value: String(format: "%.0f%%", viewModel.billablePercentage)
+                )
+                statCard(
+                    label: String(localized: "stats.entries"),
+                    value: "\(viewModel.shadowEntries.count)"
+                )
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+    }
+
+    // MARK: - Undo Toaster
+
+    /// Bottom-anchored toast shown for 5 seconds after a delete, giving
+    /// the user a chance to undo before the deletion is committed to
+    /// Moco. Subscribes to `DeleteUndoManager.pendingDelete`.
+    private func undoToaster(manager: DeleteUndoManager) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "trash")
+                .foregroundStyle(theme.textSecondary)
+            Text("Entry deleted")
+                .font(.system(size: Theme.FontSize.body, weight: .medium))
+                .foregroundStyle(theme.textPrimary)
+            Spacer(minLength: 12)
+            Button("Undo") {
+                manager.undoDelete()
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: Theme.FontSize.body, weight: .semibold))
+            .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+                .fill(theme.surfaceElevated)
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+                .stroke(theme.textTertiary.opacity(0.15), lineWidth: 1)
+        )
+        .frame(maxWidth: 360)
+    }
+
+    // MARK: - Stat Card
+
+    private func statCard(label: String, value: String, accent: Color? = nil) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+                .foregroundStyle(theme.textTertiary)
+                .textCase(.uppercase)
+                .tracking(0.3)
+            Text(value)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(accent ?? theme.textPrimary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(theme.statCardBackground)
+        )
+    }
+
 }
