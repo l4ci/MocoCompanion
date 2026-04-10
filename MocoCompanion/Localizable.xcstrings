@@ -10,6 +10,9 @@
     "--:--:--" : {
 
     },
+    ":" : {
+
+    },
     "· %@" : {
 
     },
@@ -25,8 +28,24 @@
     "(Esc)" : {
 
     },
+    "(no project selected)" : {
+
+    },
+    "*" : {
+
+    },
     "%@" : {
 
+    },
+    "%@  (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@  (%2$@)"
+          }
+        }
+      }
     },
     "%@ – %@" : {
       "localizations" : {
@@ -106,9 +125,6 @@
           }
         }
       }
-    },
-    "%lld entries" : {
-
     },
     "%lld rule%@" : {
       "localizations" : {
@@ -843,12 +859,6 @@
     "API Key" : {
 
     },
-    "App Bundle ID" : {
-
-    },
-    "App Name (contains)" : {
-
-    },
     "Approve all (%lld)" : {
 
     },
@@ -1060,6 +1070,12 @@
         }
       }
     },
+    "Billed — read-only" : {
+
+    },
+    "Booked Entries" : {
+
+    },
     "budget.projectCritical.tooltip" : {
       "localizations" : {
         "de" : {
@@ -1111,6 +1127,9 @@
     "Cancel" : {
 
     },
+    "Change" : {
+
+    },
     "Create" : {
 
     },
@@ -1124,6 +1143,15 @@
 
     },
     "Create rule for \"%@\"…" : {
+
+    },
+    "Created by an autotracker rule" : {
+
+    },
+    "Date" : {
+
+    },
+    "date.today" : {
 
     },
     "debug.apiLog" : {
@@ -1356,10 +1384,22 @@
     "Delete \"%@\"? This cannot be undone." : {
 
     },
+    "Delete entry" : {
+
+    },
+    "Delete entry?" : {
+
+    },
     "Delete Rule" : {
 
     },
+    "Delete this entry?" : {
+
+    },
     "Description" : {
+
+    },
+    "Description (required)" : {
 
     },
     "Description template" : {
@@ -1451,7 +1491,10 @@
     "Done" : {
 
     },
-    "Drag onto the timeline to set a start time" : {
+    "Drag onto the timeline to set a start time, or right-click to edit" : {
+
+    },
+    "Duration" : {
 
     },
     "Edit description" : {
@@ -1498,6 +1541,22 @@
         }
       }
     },
+    "edit.description.required" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibung ist erforderlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description is required"
+          }
+        }
+      }
+    },
     "edit.searchProjects" : {
       "localizations" : {
         "de" : {
@@ -1534,6 +1593,9 @@
 
     },
     "English" : {
+
+    },
+    "Entry deleted" : {
 
     },
     "eod.fullDay %@" : {
@@ -1599,6 +1661,12 @@
           }
         }
       }
+    },
+    "Example: \"Code review — {app}\" — the text is used as-is when the rule fires." : {
+
+    },
+    "Examples:  •  \"Pull request\"   •  \"#\\d+\" (regex)" : {
+
     },
     "forgotten.message %@ %@" : {
       "localizations" : {
@@ -2624,6 +2692,12 @@
         }
       }
     },
+    "Linked to recorded activity" : {
+
+    },
+    "Linked to recorded activity: %@" : {
+
+    },
     "Loading projects…" : {
 
     },
@@ -2716,6 +2790,9 @@
         }
       }
     },
+    "min" : {
+
+    },
     "MocoCompanion" : {
 
     },
@@ -2769,10 +2846,16 @@
     "No rules configured" : {
 
     },
+    "No running apps detected" : {
+
+    },
     "No timed entries for this day" : {
 
     },
     "Not synced" : {
+
+    },
+    "Not yet synced to Moco" : {
 
     },
     "notifDesc.activityDeleted" : {
@@ -3613,6 +3696,12 @@
     "Optional description" : {
 
     },
+    "Pending deletion" : {
+
+    },
+    "Pending sync" : {
+
+    },
     "planned.header" : {
       "localizations" : {
         "de" : {
@@ -3709,6 +3798,9 @@
         }
       }
     },
+    "Project" : {
+
+    },
     "projects.noProjects" : {
       "localizations" : {
         "de" : {
@@ -3756,6 +3848,12 @@
           }
         }
       }
+    },
+    "Recorded Activities" : {
+
+    },
+    "Refresh list" : {
+
     },
     "Rule name" : {
 
@@ -5033,6 +5131,9 @@
         }
       }
     },
+    "Start" : {
+
+    },
     "Start timer" : {
 
     },
@@ -5126,6 +5227,9 @@
     "Switch to timer mode" : {
 
     },
+    "Sync with Moco (⌘R)" : {
+
+    },
     "sync.now" : {
       "localizations" : {
         "de" : {
@@ -5158,7 +5262,7 @@
         }
       }
     },
-    "Synced %@" : {
+    "Synced to Moco" : {
 
     },
     "tab.search" : {
@@ -5301,6 +5405,9 @@
     "Unassigned" : {
 
     },
+    "Undo" : {
+
+    },
     "undo.action" : {
       "localizations" : {
         "de" : {
@@ -5391,6 +5498,9 @@
         }
       }
     },
+    "When" : {
+
+    },
     "Window title matching is not available in sandboxed mode" : {
 
     },
@@ -5460,6 +5570,12 @@
           }
         }
       }
+    },
+    "You can undo this for 5 seconds before it is pushed to Moco." : {
+
+    },
+    "You can undo this for 5 seconds." : {
+
     },
     "Your Moco subdomain, e.g. 'mycompany' for mycompany.mocoapp.com" : {
 

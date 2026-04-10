@@ -21,6 +21,7 @@ struct TimelineEntryCreationSheet: View {
     @State private var selectedEntry: SearchEntry?
     @State private var descriptionText: String = ""
     @State private var errorMessage: String?
+    @State private var hasInteracted: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -104,15 +105,19 @@ struct TimelineEntryCreationSheet: View {
                 Text("Description")
                     .font(.system(size: Theme.FontSize.caption, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
-                if descriptionRequired {
-                    Text("*")
-                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                        .foregroundStyle(.red)
-                }
+                Text("*")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(.red)
             }
-            TextField(descriptionRequired ? "Description (required)" : "Optional description", text: $descriptionText)
+            TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
+                .onChange(of: descriptionText) { hasInteracted = true }
+            if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text(String(localized: "edit.description.required"))
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(.red)
+            }
         }
     }
 
@@ -139,7 +144,7 @@ struct TimelineEntryCreationSheet: View {
                 )
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || (descriptionRequired && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty))
+            .disabled(selectedEntry == nil || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
         }
     }
 
@@ -220,6 +225,7 @@ struct TimelineEntryEditSheet: View {
     @State private var showDeleteConfirmation: Bool = false
     @State private var durationMinutes: Int
     @State private var descriptionText: String
+    @State private var hasInteracted: Bool = false
     @State private var selectedEntry: SearchEntry?
     @State private var isProjectPickerExpanded: Bool = false
     @State private var searchText: String = ""
@@ -507,15 +513,19 @@ struct TimelineEntryEditSheet: View {
                 Text("Description")
                     .font(.system(size: Theme.FontSize.caption, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
-                if descriptionRequired {
-                    Text("*")
-                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                        .foregroundStyle(.red)
-                }
+                Text("*")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(.red)
             }
-            TextField(descriptionRequired ? "Description (required)" : "Optional description", text: $descriptionText)
+            TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
+                .onChange(of: descriptionText) { hasInteracted = true }
+            if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text(String(localized: "edit.description.required"))
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(.red)
+            }
         }
     }
 
@@ -551,7 +561,7 @@ struct TimelineEntryEditSheet: View {
                 ))
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || durationMinutes <= 0 || (descriptionRequired && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty))
+            .disabled(selectedEntry == nil || durationMinutes <= 0 || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
         }
     }
 
