@@ -183,6 +183,7 @@
 		AA0C0901A1B2C3D4E5F60013 /* TimelinePaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60012 /* TimelinePaneView.swift */; };
 		AA0C0901A1B2C3D4E5F60015 /* TimelineEntryCreationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60014 /* TimelineEntryCreationSheet.swift */; };
 		AA0C0901A1B2C3D4E5F60017 /* SuggestionBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */; };
+		AA0C0901A1B2C3D4E5F60019 /* RuleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -376,6 +377,7 @@
 		AA0C0901A1B2C3D4E5F60012 /* TimelinePaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePaneView.swift; sourceTree = "<group>"; };
 		AA0C0901A1B2C3D4E5F60014 /* TimelineEntryCreationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineEntryCreationSheet.swift; sourceTree = "<group>"; };
 		AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionBlockView.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEditorSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -612,6 +614,7 @@
 				AA0C0901A1B2C3D4E5F60003 /* DateNavigationView.swift */,
 				AA0C0901A1B2C3D4E5F6000E /* EntryBlockView.swift */,
 				AA0C0901A1B2C3D4E5F60010 /* NowLineView.swift */,
+				AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */,
 				AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */,
 				AA0C0901A1B2C3D4E5F6000A /* TimeAxisView.swift */,
 				AA0C0901A1B2C3D4E5F60014 /* TimelineEntryCreationSheet.swift */,
@@ -891,6 +894,7 @@
 				AA0C0901A1B2C3D4E5F6000F /* EntryBlockView.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60011 /* NowLineView.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60017 /* SuggestionBlockView.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60019 /* RuleEditorSheet.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60015 /* TimelineEntryCreationSheet.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60013 /* TimelinePaneView.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60002 /* TimelineViewModel.swift in Sources */,

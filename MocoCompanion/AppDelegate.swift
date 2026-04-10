@@ -282,7 +282,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             shadowEntryStore: appState.shadowEntryStore,
             appRecordStore: appState.appRecordStore,
             syncState: appState.syncState,
-            projectCatalog: appState.catalog
+            projectCatalog: appState.catalog,
+            ruleStore: appState.ruleStore,
+            ruleEngine: appState.ruleEngine
         )
 
         let hostingView = NSHostingController(rootView: timelineView)
