@@ -5,6 +5,8 @@ import SwiftUI
 struct PanelContentView: View {
     @Bindable var appState: AppState
     var favoritesManager: FavoritesManager
+    /// Called when the user presses CMD+T inside the panel to open the Autotracker window.
+    var onShowAutotracker: (() -> Void)? = nil
 
     @State var activeTab: PanelTab
     @State private var initialSearchText: String = ""
@@ -12,9 +14,10 @@ struct PanelContentView: View {
     @State private var preSelectedEntry: SearchEntry? = nil
     @Environment(\.colorScheme) private var colorScheme
 
-    init(appState: AppState, favoritesManager: FavoritesManager) {
+    init(appState: AppState, favoritesManager: FavoritesManager, onShowAutotracker: (() -> Void)? = nil) {
         self.appState = appState
         self.favoritesManager = favoritesManager
+        self.onShowAutotracker = onShowAutotracker
         self._activeTab = State(initialValue: appState.settings.defaultTab == "today" ? .today : .search)
     }
 
@@ -41,7 +44,8 @@ struct PanelContentView: View {
             favoritesManager: favoritesManager,
             activeTab: $activeTab,
             initialSearchText: $initialSearchText,
-            preSelectedEntry: $preSelectedEntry
+            preSelectedEntry: $preSelectedEntry,
+            onShowAutotracker: onShowAutotracker
         )
         .frame(width: appState.settings.panelWidth)
         .frame(minHeight: 56)
@@ -59,6 +63,7 @@ private struct PanelContentInner: View {
     @Binding var activeTab: PanelContentView.PanelTab
     @Binding var initialSearchText: String
     @Binding var preSelectedEntry: SearchEntry?
+    var onShowAutotracker: (() -> Void)? = nil
 
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
@@ -69,12 +74,13 @@ private struct PanelContentInner: View {
 
     private var avatarSize: CGFloat { 38 + fontBoost }
 
-    init(appState: AppState, favoritesManager: FavoritesManager, activeTab: Binding<PanelContentView.PanelTab>, initialSearchText: Binding<String>, preSelectedEntry: Binding<SearchEntry?>) {
+    init(appState: AppState, favoritesManager: FavoritesManager, activeTab: Binding<PanelContentView.PanelTab>, initialSearchText: Binding<String>, preSelectedEntry: Binding<SearchEntry?>, onShowAutotracker: (() -> Void)? = nil) {
         self.appState = appState
         self.favoritesManager = favoritesManager
         self._activeTab = activeTab
         self._initialSearchText = initialSearchText
         self._preSelectedEntry = preSelectedEntry
+        self.onShowAutotracker = onShowAutotracker
         self._showFirstUseHint = State(initialValue: !appState.settings.hasSeenFirstUseHint)
     }
 
@@ -129,6 +135,15 @@ private struct PanelContentInner: View {
             NSCursor.setHiddenUntilMouseMoves(true)
             dismissFirstUseHint()
             return .ignored
+        }
+        .background {
+            // Hidden CMD+T button — opens Autotracker without closing the panel
+            if let onShowAutotracker {
+                Button("") { onShowAutotracker() }
+                    .keyboardShortcut("t", modifiers: .command)
+                    .frame(width: 0, height: 0)
+                    .hidden()
+            }
         }
     }
 

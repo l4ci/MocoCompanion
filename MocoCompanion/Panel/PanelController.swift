@@ -80,6 +80,9 @@ final class PanelController {
     /// Set by the hosting view to reset @State from outside SwiftUI.
     var onResetState: (() -> Void)?
 
+    /// Callback wired by AppDelegate so CMD+T from the panel opens the Autotracker window.
+    var onShowAutotracker: (() -> Void)?
+
     /// Toggle the panel: show if hidden, hide if visible.
     func toggle() {
         if isVisible {
@@ -98,9 +101,7 @@ final class PanelController {
 
         if let existing = panel {
             // Force a fresh hosting view regardless of dismissedExplicitly
-            if let appState {
-                installHostingView(PanelContentView(appState: appState, favoritesManager: appState.favoritesManager), in: existing)
-            }
+            installHostingView(makePanelContentView(), in: existing)
             existing.dismissedExplicitly = false
         }
 
@@ -117,9 +118,7 @@ final class PanelController {
         // If the panel was programmatically closed (success auto-close, Escape),
         // reset to fresh state. The dismissedExplicitly flag is set by close().
         if panel.dismissedExplicitly {
-            if let appState {
-                installHostingView(PanelContentView(appState: appState, favoritesManager: appState.favoritesManager), in: panel)
-            }
+            installHostingView(makePanelContentView(), in: panel)
             panel.dismissedExplicitly = false
         }
 
@@ -168,7 +167,7 @@ final class PanelController {
     /// Reset the panel to default state (recreate the hosting view).
     private func resetPanelState() {
         guard let panel, let appState else { return }
-        installHostingView(PanelContentView(appState: appState, favoritesManager: appState.favoritesManager), in: panel)
+        installHostingView(makePanelContentView(), in: panel)
         Self.logger.info("Panel state reset after timeout")
     }
 
@@ -187,7 +186,7 @@ final class PanelController {
         let newPanel = FloatingPanel(
             contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: 52)
         )
-        installHostingView(PanelContentView(appState: appState, favoritesManager: appState.favoritesManager), in: newPanel)
+        installHostingView(makePanelContentView(), in: newPanel)
 
         // Focus loss (click outside, app switch) — hide but preserve state
         newPanel.onFocusLost = { [weak self] in
@@ -225,10 +224,20 @@ final class PanelController {
         return newPanel
     }
 
-    private func installHostingView(_ view: PanelContentView, in panel: FloatingPanel) {
+    private func installHostingView(_ view: PanelContentView?, in panel: FloatingPanel) {
+        guard let view else { return }
         let hostingView = WindowTrackingHostingView(rootView: view)
         hostingView.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hostingView
+    }
+
+    private func makePanelContentView() -> PanelContentView? {
+        guard let appState else { return nil }
+        return PanelContentView(
+            appState: appState,
+            favoritesManager: appState.favoritesManager,
+            onShowAutotracker: onShowAutotracker
+        )
     }
 
     /// Sync the NSPanel's AppKit appearance with the user's appearance setting.

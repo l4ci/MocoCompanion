@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
 
         panelController.appState = appState
+        panelController.onShowAutotracker = { [weak self] in self?.showAutotrackerWindow() }
         updateHotKey()
         NotificationDispatcher.requestAuthorization()
         UNUserNotificationCenter.current().delegate = self
