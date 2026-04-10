@@ -127,7 +127,12 @@ struct TimelineWindow: View {
             )
         }
         .task {
+            // Load local data first so the UI has something to show,
+            // then trigger a real sync so the toolbar "last synced"
+            // label stamps on window open (matches the main panel's
+            // TodayView.task behaviour).
             await viewModel.loadData()
+            await viewModel.refreshData()
         }
         .task {
             while !Task.isCancelled {

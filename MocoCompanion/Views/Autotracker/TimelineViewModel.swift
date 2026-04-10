@@ -37,9 +37,16 @@ import os
     /// to re-evaluate when the shared SyncState changes. Reading through
     /// an explicit computed property on this @Observable viewmodel ensures
     /// SwiftUI's observation tracker picks it up.
+    ///
+    /// Prefers the shared `SyncState.lastSyncedAt` (set by `SyncEngine.sync`
+    /// on successful pull+push) and falls back to a local timestamp updated
+    /// on every manual refresh — mirrors `TodayViewModel.lastSyncedAt` so
+    /// the toolbar label stays accurate even before the first successful
+    /// sync (e.g. during auth setup).
     var lastSyncedAt: Date? {
-        syncState.lastSyncedAt
+        syncState.lastSyncedAt ?? _lastSyncedAt
     }
+    private var _lastSyncedAt: Date?
 
     var isSyncing: Bool {
         syncState.isSyncing
@@ -148,6 +155,9 @@ import os
         defer { isRefreshing = false }
         await onRefresh?()
         await loadData()
+        // Stamp the local fallback so the toolbar label keeps ticking
+        // even when the upstream sync didn't succeed (e.g. offline).
+        _lastSyncedAt = Date()
     }
 
     // MARK: - Date Navigation
