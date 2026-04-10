@@ -16,6 +16,7 @@ struct TimelinePaneView: View {
     @State private var ruleEditorConfig: RuleEditorConfig?
     @State private var editingEntry: EditingEntryWrapper?
     @State private var entryPendingDelete: ShadowEntry?
+    @FocusState private var isPaneFocused: Bool
 
     /// Identifiable wrapper so SwiftUI's `.sheet(item:)` can present the edit
     /// sheet for a `ShadowEntry` (whose `id` is optional and can't conform).
@@ -79,6 +80,34 @@ struct TimelinePaneView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .focusable()
+        .focusEffectDisabled()
+        .focused($isPaneFocused)
+        .onAppear { isPaneFocused = true }
+        .onKeyPress(keys: [.delete, .deleteForward]) { _ in
+            guard let entry = viewModel.selectedEntry else { return .ignored }
+            entryPendingDelete = entry
+            return .handled
+        }
+        .confirmationDialog(
+            "Delete this entry?",
+            isPresented: Binding(
+                get: { entryPendingDelete != nil && viewModel.selectedEntry != nil },
+                set: { if !$0 { entryPendingDelete = nil } }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let entry = entryPendingDelete {
+                    entryPendingDelete = nil
+                    Task { await viewModel.deleteEntry(entry) }
+                }
+            }
+            .keyboardShortcut(.defaultAction)
+            Button("Cancel", role: .cancel) { }
+                .keyboardShortcut(.cancelAction)
+        } message: {
+            Text("You can undo this for 5 seconds.")
+        }
         .sheet(item: $ruleEditorConfig) { config in
             RuleEditorSheet(
                 existingRule: nil,
