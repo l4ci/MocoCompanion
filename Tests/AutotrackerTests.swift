@@ -3,7 +3,7 @@ import Foundation
 @testable import MocoCompanion
 
 @MainActor
-struct RuleEngineTests {
+struct AutotrackerTests {
 
     // MARK: - Suggest Mode Tests
 
@@ -220,7 +220,7 @@ struct RuleEngineTests {
 
     // MARK: - Helpers
 
-    private func makeEngine() throws -> (RuleEngine, RuleStore, AppRecordStore, ShadowEntryStore) {
+    private func makeEngine() throws -> (Autotracker, RuleStore, AppRecordStore, ShadowEntryStore) {
         let ruleDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: ruleDb)
 
@@ -229,10 +229,15 @@ struct RuleEngineTests {
         let shadowDb = try SQLiteDatabase(path: ":memory:")
         let shadowEntryStore = try ShadowEntryStore(database: shadowDb)
 
-        let engine = RuleEngine(
-            ruleStore: ruleStore,
+        // Ephemeral UserDefaults per test so declined-suggestion state does not
+        // leak across runs (or across parallel tests in the same suite).
+        let defaults = UserDefaults(suiteName: "autotracker-test-\(UUID().uuidString)")!
+
+        let engine = Autotracker(
+            shadowEntryStore: shadowEntryStore,
             appRecordStore: appRecordStore,
-            shadowEntryStore: shadowEntryStore
+            ruleStore: ruleStore,
+            declinedDefaults: defaults
         )
 
         return (engine, ruleStore, appRecordStore, shadowEntryStore)

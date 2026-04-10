@@ -570,7 +570,8 @@ struct TimelineViewModelTests {
         let autotracker = Autotracker(
             shadowEntryStore: store,
             appRecordStore: appRecordStore,
-            ruleStore: ruleStore
+            ruleStore: ruleStore,
+            declinedDefaults: UserDefaults(suiteName: "timeline-test-\(UUID().uuidString)")!
         )
         let syncState = SyncState()
         return TimelineViewModel(
