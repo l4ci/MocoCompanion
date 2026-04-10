@@ -18,7 +18,15 @@ struct AppUsageBlockView: View {
     }
 
     private var helpLabel: String {
-        "\(block.appName) — \(block.durationLabel)"
+        var lines = ["\(block.appName) — \(block.durationLabel) (\(block.startTimeLabel) – \(block.endTimeLabel))"]
+        if !block.contributingApps.isEmpty {
+            lines.append("")
+            lines.append("Also in this window:")
+            for contrib in block.contributingApps {
+                lines.append("• \(contrib.appName): \(contrib.durationLabel)")
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 
     var body: some View {

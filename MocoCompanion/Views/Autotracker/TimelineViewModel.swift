@@ -141,6 +141,36 @@ import os
         }
     }
 
+    /// Update an entry's project, task, and description. Locked entries are rejected.
+    /// Used by the edit sheet when re-assigning an auto-created entry.
+    func updateEntryContent(
+        _ entry: ShadowEntry,
+        projectId: Int,
+        taskId: Int,
+        projectName: String,
+        taskName: String,
+        customerName: String,
+        description: String
+    ) async {
+        guard !entry.locked, entry.id != nil || entry.localId != nil else { return }
+        var updated = entry
+        updated.projectId = projectId
+        updated.taskId = taskId
+        updated.projectName = projectName
+        updated.taskName = taskName
+        updated.customerName = customerName
+        updated.description = description
+        updated.syncStatus = .dirty
+        updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        do {
+            try await shadowEntryStore.update(updated)
+            Self.logger.info("Updated entry \(entry.id ?? 0) content: project=\(projectId) task=\(taskId)")
+            await loadData()
+        } catch {
+            Self.logger.error("Failed to update entry \(entry.id ?? 0): \(error)")
+        }
+    }
+
     /// Resize an entry by changing start time and/or duration. Locked entries are rejected.
     func resizeEntry(_ entry: ShadowEntry, newStartTime: String, newDurationSeconds: Int) async {
         guard !entry.locked, entry.id != nil else { return }

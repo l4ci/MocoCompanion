@@ -72,11 +72,13 @@ struct TimelineViewModelTests {
 
     @Test("merges adjacent same-app records within 5-minute gap")
     func mergesSameAppWithinGap() {
+        // Three back-to-back same-app records of 2 minutes each — total 6 min,
+        // exceeds the 5-minute display filter, one block emitted.
         let base = Date()
         let records = [
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 60),
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(120), duration: 60),
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(240), duration: 60),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 120),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(120), duration: 120),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(240), duration: 120),
         ]
 
         let blocks = AppUsageBlock.merge(records)
@@ -84,16 +86,18 @@ struct TimelineViewModelTests {
         #expect(blocks.count == 1)
         #expect(blocks[0].appBundleId == "com.app.a")
         #expect(blocks[0].recordCount == 3)
-        #expect(blocks[0].durationSeconds == 180)
+        #expect(blocks[0].durationSeconds == 360)
     }
 
-    @Test("does NOT merge records with gap exceeding 5 minutes")
-    func doesNotMergeWithLargeGap() {
+    @Test("sleep gap exceeding 5 minutes forces a block boundary")
+    func sleepGapForcesBoundary() {
+        // Two separate 6-minute runs separated by a 10-minute gap (simulating
+        // sleep). Both should emit as separate blocks.
         let base = Date()
         let records = [
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 60),
-            // Gap of 400 seconds (>300s threshold) from end of first record
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(460), duration: 60),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 360),
+            // 10-minute gap (sleep)
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(360 + 600), duration: 360),
         ]
 
         let blocks = AppUsageBlock.merge(records)
@@ -101,21 +105,24 @@ struct TimelineViewModelTests {
         #expect(blocks.count == 2)
         #expect(blocks[0].recordCount == 1)
         #expect(blocks[1].recordCount == 1)
+        #expect(blocks[0].durationSeconds == 360)
+        #expect(blocks[1].durationSeconds == 360)
     }
 
-    @Test("does NOT merge different apps even within gap")
-    func doesNotMergeDifferentApps() {
+    @Test("blocks shorter than 5 minutes are filtered out")
+    func shortBlocksFiltered() {
+        // Two 2-minute runs of different apps — neither reaches the 5-minute
+        // display threshold, so nothing is shown.
         let base = Date()
         let records = [
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 60),
-            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(120), duration: 60),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 120),
+            // Long interruption (>60s grace) — forces new block.
+            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(120), duration: 120),
         ]
 
         let blocks = AppUsageBlock.merge(records)
 
-        #expect(blocks.count == 2)
-        #expect(blocks[0].appBundleId == "com.app.a")
-        #expect(blocks[1].appBundleId == "com.app.b")
+        #expect(blocks.isEmpty)
     }
 
     @Test("empty records produces empty blocks")
@@ -124,13 +131,60 @@ struct TimelineViewModelTests {
         #expect(blocks.isEmpty)
     }
 
-    @Test("interleaved apps create separate blocks")
-    func interleavedApps() {
+    @Test("brief interruptions are absorbed as contributions")
+    func briefInterruptionsAbsorbed() {
+        // 6 minutes of App A interleaved with 30-second visits to App B.
+        // App B visits are ≤60s grace → absorbed as contributions into the
+        // App A block. Total block > 5min so it's emitted.
         let base = Date()
         let records = [
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 60),
-            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(70), duration: 60),
-            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(140), duration: 60),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 180),
+            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(180), duration: 30),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(210), duration: 180),
+            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(390), duration: 60),
+        ]
+
+        let blocks = AppUsageBlock.merge(records)
+
+        #expect(blocks.count == 1)
+        #expect(blocks[0].appBundleId == "com.app.a")
+        #expect(blocks[0].durationSeconds == 450) // 180+30+180+60
+        // App B totals 90s, above the 60s contribution display threshold.
+        #expect(blocks[0].contributingApps.count == 1)
+        #expect(blocks[0].contributingApps[0].bundleId == "com.app.b")
+        #expect(blocks[0].contributingApps[0].durationSeconds == 90)
+    }
+
+    @Test("contributions below 1 minute are not surfaced in the tooltip")
+    func subMinuteContributionsHidden() {
+        // 6 minutes of App A with a single 30-second App B blip. B is absorbed
+        // into the block but its 30s total is below the 60s display threshold,
+        // so it's not shown in contributingApps.
+        let base = Date()
+        let records = [
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 180),
+            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(180), duration: 30),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(210), duration: 180),
+        ]
+
+        let blocks = AppUsageBlock.merge(records)
+
+        #expect(blocks.count == 1)
+        #expect(blocks[0].appBundleId == "com.app.a")
+        #expect(blocks[0].contributingApps.isEmpty)
+    }
+
+    @Test("long interruption (>60s of another app) flushes and potentially filters")
+    func longInterruptionFlushes() {
+        // 6 minutes App A, then 6 minutes App B, then 6 minutes App A.
+        // The App B run is > 60s so it's NOT absorbed — it forces a flush,
+        // starts a new dominant, and becomes its own block. All three blocks
+        // are ≥5min so three blocks emit.
+        let base = Date()
+        let records = [
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base, duration: 360),
+            makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(360), duration: 360),
+            makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(720), duration: 360),
         ]
 
         let blocks = AppUsageBlock.merge(records)
@@ -354,7 +408,8 @@ struct TimelineViewModelTests {
         let block = AppUsageBlock(
             id: "b1", appBundleId: "com.app", appName: "App",
             startTime: base, endTime: base.addingTimeInterval(3600),
-            durationSeconds: 3600, recordCount: 1
+            durationSeconds: 3600, recordCount: 1,
+            contributingApps: []
         )
         vm.appUsageBlocks = [block]
         vm.toggleAppBlockSelection(id: "b1", shiftHeld: false)
@@ -372,13 +427,15 @@ struct TimelineViewModelTests {
             id: "b1", appBundleId: "com.app", appName: "App",
             startTime: makeDate(hour: 9, minute: 0),
             endTime: makeDate(hour: 9, minute: 30),
-            durationSeconds: 1800, recordCount: 1
+            durationSeconds: 1800, recordCount: 1,
+            contributingApps: []
         )
         let block2 = AppUsageBlock(
             id: "b2", appBundleId: "com.app", appName: "App",
             startTime: makeDate(hour: 11, minute: 0),
             endTime: makeDate(hour: 11, minute: 45),
-            durationSeconds: 2700, recordCount: 1
+            durationSeconds: 2700, recordCount: 1,
+            contributingApps: []
         )
         vm.appUsageBlocks = [block1, block2]
         vm.toggleAppBlockSelection(id: "b1", shiftHeld: true)

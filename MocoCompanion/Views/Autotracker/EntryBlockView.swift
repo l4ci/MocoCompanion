@@ -6,6 +6,7 @@ import SwiftUI
 struct EntryBlockView: View {
     let entry: ShadowEntry
     let viewModel: TimelineViewModel
+    var onEdit: ((ShadowEntry) -> Void)? = nil
     @Environment(\.theme) private var theme
 
     // MARK: - Gesture State
@@ -138,6 +139,13 @@ struct EntryBlockView: View {
         }
         .offset(y: dragOffset + (isResizingTop ? topResizeOffset : 0))
         .gesture(entry.locked || isRunning ? nil : dragMoveGesture)
+        .contextMenu {
+            if !entry.locked {
+                Button("Edit entry…") {
+                    onEdit?(entry)
+                }
+            }
+        }
 
         if isRunning {
             TimelineView(.periodic(from: .now, by: 60)) { _ in

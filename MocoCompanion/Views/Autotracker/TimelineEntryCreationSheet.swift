@@ -204,3 +204,184 @@ struct TimelineEntryCreationSheet: View {
         return matches.map(\.entry)
     }
 }
+
+// MARK: - Edit Sheet
+
+/// Sheet for re-assigning an existing `ShadowEntry` to a different project,
+/// task, and/or description. Used primarily for editing auto-created entries
+/// so they can be promoted from "tracker guessed this" to "user confirmed
+/// this". Time fields are not edited here — use drag-to-move/resize instead.
+struct TimelineEntryEditSheet: View {
+    let entry: ShadowEntry
+    let projectCatalog: ProjectCatalog
+
+    /// Called when the user taps Save with valid selection.
+    /// (projectId, taskId, projectName, taskName, customerName, description)
+    let onSave: (Int, Int, String, String, String, String) -> Void
+    let onCancel: () -> Void
+
+    @Environment(\.theme) private var theme
+    @State private var searchText = ""
+    @State private var selectedEntry: SearchEntry?
+    @State private var descriptionText: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            Divider()
+            projectPicker
+            descriptionField
+            Divider()
+            buttonRow
+        }
+        .padding(16)
+        .frame(width: 380, alignment: .topLeading)
+        .onAppear {
+            descriptionText = entry.description
+            // Pre-select the current project/task from the catalog so the row
+            // shows the checkmark and the user can see what's currently set.
+            selectedEntry = projectCatalog.searchEntries.first {
+                $0.projectId == entry.projectId && $0.taskId == entry.taskId
+            }
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Edit Entry")
+                .font(.system(size: Theme.FontSize.callout, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+
+            HStack(spacing: 6) {
+                if let startTime = entry.startTime {
+                    Text(startTime)
+                        .font(.system(size: Theme.FontSize.body, design: .monospaced))
+                        .foregroundStyle(theme.textSecondary)
+                }
+                Text("(\(entry.seconds / 60) min)")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+            }
+        }
+    }
+
+    // MARK: - Project Picker
+
+    private var projectPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Search projects…", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
+
+            let entries = filteredEntries
+            if entries.isEmpty {
+                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.vertical, 4)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(entries.prefix(20), id: \.taskId) { row in
+                            projectRow(row)
+                        }
+                    }
+                }
+                .frame(maxHeight: 180)
+            }
+        }
+    }
+
+    private func projectRow(_ row: SearchEntry) -> some View {
+        let isSelected = selectedEntry?.projectId == row.projectId
+            && selectedEntry?.taskId == row.taskId
+
+        return HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(row.customerName)
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(row.projectName)
+                        .font(.system(size: Theme.FontSize.callout, weight: .medium))
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                    Text("›")
+                        .foregroundStyle(theme.textTertiary)
+                    Text(row.taskName)
+                        .font(.system(size: Theme.FontSize.callout))
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: Theme.FontSize.callout))
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            isSelected ? Color.accentColor.opacity(0.1) : Color.clear,
+            in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectedEntry = row
+        }
+    }
+
+    // MARK: - Description
+
+    private var descriptionField: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Description")
+                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                .foregroundStyle(theme.textSecondary)
+            TextField("Optional description", text: $descriptionText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
+        }
+    }
+
+    // MARK: - Buttons
+
+    private var buttonRow: some View {
+        HStack {
+            Button("Cancel") {
+                onCancel()
+            }
+            .keyboardShortcut(.cancelAction)
+
+            Spacer()
+
+            Button("Save") {
+                guard let selected = selectedEntry else { return }
+                onSave(
+                    selected.projectId,
+                    selected.taskId,
+                    selected.projectName,
+                    selected.taskName,
+                    selected.customerName,
+                    descriptionText
+                )
+            }
+            .keyboardShortcut(.defaultAction)
+            .disabled(selectedEntry == nil)
+        }
+    }
+
+    // MARK: - Filtering
+
+    private var filteredEntries: [SearchEntry] {
+        let all = projectCatalog.searchEntries
+        guard !searchText.isEmpty else { return all }
+        let matches = FuzzyMatcher.search(query: searchText, in: all)
+        return matches.map(\.entry)
+    }
+}

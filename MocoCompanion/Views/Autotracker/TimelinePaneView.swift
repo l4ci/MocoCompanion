@@ -13,6 +13,14 @@ struct TimelinePaneView: View {
     @Environment(\.theme) private var theme
     @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String)?
     @State private var ruleEditorConfig: RuleEditorConfig?
+    @State private var editingEntry: EditingEntryWrapper?
+
+    /// Identifiable wrapper so SwiftUI's `.sheet(item:)` can present the edit
+    /// sheet for a `ShadowEntry` (whose `id` is optional and can't conform).
+    struct EditingEntryWrapper: Identifiable {
+        let entry: ShadowEntry
+        var id: String { "\(entry.id ?? 0)-\(entry.localId ?? "")" }
+    }
     /// Tracks the entry column's origin in global coordinate space for drag target conversion.
     @State private var entryColumnGlobalOrigin: CGFloat = 0
 
@@ -55,6 +63,27 @@ struct TimelinePaneView: View {
                         Task { await viewModel.loadData() }
                     }
                 )
+        }
+        .sheet(item: $editingEntry) { wrapper in
+            TimelineEntryEditSheet(
+                entry: wrapper.entry,
+                projectCatalog: projectCatalog,
+                onSave: { projectId, taskId, projectName, taskName, customerName, description in
+                    Task {
+                        await viewModel.updateEntryContent(
+                            wrapper.entry,
+                            projectId: projectId,
+                            taskId: taskId,
+                            projectName: projectName,
+                            taskName: taskName,
+                            customerName: customerName,
+                            description: description
+                        )
+                        editingEntry = nil
+                    }
+                },
+                onCancel: { editingEntry = nil }
+            )
         }
         .sheet(isPresented: showCreationSheet) {
             if let creation = pendingCreation {
@@ -181,19 +210,27 @@ struct TimelinePaneView: View {
                         NowLineView()
                     }
 
-                    // Scroll anchor
+                    // Scroll anchor. Uses `.position` (layout placement) not
+                    // `.offset` (visual-only) so ScrollViewReader.scrollTo
+                    // actually targets the anchor's laid-out y coordinate.
                     Color.clear
                         .frame(width: 1, height: 1)
+                        .position(x: 0.5, y: scrollAnchorY)
                         .id("scrollAnchor")
-                        .offset(y: scrollAnchorY)
                 }
                 .frame(height: TimelineLayout.totalHeight)
             }
             .onAppear {
-                proxy.scrollTo("scrollAnchor", anchor: .center)
+                // Defer so the ScrollView has completed its initial layout
+                // pass; otherwise scrollTo runs before the anchor has a frame.
+                DispatchQueue.main.async {
+                    proxy.scrollTo("scrollAnchor", anchor: .center)
+                }
             }
             .onChange(of: selectedDate) {
-                proxy.scrollTo("scrollAnchor", anchor: .center)
+                DispatchQueue.main.async {
+                    proxy.scrollTo("scrollAnchor", anchor: .center)
+                }
             }
         }
     }
@@ -244,7 +281,11 @@ struct TimelinePaneView: View {
     private var entryColumn: some View {
         ZStack(alignment: .topLeading) {
             ForEach(positionedEntries, id: \.id) { entry in
-                EntryBlockView(entry: entry, viewModel: viewModel)
+                EntryBlockView(
+                    entry: entry,
+                    viewModel: viewModel,
+                    onEdit: { e in editingEntry = EditingEntryWrapper(entry: e) }
+                )
                     .padding(.horizontal, 4)
                     .offset(y: yOffsetFromTimeString(entry.startTime))
             }

@@ -73,19 +73,40 @@ struct AppRecord: Sendable, Identifiable, Equatable {
 
 // MARK: - App Usage Block
 
-/// A merged block of consecutive app usage within a 5-minute gap threshold.
+/// A brief co-occurring app use within a larger block's timeframe.
+/// Surfaced in `AppUsageBlock.contributingApps` for tooltip display.
+struct ContributingApp: Sendable, Hashable {
+    let bundleId: String
+    let appName: String
+    let durationSeconds: TimeInterval
+
+    var durationLabel: String { TimelineGeometry.durationLabel(seconds: durationSeconds) }
+}
+
+/// A merged block of app usage dominated by one bundle, with short same-window
+/// usage of other bundles absorbed as contributions.
 ///
-/// Produced by folding adjacent `AppRecord` rows for the same bundle into one
-/// visible block. Used by the autotracker rule engine for matching and by the
-/// timeline view for the app-usage column.
+/// Produced by folding raw `AppRecord` rows via `merge(_:)`. The algorithm is a
+/// "sticky-dominant" merge: a run of records with the same dominant bundle is
+/// extended when brief interruptions from other bundles appear (≤ the
+/// interruption grace window), and those interruptions are tracked as
+/// contributions. Blocks whose total duration falls below
+/// `minDisplayDurationSeconds` are filtered out entirely — the timeline only
+/// shows windows of meaningful focus.
 struct AppUsageBlock: Identifiable, Sendable {
     let id: String
     let appBundleId: String
     let appName: String
     let startTime: Date
     let endTime: Date
+    /// Total duration of the block window (dominant + contributions combined).
     let durationSeconds: TimeInterval
     let recordCount: Int
+    /// Other apps briefly used within this block's time window, each with total
+    /// duration ≥ `contributionMinDisplaySeconds`, sorted by duration descending.
+    let contributingApps: [ContributingApp]
+
+    // MARK: - View-ready labels
 
     /// "HH:mm" start-of-block label, pre-formatted so views don't need to reach
     /// for a `DateFormatter`.
@@ -97,68 +118,124 @@ struct AppUsageBlock: Identifiable, Sendable {
     /// Short duration label ("45m" / "1h 15m").
     var durationLabel: String { TimelineGeometry.durationLabel(seconds: durationSeconds) }
 
-    /// Gap threshold (seconds) for merging adjacent same-app records into a single block.
-    static let mergeGapSeconds: TimeInterval = 300 // 5 minutes
+    // MARK: - Merge constants
 
-    /// Merges adjacent `AppRecord`s with the same bundleId within `mergeGapSeconds`
-    /// into consolidated `AppUsageBlock` instances. Pure function — safe to call
-    /// from any isolation domain.
+    /// Minimum total block duration required for display. Blocks shorter than
+    /// this are filtered out — a 30-second visit to an app is noise, not
+    /// signal.
+    static let minDisplayDurationSeconds: TimeInterval = 300 // 5 minutes
+
+    /// A single non-dominant record at or below this duration is absorbed into
+    /// the surrounding dominant block as a contribution rather than breaking
+    /// the block in two.
+    static let interruptionGraceSeconds: TimeInterval = 60 // 1 minute
+
+    /// A contribution is surfaced in the block's tooltip only if its total
+    /// duration (summed across all the block's time window) is at least this
+    /// long.
+    static let contributionMinDisplaySeconds: TimeInterval = 60 // 1 minute
+
+    /// Any gap between two records longer than this forces a block boundary.
+    /// Handles sleep/wake and long idle windows.
+    static let sleepGapSeconds: TimeInterval = 300 // 5 minutes
+
+    // MARK: - Merge algorithm
+
+    /// Merges raw `AppRecord`s into displayable `AppUsageBlock`s using the
+    /// sticky-dominant algorithm. Returns only blocks whose total duration
+    /// meets `minDisplayDurationSeconds`. Pure function — safe to call from
+    /// any isolation domain.
     static func merge(_ records: [AppRecord]) -> [AppUsageBlock] {
         guard !records.isEmpty else { return [] }
 
         let sorted = records.sorted { $0.timestamp < $1.timestamp }
-        var blocks: [AppUsageBlock] = []
 
-        var currentBundleId = sorted[0].appBundleId
-        var currentAppName = sorted[0].appName
-        var blockStart = sorted[0].timestamp
-        var blockEnd = sorted[0].timestamp.addingTimeInterval(sorted[0].durationSeconds)
-        var blockDuration = sorted[0].durationSeconds
-        var recordCount = 1
+        var result: [AppUsageBlock] = []
 
-        for i in 1..<sorted.count {
-            let record = sorted[i]
-            let gap = record.timestamp.timeIntervalSince(blockEnd)
+        // Working block state
+        var workBundleId: String? = nil
+        var workAppName: String = ""
+        var workStart: Date = sorted[0].timestamp
+        var workEnd: Date = sorted[0].timestamp
+        var workDominantDuration: TimeInterval = 0
+        var workContributions: [String: (appName: String, total: TimeInterval)] = [:]
+        var workRecordCount: Int = 0
 
-            if record.appBundleId == currentBundleId && gap <= mergeGapSeconds {
-                // Merge into current block
-                let recordEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
-                blockEnd = max(blockEnd, recordEnd)
-                blockDuration += record.durationSeconds
-                recordCount += 1
-            } else {
-                // Flush current block
-                blocks.append(AppUsageBlock(
-                    id: "\(currentBundleId)-\(blockStart.timeIntervalSince1970)",
-                    appBundleId: currentBundleId,
-                    appName: currentAppName,
-                    startTime: blockStart,
-                    endTime: blockEnd,
-                    durationSeconds: blockDuration,
-                    recordCount: recordCount
+        func flush() {
+            guard let bundleId = workBundleId else { return }
+            let contributionTotal = workContributions.values.reduce(0) { $0 + $1.total }
+            let totalDuration = workDominantDuration + contributionTotal
+            if totalDuration >= minDisplayDurationSeconds {
+                let contributing = workContributions
+                    .filter { $0.value.total >= contributionMinDisplaySeconds }
+                    .map { ContributingApp(bundleId: $0.key, appName: $0.value.appName, durationSeconds: $0.value.total) }
+                    .sorted { $0.durationSeconds > $1.durationSeconds }
+                result.append(AppUsageBlock(
+                    id: "\(bundleId)-\(workStart.timeIntervalSince1970)",
+                    appBundleId: bundleId,
+                    appName: workAppName,
+                    startTime: workStart,
+                    endTime: workEnd,
+                    durationSeconds: totalDuration,
+                    recordCount: workRecordCount,
+                    contributingApps: contributing
                 ))
-
-                // Start new block
-                currentBundleId = record.appBundleId
-                currentAppName = record.appName
-                blockStart = record.timestamp
-                blockEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
-                blockDuration = record.durationSeconds
-                recordCount = 1
             }
+            workBundleId = nil
+            workDominantDuration = 0
+            workContributions = [:]
+            workRecordCount = 0
         }
 
-        // Flush last block
-        blocks.append(AppUsageBlock(
-            id: "\(currentBundleId)-\(blockStart.timeIntervalSince1970)",
-            appBundleId: currentBundleId,
-            appName: currentAppName,
-            startTime: blockStart,
-            endTime: blockEnd,
-            durationSeconds: blockDuration,
-            recordCount: recordCount
-        ))
+        func startWith(_ record: AppRecord) {
+            workBundleId = record.appBundleId
+            workAppName = record.appName
+            workStart = record.timestamp
+            workEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
+            workDominantDuration = record.durationSeconds
+            workContributions = [:]
+            workRecordCount = 1
+        }
 
-        return blocks
+        for record in sorted {
+            let recordEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
+
+            // Sleep/wake gap: any gap beyond the threshold forces a flush so
+            // we don't visually bridge hours of inactivity into one block.
+            if workBundleId != nil {
+                let gap = record.timestamp.timeIntervalSince(workEnd)
+                if gap > sleepGapSeconds {
+                    flush()
+                }
+            }
+
+            if workBundleId == nil {
+                startWith(record)
+                continue
+            }
+
+            if record.appBundleId == workBundleId {
+                // Same dominant — extend in place.
+                workEnd = max(workEnd, recordEnd)
+                workDominantDuration += record.durationSeconds
+                workRecordCount += 1
+            } else if record.durationSeconds <= interruptionGraceSeconds {
+                // Brief use of another app — absorb as a contribution.
+                workEnd = max(workEnd, recordEnd)
+                let existing = workContributions[record.appBundleId]
+                workContributions[record.appBundleId] = (
+                    appName: record.appName,
+                    total: (existing?.total ?? 0) + record.durationSeconds
+                )
+                workRecordCount += 1
+            } else {
+                // Long interruption — flush and start fresh with this record
+                // as the new dominant.
+                flush()
+                startWith(record)
+            }
+        }
+        flush()
+        return result
     }
 }
