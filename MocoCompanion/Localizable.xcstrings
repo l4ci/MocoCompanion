@@ -1074,7 +1074,20 @@
 
     },
     "Booked Entries" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebuchte Einträge"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booked Entries"
+          }
+        }
+      }
     },
     "budget.projectCritical.tooltip" : {
       "localizations" : {
@@ -1152,7 +1165,20 @@
 
     },
     "date.today" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
     },
     "debug.apiLog" : {
       "localizations" : {
@@ -2835,7 +2861,20 @@
 
     },
     "No activity for this day" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Aktivität an diesem Tag"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No activity for this day"
+          }
+        }
+      }
     },
     "No matches" : {
 
@@ -2850,10 +2889,36 @@
 
     },
     "No timed entries for this day" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine zeitlich eingeordneten Einträge an diesem Tag"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No timed entries for this day"
+          }
+        }
+      }
     },
     "Not synced" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht synchronisiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not synced"
+          }
+        }
+      }
     },
     "Not yet synced to Moco" : {
 
@@ -3850,7 +3915,20 @@
       }
     },
     "Recorded Activities" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgezeichnete Aktivitäten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded Activities"
+          }
+        }
+      }
     },
     "Refresh list" : {
 
@@ -5403,7 +5481,20 @@
 
     },
     "Unassigned" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zugeordnet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned"
+          }
+        }
+      }
     },
     "Undo" : {
 
