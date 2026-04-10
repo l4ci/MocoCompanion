@@ -154,7 +154,7 @@ struct TimelineViewModelTests {
         try await store.insert(normal)
         try await store.insert(deleted)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         #expect(vm.shadowEntries.count == 1)
@@ -174,7 +174,7 @@ struct TimelineViewModelTests {
         try await store.insert(positioned)
         try await store.insert(unpositioned)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         #expect(vm.positionedEntries.count == 1)
@@ -226,7 +226,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         await vm.moveEntry(vm.positionedEntries[0], toStartTime: "10:30")
@@ -244,7 +244,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, locked: true, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         await vm.moveEntry(vm.positionedEntries[0], toStartTime: "10:30")
@@ -264,7 +264,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         await vm.resizeEntry(vm.positionedEntries[0], newStartTime: "09:15", newDurationSeconds: 2700)
@@ -407,7 +407,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         // Proposed 09:30-10:30 overlaps existing 09:00-10:00
@@ -424,7 +424,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         // Proposed 08:00-11:00 fully contains existing 09:00-10:00
@@ -441,7 +441,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         // Proposed starts exactly when existing ends (10:00 = 600 min) → NOT an overlap
@@ -457,7 +457,7 @@ struct TimelineViewModelTests {
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         // Proposed 14:00-15:00 doesn't overlap 09:00-10:00
@@ -471,7 +471,7 @@ struct TimelineViewModelTests {
     @MainActor
     func createEntryInsertsWithPendingCreate() async throws {
         let store = try makeShadowEntryStore()
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         let today = TimelineViewModel.dateString(from: Date())
 
         await vm.createEntry(
@@ -504,7 +504,7 @@ struct TimelineViewModelTests {
     @MainActor
     func createEntryReloadsData() async throws {
         let store = try makeShadowEntryStore()
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         let today = TimelineViewModel.dateString(from: Date())
 
         await vm.createEntry(
@@ -531,7 +531,7 @@ struct TimelineViewModelTests {
         let existing = TestFactories.makeShadowEntry(id: 1, date: today, startTime: "08:00")
         try await store.insert(existing)
 
-        let vm = makeViewModel(shadowEntryStore: store)
+        let vm = try makeViewModel(shadowEntryStore: store)
         await vm.loadData()
 
         await vm.createEntry(
@@ -565,21 +565,35 @@ struct TimelineViewModelTests {
     private func makeViewModel(shadowEntryStore: ShadowEntryStore? = nil) throws -> TimelineViewModel {
         let store = try shadowEntryStore ?? makeShadowEntryStore()
         let appRecordStore = AppRecordStore(inMemory: true)
+        let rulesDb = try SQLiteDatabase(path: ":memory:")
+        let ruleStore = try RuleStore(database: rulesDb)
+        let autotracker = Autotracker(
+            shadowEntryStore: store,
+            appRecordStore: appRecordStore,
+            ruleStore: ruleStore
+        )
         let syncState = SyncState()
         return TimelineViewModel(
             shadowEntryStore: store,
-            appRecordStore: appRecordStore,
+            autotracker: autotracker,
             syncState: syncState
         )
     }
 
     @MainActor
-    private func makeViewModel(shadowEntryStore: ShadowEntryStore) -> TimelineViewModel {
+    private func makeViewModel(shadowEntryStore: ShadowEntryStore) throws -> TimelineViewModel {
         let appRecordStore = AppRecordStore(inMemory: true)
+        let rulesDb = try SQLiteDatabase(path: ":memory:")
+        let ruleStore = try RuleStore(database: rulesDb)
+        let autotracker = Autotracker(
+            shadowEntryStore: shadowEntryStore,
+            appRecordStore: appRecordStore,
+            ruleStore: ruleStore
+        )
         let syncState = SyncState()
         return TimelineViewModel(
             shadowEntryStore: shadowEntryStore,
-            appRecordStore: appRecordStore,
+            autotracker: autotracker,
             syncState: syncState
         )
     }

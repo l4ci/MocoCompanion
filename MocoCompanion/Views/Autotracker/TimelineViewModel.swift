@@ -12,14 +12,8 @@ import os
     // MARK: - Dependencies
 
     private let shadowEntryStore: ShadowEntryStore
-    private let appRecordStore: AppRecordStore
+    let autotracker: Autotracker
     let syncState: SyncState
-
-    /// Optional rule engine — when set, evaluate() runs during loadData().
-    var ruleEngine: RuleEngine?
-
-    /// Optional rule store — exposed so TimelinePaneView can pass it to the rule editor sheet.
-    var ruleStore: RuleStore?
 
     // MARK: - Published State
 
@@ -50,9 +44,9 @@ import os
 
     // MARK: - Init
 
-    init(shadowEntryStore: ShadowEntryStore, appRecordStore: AppRecordStore, syncState: SyncState) {
+    init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState) {
         self.shadowEntryStore = shadowEntryStore
-        self.appRecordStore = appRecordStore
+        self.autotracker = autotracker
         self.syncState = syncState
     }
 
@@ -77,7 +71,7 @@ import os
             unpositionedEntries = []
         }
 
-        let records = appRecordStore.records(for: selectedDate)
+        let records = autotracker.records(for: selectedDate)
         appRecords = records
         appUsageBlocks = AppUsageBlock.merge(records)
 
@@ -85,24 +79,24 @@ import os
 
         // Evaluate rules against loaded data
         let isTimerRunning = shadowEntries.contains { $0.timerStartedAt != nil }
-        await ruleEngine?.evaluate(for: selectedDate, existingEntries: shadowEntries, timerRunning: isTimerRunning)
+        await autotracker.evaluate(for: selectedDate, existingEntries: shadowEntries, timerRunning: isTimerRunning)
     }
 
-    // MARK: - Rule Engine Passthrough
+    // MARK: - Autotracker Passthrough
 
-    var suggestions: [Suggestion] { ruleEngine?.suggestions ?? [] }
+    var suggestions: [Suggestion] { autotracker.suggestions }
 
     func approveSuggestion(_ suggestion: Suggestion) async {
-        await ruleEngine?.approveSuggestion(suggestion)
+        await autotracker.approveSuggestion(suggestion)
         await loadData()
     }
 
     func declineSuggestion(_ suggestion: Suggestion) {
-        ruleEngine?.declineSuggestion(suggestion)
+        autotracker.declineSuggestion(suggestion)
     }
 
     func approveAllSuggestions() async {
-        await ruleEngine?.approveAllSuggestions()
+        await autotracker.approveAllSuggestions()
         await loadData()
     }
 

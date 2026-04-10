@@ -45,18 +45,16 @@ struct TimelinePaneView: View {
             }
         }
         .sheet(item: $ruleEditorConfig) { config in
-            if let ruleStore = viewModel.ruleStore {
-                RuleEditorSheet(
-                    existingRule: nil,
-                    prefillBundleId: config.prefillBundleId,
-                    prefillAppName: config.prefillAppName,
-                    ruleStore: ruleStore,
-                    projectCatalog: projectCatalog,
+            RuleEditorSheet(
+                existingRule: nil,
+                prefillBundleId: config.prefillBundleId,
+                prefillAppName: config.prefillAppName,
+                autotracker: viewModel.autotracker,
+                projectCatalog: projectCatalog,
                     onSave: {
                         Task { await viewModel.loadData() }
                     }
                 )
-            }
         }
         .sheet(isPresented: showCreationSheet) {
             if let creation = pendingCreation {

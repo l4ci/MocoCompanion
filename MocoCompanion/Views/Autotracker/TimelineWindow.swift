@@ -6,22 +6,20 @@ import SwiftUI
 struct TimelineWindow: View {
     @State private var viewModel: TimelineViewModel
     let projectCatalog: ProjectCatalog
-    let ruleStore: RuleStore
+    let autotracker: Autotracker
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
     @State private var showRuleList = false
 
-    init(shadowEntryStore: ShadowEntryStore, appRecordStore: AppRecordStore, syncState: SyncState, projectCatalog: ProjectCatalog, ruleStore: RuleStore, ruleEngine: RuleEngine) {
+    init(shadowEntryStore: ShadowEntryStore, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker) {
         let vm = TimelineViewModel(
             shadowEntryStore: shadowEntryStore,
-            appRecordStore: appRecordStore,
+            autotracker: autotracker,
             syncState: syncState
         )
-        vm.ruleEngine = ruleEngine
-        vm.ruleStore = ruleStore
         _viewModel = State(initialValue: vm)
         self.projectCatalog = projectCatalog
-        self.ruleStore = ruleStore
+        self.autotracker = autotracker
     }
 
     var body: some View {
@@ -87,7 +85,7 @@ struct TimelineWindow: View {
         }
         .sheet(isPresented: $showRuleList) {
             RuleListView(
-                ruleStore: ruleStore,
+                autotracker: autotracker,
                 projectCatalog: projectCatalog,
                 onDismiss: { showRuleList = false }
             )

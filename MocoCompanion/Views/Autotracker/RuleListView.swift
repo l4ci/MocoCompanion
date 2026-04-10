@@ -2,7 +2,7 @@ import SwiftUI
 
 /// View for managing all tracking rules: list, toggle, edit, delete.
 struct RuleListView: View {
-    let ruleStore: RuleStore
+    let autotracker: Autotracker
     let projectCatalog: ProjectCatalog
     let onDismiss: () -> Void
 
@@ -31,7 +31,7 @@ struct RuleListView: View {
                 existingRule: rule,
                 prefillBundleId: nil,
                 prefillAppName: nil,
-                ruleStore: ruleStore,
+                autotracker: autotracker,
                 projectCatalog: projectCatalog,
                 onSave: { Task { await loadRules() } }
             )
@@ -41,7 +41,7 @@ struct RuleListView: View {
                 existingRule: nil,
                 prefillBundleId: nil,
                 prefillAppName: nil,
-                ruleStore: ruleStore,
+                autotracker: autotracker,
                 projectCatalog: projectCatalog,
                 onSave: { Task { await loadRules() } }
             )
@@ -57,7 +57,7 @@ struct RuleListView: View {
             Button("Delete", role: .destructive) {
                 Task {
                     if let id = rule.id {
-                        try? await ruleStore.delete(id: id)
+                        try? await autotracker.deleteRule(id: id)
                     }
                     await loadRules()
                 }
@@ -192,14 +192,14 @@ struct RuleListView: View {
     // MARK: - Actions
 
     private func loadRules() async {
-        rules = (try? await ruleStore.allRules()) ?? []
+        rules = (try? await autotracker.allRules()) ?? []
     }
 
     private func toggleEnabled(_ rule: TrackingRule) {
         Task {
             var updated = rule
             updated.enabled.toggle()
-            try? await ruleStore.update(updated)
+            try? await autotracker.updateRule(updated)
             await loadRules()
         }
     }

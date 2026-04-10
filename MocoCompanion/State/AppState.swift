@@ -31,10 +31,7 @@ final class AppState {
     let shadowEntryStore: ShadowEntryStore
     let syncEngine: SyncEngine
     let syncState: SyncState
-    let appRecordStore: AppRecordStore
-    let appRecorder: AppRecorder
-    let ruleStore: RuleStore
-    let ruleEngine: RuleEngine
+    let autotracker: Autotracker
 
     let yesterdayService: YesterdayService
 
@@ -199,13 +196,14 @@ final class AppState {
         self.offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
 
         let recordStore = AppRecordStore()
-        self.appRecordStore = recordStore
-        self.appRecorder = AppRecorder(store: recordStore, settings: settings)
-
         let rulesDb = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
         let rStore = try! RuleStore(database: rulesDb)
-        self.ruleStore = rStore
-        self.ruleEngine = RuleEngine(ruleStore: rStore, appRecordStore: recordStore, shadowEntryStore: shadowStore)
+        self.autotracker = Autotracker(
+            shadowEntryStore: shadowStore,
+            appRecordStore: recordStore,
+            ruleStore: rStore,
+            settings: settings
+        )
 
         // Create extracted submodules
         let projectCatalog = ProjectCatalog()

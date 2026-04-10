@@ -3,8 +3,7 @@ import SwiftUI
 /// Settings tab for the Autotracker feature: toggle recording, view status, configure retention.
 struct AutotrackerSettingsTab: View {
     @Bindable var settings: SettingsStore
-    var appRecorder: AppRecorder?
-    var ruleStore: RuleStore?
+    var autotracker: Autotracker?
     var projectCatalog: ProjectCatalog?
 
     @Environment(\.theme) private var theme
@@ -20,9 +19,9 @@ struct AutotrackerSettingsTab: View {
                 Toggle(String(localized: "autotracker.enable"), isOn: $settings.autotrackerEnabled)
                     .onChange(of: settings.autotrackerEnabled) { _, enabled in
                         if enabled {
-                            appRecorder?.start()
+                            autotracker?.start()
                         } else {
-                            appRecorder?.stop()
+                            autotracker?.stop()
                         }
                     }
             }
@@ -31,10 +30,10 @@ struct AutotrackerSettingsTab: View {
                 Section(String(localized: "autotracker.status")) {
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(appRecorder?.isRecording == true ? .green : .secondary)
+                            .fill(autotracker?.isRecording == true ? .green : .secondary)
                             .frame(width: 8, height: 8)
 
-                        Text(appRecorder?.isRecording == true
+                        Text(autotracker?.isRecording == true
                              ? String(localized: "autotracker.recording")
                              : String(localized: "autotracker.stopped"))
                             .font(.system(size: Theme.FontSize.body))
@@ -44,12 +43,12 @@ struct AutotrackerSettingsTab: View {
                         Text(String(localized: "autotracker.recordCount"))
                             .font(.system(size: Theme.FontSize.body))
                         Spacer()
-                        Text("\(appRecorder?.recordCount ?? 0)")
+                        Text("\(autotracker?.recordCount ?? 0)")
                             .font(.system(size: Theme.FontSize.body).monospacedDigit())
                             .foregroundStyle(theme.textSecondary)
                     }
 
-                    if let name = appRecorder?.currentAppName, appRecorder?.isRecording == true {
+                    if let name = autotracker?.currentAppName, autotracker?.isRecording == true {
                         HStack {
                             Text(String(localized: "autotracker.currentApp"))
                                 .font(.system(size: Theme.FontSize.body))
@@ -90,7 +89,7 @@ struct AutotrackerSettingsTab: View {
                 }
             }
 
-            if settings.autotrackerEnabled, let ruleStore, let projectCatalog {
+            if settings.autotrackerEnabled, autotracker != nil, projectCatalog != nil {
                 Section("Rules") {
                     Button {
                         showRuleList = true
@@ -127,21 +126,21 @@ struct AutotrackerSettingsTab: View {
         }
         .formStyle(.grouped)
         .task {
-            if let ruleStore {
-                ruleCount = (try? await ruleStore.allRules().count) ?? 0
+            if let autotracker {
+                ruleCount = (try? await autotracker.allRules().count) ?? 0
             }
         }
         .sheet(isPresented: $showRuleList) {
             // Refresh count when sheet dismisses
             Task {
-                if let ruleStore {
-                    ruleCount = (try? await ruleStore.allRules().count) ?? 0
+                if let autotracker {
+                    ruleCount = (try? await autotracker.allRules().count) ?? 0
                 }
             }
         } content: {
-            if let ruleStore, let projectCatalog {
+            if let autotracker, let projectCatalog {
                 RuleListView(
-                    ruleStore: ruleStore,
+                    autotracker: autotracker,
                     projectCatalog: projectCatalog,
                     onDismiss: { showRuleList = false }
                 )

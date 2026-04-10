@@ -7,7 +7,7 @@ struct RuleEditorSheet: View {
     let existingRule: TrackingRule?
     let prefillBundleId: String?
     let prefillAppName: String?
-    let ruleStore: RuleStore
+    let autotracker: Autotracker
     let projectCatalog: ProjectCatalog
     let onSave: () -> Void
 
@@ -249,9 +249,9 @@ struct RuleEditorSheet: View {
         Task {
             do {
                 if isEditing {
-                    try await ruleStore.update(rule)
+                    try await autotracker.updateRule(rule)
                 } else {
-                    _ = try await ruleStore.insert(rule)
+                    _ = try await autotracker.insertRule(rule)
                 }
                 onSave()
                 dismiss()

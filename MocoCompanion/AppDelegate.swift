@@ -129,9 +129,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
 
         // Autotracker: cleanup old records and start if enabled
-        appState.appRecordStore.cleanup(olderThan: appState.settings.autotrackerRetentionDays)
+        appState.autotracker.cleanup(olderThanDays: appState.settings.autotrackerRetentionDays)
         if appState.settings.autotrackerEnabled {
-            appState.appRecorder.start()
+            appState.autotracker.start()
         }
     }
 
@@ -163,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationWillTerminate(_ notification: Notification) {
         statusItemController?.teardown()
         appState.monitorEngine.stopAll()
-        appState.appRecorder.stop()
+        appState.autotracker.stop()
         backgroundPollingTask?.cancel()
         timerSyncTask?.cancel()
     }
@@ -280,11 +280,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         let timelineView = TimelineWindow(
             shadowEntryStore: appState.shadowEntryStore,
-            appRecordStore: appState.appRecordStore,
             syncState: appState.syncState,
             projectCatalog: appState.catalog,
-            ruleStore: appState.ruleStore,
-            ruleEngine: appState.ruleEngine
+            autotracker: appState.autotracker
         )
 
         let hostingView = NSHostingController(rootView: timelineView)
