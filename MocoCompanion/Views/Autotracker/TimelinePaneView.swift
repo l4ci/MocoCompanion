@@ -254,6 +254,9 @@ struct TimelinePaneView: View {
                             Task { await viewModel.deleteEntry(entry) }
                         }
                     }
+                    .keyboardShortcut(.defaultAction)
+                    Button("Cancel", role: .cancel) { }
+                        .keyboardShortcut(.cancelAction)
                 } message: {
                     Text("You can undo this for 5 seconds.")
                 }

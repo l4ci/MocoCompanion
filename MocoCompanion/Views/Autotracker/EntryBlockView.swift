@@ -285,6 +285,9 @@ struct EntryBlockView: View {
             Button("Delete", role: .destructive) {
                 onDelete?(entry)
             }
+            .keyboardShortcut(.defaultAction)
+            Button("Cancel", role: .cancel) { }
+                .keyboardShortcut(.cancelAction)
         } message: {
             Text("You can undo this for 5 seconds.")
         }

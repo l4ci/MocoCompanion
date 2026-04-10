@@ -332,7 +332,9 @@ struct TimelineEntryEditSheet: View {
             Button("Delete", role: .destructive) {
                 onDelete?()
             }
+            .keyboardShortcut(.defaultAction)
             Button("Cancel", role: .cancel) { }
+                .keyboardShortcut(.cancelAction)
         } message: {
             Text("You can undo this for 5 seconds before it is pushed to Moco.")
         }
