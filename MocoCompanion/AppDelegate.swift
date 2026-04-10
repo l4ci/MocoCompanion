@@ -23,7 +23,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Background tasks
     private var backgroundPollingTask: Task<Void, Never>?
     private var timerSyncTask: Task<Void, Never>?
-    private var periodicSyncTask: Task<Void, Never>?
 
     /// Convenience accessor for the timer service.
     var timerService: TimerService { appState.timerService }
@@ -131,15 +130,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             await self.timerService.sync()
         }
 
-        periodicSyncTask = repeatingTask(every: .seconds(300)) { [weak self] in
-            guard let self else { return }
-            let today = DateUtilities.todayString()
-            var dates = [today]
-            if let yesterday = DateUtilities.yesterdayString() { dates.append(yesterday) }
-            await self.appState.syncEngine.sync(dates: dates)
-            logger.info("Periodic background sync completed")
-        }
-
         // Autotracker: cleanup old records and start if enabled
         appState.autotracker.cleanup(olderThanDays: appState.settings.autotrackerRetentionDays)
         if appState.settings.autotrackerEnabled {
@@ -178,7 +168,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         appState.autotracker.stop()
         backgroundPollingTask?.cancel()
         timerSyncTask?.cancel()
-        periodicSyncTask?.cancel()
     }
 
     // MARK: - UNUserNotificationCenterDelegate

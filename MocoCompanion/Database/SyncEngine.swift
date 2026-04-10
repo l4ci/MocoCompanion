@@ -44,7 +44,6 @@ actor SyncEngine {
             }
             let pending = try await store.dirtyEntries().count
             await MainActor.run { syncState.setPendingChanges(pending) }
-            await cleanupStaleLocalRows()
         } catch {
             let mocoError = MocoError.from(error)
             await MainActor.run { syncState.setLastError(mocoError) }
@@ -180,68 +179,6 @@ actor SyncEngine {
 
         let shadow = ShadowEntry.from(result)
         try await store.updateFromServer(shadow)
-    }
-
-    // MARK: - Orphan Cleanup
-
-    /// Remove local-only `.pendingCreate` rows that are older than `hours` hours
-    /// and could never sync (e.g. the project no longer exists on the server).
-    /// Attempts one final push; on a 4xx error the row is deleted locally and logged.
-    func cleanupStaleLocalRows(olderThan hours: Int = 24) async {
-        guard let client = clientFactory() else { return }
-        let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-        let formatter = ISO8601DateFormatter()
-
-        let allDirty: [ShadowEntry]
-        do {
-            allDirty = try await store.dirtyEntries()
-        } catch {
-            logger.warning("cleanupStaleLocalRows: could not fetch dirty entries: \(error)")
-            return
-        }
-
-        let stale = allDirty.filter { entry in
-            guard entry.syncStatus == .pendingCreate,
-                  let localId = entry.localId,
-                  !localId.isEmpty,
-                  let createdAt = formatter.date(from: entry.createdAt)
-            else { return false }
-            return createdAt < cutoff
-        }
-
-        for entry in stale {
-            do {
-                _ = try await client.createActivity(
-                    date: entry.date,
-                    projectId: entry.projectId,
-                    taskId: entry.taskId,
-                    description: entry.description,
-                    seconds: entry.seconds,
-                    tag: entry.tag.isEmpty ? nil : entry.tag
-                )
-                // Push succeeded — the regular pushDirty cycle will replace the row
-            } catch {
-                let mocoError = MocoError.from(error)
-                var shouldDelete = false
-                switch mocoError {
-                case .notFound:
-                    shouldDelete = true
-                case .validationError:
-                    shouldDelete = true
-                case .serverError(let statusCode, _) where statusCode >= 400 && statusCode < 500:
-                    shouldDelete = true
-                default:
-                    break
-                }
-                if shouldDelete {
-                    if let localId = entry.localId {
-                        try? await store.deleteByLocalId(localId)
-                        logger.info("cleanupStaleLocalRows: removed unrecoverable pendingCreate row \(localId): \(mocoError)")
-                    }
-                }
-                // Any other error (network, 5xx) — leave the row and retry next cycle
-            }
-        }
     }
 
     // MARK: - UI Convenience
