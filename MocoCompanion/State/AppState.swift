@@ -263,9 +263,13 @@ final class AppState {
             await self.syncQueuedEntries()
         }
 
-        // Auto-detect "description required" from Moco validation errors
+        // Auto-detect "description required" from Moco validation errors.
+        // The callback is invoked synchronously from the SyncEngine actor
+        // (see SyncEngine.sync catch block), which is NOT the main actor.
+        // Hop to main before touching @MainActor settings — using
+        // `assumeIsolated` here would trap.
         sEngine.onDescriptionRequired = { [weak self] in
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let self, !self.settings.descriptionRequired else { return }
                 self.settings.descriptionRequired = true
                 self.logger.info("Auto-detected: Moco requires non-empty descriptions")
