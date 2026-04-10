@@ -13,6 +13,12 @@
     "· %@" : {
 
     },
+    "›" : {
+
+    },
+    "(%lld min)" : {
+
+    },
     "(↩)" : {
 
     },
@@ -21,6 +27,16 @@
     },
     "%@" : {
 
+    },
+    "%@ – %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ – %2$@"
+          }
+        }
+      }
     },
     "%@ › %@" : {
       "localizations" : {
@@ -78,12 +94,28 @@
     "%@.mocoapp.com" : {
 
     },
+    "%lld" : {
+
+    },
     "%lld %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld entries" : {
+
+    },
+    "%lld rule%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld rule%2$@"
           }
         }
       }
@@ -452,22 +484,6 @@
         }
       }
     },
-    "a11y.startTimer %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timer starten für %@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start timer for %@"
-          }
-        }
-      }
-    },
     "a11y.shortcutSelect %lld" : {
       "localizations" : {
         "de" : {
@@ -484,18 +500,18 @@
         }
       }
     },
-    "a11y.tapToSelect" : {
+    "a11y.startTimer %@" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tippen zum Auswählen"
+            "value" : "Timer starten für %@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap to select"
+            "value" : "Start timer for %@"
           }
         }
       }
@@ -512,6 +528,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop timer for %@"
+          }
+        }
+      }
+    },
+    "a11y.tapToSelect" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen zum Auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to select"
           }
         }
       }
@@ -692,6 +724,9 @@
         }
       }
     },
+    "Action" : {
+
+    },
     "action.cancel" : {
       "localizations" : {
         "de" : {
@@ -808,6 +843,223 @@
     "API Key" : {
 
     },
+    "App Bundle ID" : {
+
+    },
+    "App Name (contains)" : {
+
+    },
+    "Approve all (%lld)" : {
+
+    },
+    "autotracker.currentApp" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuelle App"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current app"
+          }
+        }
+      }
+    },
+    "autotracker.data" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        }
+      }
+    },
+    "autotracker.days %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Tage"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days"
+          }
+        }
+      }
+    },
+    "autotracker.enable" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker aktivieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Autotracker"
+          }
+        }
+      }
+    },
+    "autotracker.excludedApps" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgeschlossene Apps"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluded Apps"
+          }
+        }
+      }
+    },
+    "autotracker.excludedApps.add" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        }
+      }
+    },
+    "autotracker.excludedApps.placeholder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-Bundle-ID (z. B. com.example.app)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App bundle ID (e.g. com.example.app)"
+          }
+        }
+      }
+    },
+    "autotracker.privacyNote" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Autotracker zeichnet auf, welche App im Vordergrund ist, während MocoCompanion läuft. Die Daten werden nur lokal auf deinem Mac gespeichert und niemals an Moco oder einen anderen Server übertragen. Du kannst die Funktion jederzeit deaktivieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker records which app is in the foreground while MocoCompanion is running. Data is stored only on your Mac and is never uploaded to Moco or any other server. You can disable it at any time."
+          }
+        }
+      }
+    },
+    "autotracker.recordCount" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufzeichnungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records"
+          }
+        }
+      }
+    },
+    "autotracker.recording" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeichnet auf"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording"
+          }
+        }
+      }
+    },
+    "autotracker.retention" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufbewahrung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retention"
+          }
+        }
+      }
+    },
+    "autotracker.status" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        }
+      }
+    },
+    "autotracker.stopped" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestoppt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopped"
+          }
+        }
+      }
+    },
     "budget.projectCritical.tooltip" : {
       "localizations" : {
         "de" : {
@@ -855,6 +1107,21 @@
           }
         }
       }
+    },
+    "Cancel" : {
+
+    },
+    "Create" : {
+
+    },
+    "Create Entry" : {
+
+    },
+    "Create Rule" : {
+
+    },
+    "Create rule for \"%@\"…" : {
+
     },
     "debug.apiLog" : {
       "localizations" : {
@@ -1080,6 +1347,21 @@
         }
       }
     },
+    "Delete" : {
+
+    },
+    "Delete \"%@\"? This cannot be undone." : {
+
+    },
+    "Delete Rule" : {
+
+    },
+    "Description" : {
+
+    },
+    "Description template" : {
+
+    },
     "description.acceptSuggestion" : {
       "localizations" : {
         "de" : {
@@ -1163,7 +1445,13 @@
     "Deutsch" : {
 
     },
+    "Done" : {
+
+    },
     "Edit description" : {
+
+    },
+    "Edit Rule" : {
 
     },
     "edit.description" : {
@@ -1229,6 +1517,9 @@
           }
         }
       }
+    },
+    "Enabled" : {
+
     },
     "English" : {
 
@@ -2324,6 +2615,31 @@
     "Loading projects…" : {
 
     },
+    "Loading..." : {
+
+    },
+    "Manage Rules" : {
+
+    },
+    "Match Criteria" : {
+
+    },
+    "menu.autotracker" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
+          }
+        }
+      }
+    },
     "menu.newTimer" : {
       "localizations" : {
         "de" : {
@@ -2372,22 +2688,6 @@
         }
       }
     },
-    "menu.autotracker" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autotracker"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autotracker"
-          }
-        }
-      }
-    },
     "menu.settings" : {
       "localizations" : {
         "de" : {
@@ -2405,6 +2705,9 @@
       }
     },
     "MocoCompanion" : {
+
+    },
+    "Mode" : {
 
     },
     "mode.manual" : {
@@ -2438,6 +2741,27 @@
           }
         }
       }
+    },
+    "New Rule" : {
+
+    },
+    "No activity for this day" : {
+
+    },
+    "No matches" : {
+
+    },
+    "No projects loaded" : {
+
+    },
+    "No rules configured" : {
+
+    },
+    "No timed entries for this day" : {
+
+    },
+    "Not synced" : {
+
     },
     "notifDesc.activityDeleted" : {
       "localizations" : {
@@ -3274,6 +3598,9 @@
         }
       }
     },
+    "Optional description" : {
+
+    },
     "planned.header" : {
       "localizations" : {
         "de" : {
@@ -3417,6 +3744,18 @@
           }
         }
       }
+    },
+    "Rule name" : {
+
+    },
+    "Rules" : {
+
+    },
+    "Save" : {
+
+    },
+    "Search projects…" : {
+
     },
     "search.configureApi" : {
       "localizations" : {
@@ -3718,6 +4057,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autocomplete Descriptions"
+          }
+        }
+      }
+    },
+    "settings.autotracker" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autotracker"
           }
         }
       }
@@ -4650,38 +5005,6 @@
         }
       }
     },
-    "sync.now" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "jetzt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "now"
-          }
-        }
-      }
-    },
-    "sync.refresh" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktualisieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
-          }
-        }
-      }
-    },
     "setup.welcome" : {
       "localizations" : {
         "de" : {
@@ -4782,10 +5105,48 @@
         }
       }
     },
+    "Suggest" : {
+
+    },
     "Switch to manual hours entry" : {
 
     },
     "Switch to timer mode" : {
+
+    },
+    "sync.now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "jetzt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "now"
+          }
+        }
+      }
+    },
+    "sync.refresh" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh"
+          }
+        }
+      }
+    },
+    "Synced %@" : {
 
     },
     "tab.search" : {
@@ -4819,6 +5180,12 @@
           }
         }
       }
+    },
+    "Target Entry" : {
+
+    },
+    "Today" : {
+
     },
     "today.noEntries" : {
       "localizations" : {
@@ -4868,22 +5235,6 @@
         }
       }
     },
-    "tomorrow.noPlanning" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keine Aufgaben für morgen geplant"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No tasks planned for tomorrow"
-          }
-        }
-      }
-    },
     "tomorrow.hoursPlanned %lld" : {
       "localizations" : {
         "de" : {
@@ -4896,6 +5247,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lldh planned"
+          }
+        }
+      }
+    },
+    "tomorrow.noPlanning" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Aufgaben für morgen geplant"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tasks planned for tomorrow"
           }
         }
       }
@@ -4915,6 +5282,12 @@
           }
         }
       }
+    },
+    "Tracking Rules" : {
+
+    },
+    "Unassigned" : {
+
     },
     "undo.action" : {
       "localizations" : {
@@ -5005,6 +5378,12 @@
           }
         }
       }
+    },
+    "Window title matching is not available in sandboxed mode" : {
+
+    },
+    "Window Title Pattern" : {
+
     },
     "yesterday.hoursIncomplete" : {
       "localizations" : {
