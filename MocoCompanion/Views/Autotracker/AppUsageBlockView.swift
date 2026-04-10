@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Renders a single app usage block on the timeline.
@@ -13,9 +14,21 @@ struct AppUsageBlockView: View {
     var onDragEnded: () -> Void = {}
     @Environment(\.theme) private var theme
     @State private var isDragging: Bool = false
+    @State private var appIcon: NSImage?
 
     private var height: CGFloat {
         max(CGFloat(block.durationSeconds / 60) * TimelineLayout.pixelsPerMinute, 12)
+    }
+
+    /// Resolves the app's icon from its bundle ID via NSWorkspace. Cached in
+    /// `@State` for the lifetime of the view so we don't hit the filesystem
+    /// on every render.
+    private func resolveAppIcon() {
+        guard appIcon == nil else { return }
+        let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: block.appBundleId)
+        if let url {
+            appIcon = NSWorkspace.shared.icon(forFile: url.path)
+        }
     }
 
     private var helpLabel: String {
@@ -37,6 +50,15 @@ struct AppUsageBlockView: View {
                 .fill(Color.accentColor.opacity(0.6))
                 .frame(width: 3)
 
+            // App icon (resolved from bundle id via NSWorkspace)
+            if let appIcon {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 14, height: 14)
+                    .padding(.leading, 4)
+            }
+
             Text(block.appName)
                 .font(.system(size: Theme.FontSize.caption))
                 .foregroundStyle(theme.textSecondary)
@@ -46,6 +68,8 @@ struct AppUsageBlockView: View {
 
             Spacer(minLength: 0)
         }
+        .onAppear { resolveAppIcon() }
+        .onChange(of: block.appBundleId) { _, _ in resolveAppIcon() }
         .frame(width: TimelineLayout.appUsagePaneWidth - 8, height: height)
         .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
         .overlay(

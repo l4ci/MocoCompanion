@@ -6,7 +6,9 @@ enum TimelineLayout {
     static let timeAxisWidth: CGFloat = 50
     static let appUsagePaneWidth: CGFloat = 140
     static let blockCornerRadius: CGFloat = Theme.Radius.medium
-    static let snapMinutes: Int = 5
+    /// Coarse snap for timeline gestures (drag-move, edge-resize, drag-create).
+    /// For finer-grained edits (precise minute adjustment), use the Edit sheet.
+    static let snapMinutes: Int = 15
     static let totalHeight: CGFloat = 24 * 60 * pixelsPerMinute
 }
 

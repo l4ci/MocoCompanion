@@ -38,18 +38,28 @@ struct TimelinePaneView: View {
                 Divider()
             }
 
-            // Main timeline
-            if positionedEntries.isEmpty && appUsageBlocks.isEmpty && unpositionedEntries.isEmpty {
-                emptyState
-            } else if positionedEntries.isEmpty && appUsageBlocks.isEmpty {
-                // Only unpositioned entries exist — show a subtle note in the scroll area
-                Spacer()
-                Text("No timed entries for this day")
-                    .font(.system(size: Theme.FontSize.body))
-                    .foregroundStyle(theme.textTertiary)
-                Spacer()
-            } else {
+            // Main timeline. Always rendered so the entry column remains
+            // a valid drop target — previously we short-circuited to an
+            // empty state view when there was no data, which broke
+            // drag-unassigned-to-timeline on empty days. The empty-state
+            // messages now overlay the scrollable timeline instead.
+            ZStack {
                 scrollableTimeline
+                if positionedEntries.isEmpty && appUsageBlocks.isEmpty && unpositionedEntries.isEmpty {
+                    Text("No activity for this day")
+                        .font(.system(size: Theme.FontSize.body))
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(12)
+                        .background(theme.surface.opacity(0.85), in: Capsule())
+                        .allowsHitTesting(false)
+                } else if positionedEntries.isEmpty && appUsageBlocks.isEmpty {
+                    Text("No timed entries for this day")
+                        .font(.system(size: Theme.FontSize.body))
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(12)
+                        .background(theme.surface.opacity(0.85), in: Capsule())
+                        .allowsHitTesting(false)
+                }
             }
         }
         .sheet(item: $ruleEditorConfig) { config in
@@ -67,17 +77,21 @@ struct TimelinePaneView: View {
         .sheet(item: $editingEntry) { wrapper in
             TimelineEntryEditSheet(
                 entry: wrapper.entry,
+                fallbackDate: selectedDate,
                 projectCatalog: projectCatalog,
-                onSave: { projectId, taskId, projectName, taskName, customerName, description in
+                onSave: { edited in
                     Task {
-                        await viewModel.updateEntryContent(
+                        await viewModel.updateEntryFully(
                             wrapper.entry,
-                            projectId: projectId,
-                            taskId: taskId,
-                            projectName: projectName,
-                            taskName: taskName,
-                            customerName: customerName,
-                            description: description
+                            projectId: edited.projectId,
+                            taskId: edited.taskId,
+                            projectName: edited.projectName,
+                            taskName: edited.taskName,
+                            customerName: edited.customerName,
+                            description: edited.description,
+                            date: edited.date,
+                            startTime: edited.startTime,
+                            durationSeconds: edited.durationMinutes * 60
                         )
                         editingEntry = nil
                     }
@@ -186,7 +200,14 @@ struct TimelinePaneView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
-                .help("Drag onto the timeline to set a start time")
+                .help("Drag onto the timeline to set a start time, or right-click to edit")
+                .contextMenu {
+                    if !entry.locked {
+                        Button("Edit entry…") {
+                            editingEntry = EditingEntryWrapper(entry: entry)
+                        }
+                    }
+                }
                 // Make the row draggable so the user can drop it onto the
                 // timeline to assign a start time. We pass the entry id as
                 // a plain Int payload; the drop handler looks it up.

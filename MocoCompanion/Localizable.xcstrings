@@ -1117,6 +1117,9 @@
     "Create Entry" : {
 
     },
+    "Create entry from this block…" : {
+
+    },
     "Create Rule" : {
 
     },
@@ -1448,7 +1451,16 @@
     "Done" : {
 
     },
+    "Drag onto the timeline to set a start time" : {
+
+    },
     "Edit description" : {
+
+    },
+    "Edit Entry" : {
+
+    },
+    "Edit entry…" : {
 
     },
     "Edit Rule" : {

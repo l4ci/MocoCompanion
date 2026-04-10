@@ -146,6 +146,23 @@ struct EntryBlockView: View {
                 }
             }
         }
+        // When the underlying entry's time/duration changes (after a move
+        // or resize completes), reset the visual offsets. This avoids the
+        // snap-back flicker: we keep the dragged offset until the new
+        // entry data arrives, then the base y-position shifts and the
+        // offset clears on the same frame.
+        .onChange(of: entry.startTime) { _, _ in
+            dragOffset = 0
+            topResizeOffset = 0
+            isDragging = false
+            isResizingTop = false
+        }
+        .onChange(of: entry.seconds) { _, _ in
+            topResizeOffset = 0
+            bottomResizeOffset = 0
+            isResizingTop = false
+            isResizingBottom = false
+        }
 
         if isRunning {
             TimelineView(.periodic(from: .now, by: 60)) { _ in
@@ -168,10 +185,12 @@ struct EntryBlockView: View {
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
                 let newMinutes = TimelineGeometry.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
                 let newTime = TimelineGeometry.timeString(fromMinutes: newMinutes)
-
-                isDragging = false
-                dragOffset = 0
-
+                // Snap the visual offset to the final grid position so the
+                // block sits exactly where it will land once the update
+                // commits. `.onChange(of: entry.startTime)` clears this
+                // offset when the new entry data arrives — same frame as
+                // the base y-position updates — so there's no snap-back.
+                dragOffset = CGFloat(newMinutes - originalMinutes) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.moveEntry(entry, toStartTime: newTime)
                 }
@@ -194,10 +213,10 @@ struct EntryBlockView: View {
                 let newDurationMinutes = max(originalDurationMinutes - movedBy, TimelineLayout.snapMinutes)
                 let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
-
-                isResizingTop = false
-                topResizeOffset = 0
-
+                // Snap offset to final grid position so the block stays
+                // visually where it will land. Cleared by `.onChange` when
+                // the data arrives.
+                topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
                 }
@@ -217,10 +236,10 @@ struct EntryBlockView: View {
                 let originalDurationMinutes = entry.seconds / 60
                 let newDurationMinutes = max(originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes, TimelineLayout.snapMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
-
-                isResizingBottom = false
-                bottomResizeOffset = 0
-
+                // Snap visual offset to the final grid height so the block
+                // stays at its committed size until the new entry data
+                // arrives (cleared by `.onChange(of: entry.seconds)`).
+                bottomResizeOffset = CGFloat(newDurationMinutes - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
                 }
