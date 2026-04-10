@@ -174,8 +174,8 @@ struct TimelineEntryCreationSheet: View {
     // MARK: - Computed
 
     private var endTime: String {
-        let endMinutes = (TimelineViewModel.minutesSinceMidnight(from: startTime) ?? 0) + durationMinutes
-        return TimelineViewModel.timeString(fromMinutes: endMinutes)
+        let endMinutes = (TimelineGeometry.minutesSinceMidnight(from: startTime) ?? 0) + durationMinutes
+        return TimelineGeometry.timeString(fromMinutes: endMinutes)
     }
 
     private var formattedDateHeader: String {

@@ -147,7 +147,7 @@ struct TimelineViewModelTests {
     @MainActor
     func filtersPendingDelete() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
 
         let normal = TestFactories.makeShadowEntry(id: 1, date: today, syncStatus: .synced)
         let deleted = TestFactories.makeShadowEntry(id: 2, date: today, syncStatus: .pendingDelete)
@@ -167,7 +167,7 @@ struct TimelineViewModelTests {
     @MainActor
     func segregatesEntries() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
 
         let positioned = TestFactories.makeShadowEntry(id: 1, date: today, startTime: "09:00")
         let unpositioned = TestFactories.makeShadowEntry(id: 2, date: today)
@@ -187,33 +187,33 @@ struct TimelineViewModelTests {
 
     @Test("snapToGrid rounds to nearest 5 minutes")
     func snapToGridBasic() {
-        #expect(TimelineViewModel.snapToGrid(minutes: 0) == 0)
-        #expect(TimelineViewModel.snapToGrid(minutes: 2) == 0)
-        #expect(TimelineViewModel.snapToGrid(minutes: 3) == 5)
-        #expect(TimelineViewModel.snapToGrid(minutes: 7) == 5)
-        #expect(TimelineViewModel.snapToGrid(minutes: 62) == 60)
-        #expect(TimelineViewModel.snapToGrid(minutes: 63) == 65)
+        #expect(TimelineGeometry.snapToGrid(minutes: 0) == 0)
+        #expect(TimelineGeometry.snapToGrid(minutes: 2) == 0)
+        #expect(TimelineGeometry.snapToGrid(minutes: 3) == 5)
+        #expect(TimelineGeometry.snapToGrid(minutes: 7) == 5)
+        #expect(TimelineGeometry.snapToGrid(minutes: 62) == 60)
+        #expect(TimelineGeometry.snapToGrid(minutes: 63) == 65)
     }
 
     @Test("snapToGrid clamps to 0...1439")
     func snapToGridClamp() {
-        #expect(TimelineViewModel.snapToGrid(minutes: -10) == 0)
-        #expect(TimelineViewModel.snapToGrid(minutes: 1500) == 1439)
+        #expect(TimelineGeometry.snapToGrid(minutes: -10) == 0)
+        #expect(TimelineGeometry.snapToGrid(minutes: 1500) == 1439)
     }
 
     @Test("minutesSinceMidnight parses HH:mm correctly")
     func minutesSinceMidnight() {
-        #expect(TimelineViewModel.minutesSinceMidnight(from: "00:00") == 0)
-        #expect(TimelineViewModel.minutesSinceMidnight(from: "09:30") == 570)
-        #expect(TimelineViewModel.minutesSinceMidnight(from: "23:59") == 1439)
-        #expect(TimelineViewModel.minutesSinceMidnight(from: "bad") == nil)
+        #expect(TimelineGeometry.minutesSinceMidnight(from: "00:00") == 0)
+        #expect(TimelineGeometry.minutesSinceMidnight(from: "09:30") == 570)
+        #expect(TimelineGeometry.minutesSinceMidnight(from: "23:59") == 1439)
+        #expect(TimelineGeometry.minutesSinceMidnight(from: "bad") == nil)
     }
 
     @Test("timeString formats minutes as HH:mm")
     func timeStringFormatting() {
-        #expect(TimelineViewModel.timeString(fromMinutes: 0) == "00:00")
-        #expect(TimelineViewModel.timeString(fromMinutes: 570) == "09:30")
-        #expect(TimelineViewModel.timeString(fromMinutes: 1439) == "23:59")
+        #expect(TimelineGeometry.timeString(fromMinutes: 0) == "00:00")
+        #expect(TimelineGeometry.timeString(fromMinutes: 570) == "09:30")
+        #expect(TimelineGeometry.timeString(fromMinutes: 1439) == "23:59")
     }
 
     // MARK: - Move Entry
@@ -222,7 +222,7 @@ struct TimelineViewModelTests {
     @MainActor
     func moveEntryUpdatesPersistence() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, startTime: "09:00")
         try await store.insert(entry)
 
@@ -240,7 +240,7 @@ struct TimelineViewModelTests {
     @MainActor
     func moveEntryRejectsLocked() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, locked: true, startTime: "09:00")
         try await store.insert(entry)
 
@@ -260,7 +260,7 @@ struct TimelineViewModelTests {
     @MainActor
     func resizeEntryUpdatesPersistence() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
@@ -403,7 +403,7 @@ struct TimelineViewModelTests {
     @MainActor
     func overlapPartial() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
@@ -420,7 +420,7 @@ struct TimelineViewModelTests {
     @MainActor
     func overlapContainment() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
@@ -436,7 +436,7 @@ struct TimelineViewModelTests {
     @MainActor
     func overlapBoundaryNoOverlap() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         // Entry from 09:00, duration 3600s = 60 min → ends at 10:00 (600 min)
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
@@ -453,7 +453,7 @@ struct TimelineViewModelTests {
     @MainActor
     func overlapNone() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
         try await store.insert(entry)
 
@@ -472,7 +472,7 @@ struct TimelineViewModelTests {
     func createEntryInsertsWithPendingCreate() async throws {
         let store = try makeShadowEntryStore()
         let vm = try makeViewModel(shadowEntryStore: store)
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
 
         await vm.createEntry(
             date: today,
@@ -505,7 +505,7 @@ struct TimelineViewModelTests {
     func createEntryReloadsData() async throws {
         let store = try makeShadowEntryStore()
         let vm = try makeViewModel(shadowEntryStore: store)
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
 
         await vm.createEntry(
             date: today,
@@ -527,7 +527,7 @@ struct TimelineViewModelTests {
     @MainActor
     func createEntryInheritsUserFields() async throws {
         let store = try makeShadowEntryStore()
-        let today = TimelineViewModel.dateString(from: Date())
+        let today = TimelineGeometry.dateString(from: Date())
         let existing = TestFactories.makeShadowEntry(id: 1, date: today, startTime: "08:00")
         try await store.insert(existing)
 

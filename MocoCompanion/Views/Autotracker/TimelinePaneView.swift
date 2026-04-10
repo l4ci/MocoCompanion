@@ -58,8 +58,8 @@ struct TimelinePaneView: View {
         }
         .sheet(isPresented: showCreationSheet) {
             if let creation = pendingCreation {
-                let dateStr = TimelineViewModel.dateString(from: selectedDate)
-                let startTimeStr = TimelineViewModel.timeString(fromMinutes: creation.startMinutes)
+                let dateStr = TimelineGeometry.dateString(from: selectedDate)
+                let startTimeStr = TimelineGeometry.timeString(fromMinutes: creation.startMinutes)
                 TimelineEntryCreationSheet(
                     date: dateStr,
                     startTime: startTimeStr,
@@ -281,8 +281,8 @@ struct TimelinePaneView: View {
         let yPos = CGFloat(drag.startMinutes) * TimelineLayout.pixelsPerMinute
         let height = max(CGFloat(drag.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
         let tint: Color = drag.isOverlapping ? .orange : .accentColor
-        let startLabel = TimelineViewModel.timeString(fromMinutes: drag.startMinutes)
-        let endLabel = TimelineViewModel.timeString(fromMinutes: drag.startMinutes + drag.durationMinutes)
+        let startLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes)
+        let endLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes + drag.durationMinutes)
 
         return VStack(alignment: .leading, spacing: 2) {
             Text("\(startLabel) – \(endLabel)")

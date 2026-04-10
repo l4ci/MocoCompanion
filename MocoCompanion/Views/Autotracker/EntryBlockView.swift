@@ -61,7 +61,7 @@ struct EntryBlockView: View {
     }
 
     private var originalMinutes: Int {
-        TimelineViewModel.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
+        TimelineGeometry.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
     }
 
     // MARK: - Edge Handle Size
@@ -158,8 +158,8 @@ struct EntryBlockView: View {
             }
             .onEnded { value in
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newMinutes = TimelineViewModel.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
-                let newTime = TimelineViewModel.timeString(fromMinutes: newMinutes)
+                let newMinutes = TimelineGeometry.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
+                let newTime = TimelineGeometry.timeString(fromMinutes: newMinutes)
 
                 isDragging = false
                 dragOffset = 0
@@ -180,11 +180,11 @@ struct EntryBlockView: View {
             }
             .onEnded { value in
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newStartMinutes = TimelineViewModel.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
+                let newStartMinutes = TimelineGeometry.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
                 let originalDurationMinutes = entry.seconds / 60
                 let movedBy = newStartMinutes - originalMinutes
                 let newDurationMinutes = max(originalDurationMinutes - movedBy, TimelineLayout.snapMinutes)
-                let newTime = TimelineViewModel.timeString(fromMinutes: newStartMinutes)
+                let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
 
                 isResizingTop = false
