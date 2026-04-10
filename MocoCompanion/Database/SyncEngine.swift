@@ -127,11 +127,15 @@ actor SyncEngine {
                 if let localId = entry.localId {
                     try await store.deleteByLocalId(localId)
                 }
-                // Preserve origin metadata across the API round-trip.
+                // Preserve local-only metadata across the API round-trip.
                 // `ShadowEntry.from(MocoActivity)` zeroes these fields
                 // because Moco doesn't know about them; we copy them
-                // back from the dirty local row.
+                // back from the dirty local row. `startTime` is critical:
+                // Moco has no concept of start-of-day offset, so without
+                // this copy the entry loses its position on the timeline
+                // the moment it's pushed.
                 var serverShadow = ShadowEntry.from(created)
+                serverShadow.startTime = entry.startTime
                 serverShadow.sourceAppBundleId = entry.sourceAppBundleId
                 serverShadow.sourceRuleId = entry.sourceRuleId
                 try await store.insert(serverShadow)
