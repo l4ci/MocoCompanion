@@ -390,7 +390,7 @@ struct TimelinePaneView: View {
             syncIndicator
                 .padding(.trailing, 10)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
         .padding(.horizontal, 4)
     }
 
