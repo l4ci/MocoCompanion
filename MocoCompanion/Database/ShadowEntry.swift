@@ -61,6 +61,9 @@ struct ShadowEntry: Sendable, Equatable {
     /// Id of the TrackingRule that created this entry, if any.
     var sourceRuleId: Int64?
 
+    /// Whether the entry is read-only (locked by Moco or already billed/invoiced).
+    var isReadOnly: Bool { locked || billed }
+
     // MARK: - Conversion from MocoActivity
 
     static func from(_ activity: MocoActivity) -> ShadowEntry {

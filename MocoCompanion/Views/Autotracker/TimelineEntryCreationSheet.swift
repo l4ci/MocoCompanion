@@ -268,7 +268,7 @@ struct TimelineEntryEditSheet: View {
                     .font(.system(size: Theme.FontSize.callout, weight: .semibold))
                     .foregroundStyle(theme.textPrimary)
                 Spacer()
-                if onDelete != nil, !entry.locked {
+                if onDelete != nil, !entry.isReadOnly {
                     Button(role: .destructive) {
                         showDeleteConfirmation = true
                     } label: {

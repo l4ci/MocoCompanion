@@ -305,7 +305,7 @@ final class TodayViewModel {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
         let activity = sortedActivities[selectedIndex]
-        guard !activity.locked else { return }
+        guard !activity.isReadOnly else { return }
         editingActivityId = activity.id
     }
 
@@ -313,7 +313,7 @@ final class TodayViewModel {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
         let activity = sortedActivities[selectedIndex]
-        guard !activity.locked else { return }
+        guard !activity.isReadOnly else { return }
         deletingActivityId = activity.id
     }
 

@@ -98,6 +98,11 @@ struct MocoActivity: Codable, Identifiable, Sendable, Equatable {
     var isTimerRunning: Bool {
         timerStartedAt != nil
     }
+
+    /// Whether the entry is read-only (locked by Moco or already billed/invoiced).
+    var isReadOnly: Bool {
+        locked || billed
+    }
 }
 
 /// Nested project representation inside an activity response.

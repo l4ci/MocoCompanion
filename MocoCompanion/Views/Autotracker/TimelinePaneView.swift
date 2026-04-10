@@ -10,8 +10,9 @@ struct TimelinePaneView: View {
     let isToday: Bool
     let viewModel: TimelineViewModel
     let projectCatalog: ProjectCatalog
+    var descriptionRequired: Bool = false
     @Environment(\.theme) private var theme
-    @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String)?
+    @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)?
     @State private var ruleEditorConfig: RuleEditorConfig?
     @State private var editingEntry: EditingEntryWrapper?
 
@@ -23,6 +24,9 @@ struct TimelinePaneView: View {
     }
     /// Tracks the entry column's origin in global coordinate space for drag target conversion.
     @State private var entryColumnGlobalOrigin: CGFloat = 0
+    /// Tracks the entry column's laid-out width (used to place
+    /// overlapping entries into side-by-side fractional columns).
+    @State private var entryColumnWidth: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,19 +42,28 @@ struct TimelinePaneView: View {
                 Divider()
             }
 
-            // Main timeline. Always rendered so the entry column remains
-            // a valid drop target — previously we short-circuited to an
-            // empty state view when there was no data, which broke
-            // drag-unassigned-to-timeline on empty days. The empty-state
-            // messages now overlay the scrollable timeline instead.
-            ZStack {
-                scrollableTimeline
+            // Column headers pinned to the top of the pane (directly below
+            // the date-nav divider). Kept OUT of any ScrollViewReader so
+            // its layout is unambiguous — the headers are siblings of the
+            // ScrollView, not children of a nested VStack that can get
+            // squeezed when wrapping a flexible ScrollView.
+            columnHeaders
+            theme.divider.frame(height: 1)
+
+            // Main timeline scroll area. Always rendered so the entry
+            // column remains a valid drop target even on empty days; the
+            // empty-state messages overlay the ScrollView instead of
+            // replacing it.
+            ZStack(alignment: .top) {
+                scrollContent
+
                 if positionedEntries.isEmpty && appUsageBlocks.isEmpty && unpositionedEntries.isEmpty {
                     Text("No activity for this day")
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundStyle(theme.textTertiary)
                         .padding(12)
                         .background(theme.surface.opacity(0.85), in: Capsule())
+                        .padding(.top, 60)
                         .allowsHitTesting(false)
                 } else if positionedEntries.isEmpty && appUsageBlocks.isEmpty {
                     Text("No timed entries for this day")
@@ -58,10 +71,13 @@ struct TimelinePaneView: View {
                         .foregroundStyle(theme.textTertiary)
                         .padding(12)
                         .background(theme.surface.opacity(0.85), in: Capsule())
+                        .padding(.top, 60)
                         .allowsHitTesting(false)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(item: $ruleEditorConfig) { config in
             RuleEditorSheet(
                 existingRule: nil,
@@ -79,6 +95,8 @@ struct TimelinePaneView: View {
                 entry: wrapper.entry,
                 fallbackDate: selectedDate,
                 projectCatalog: projectCatalog,
+                linkedAppName: viewModel.linkedAppName(for: wrapper.entry),
+                descriptionRequired: descriptionRequired,
                 onSave: { edited in
                     Task {
                         await viewModel.updateEntryFully(
@@ -96,6 +114,11 @@ struct TimelinePaneView: View {
                         editingEntry = nil
                     }
                 },
+                onDelete: wrapper.entry.isReadOnly ? nil : {
+                    let entry = wrapper.entry
+                    editingEntry = nil
+                    Task { await viewModel.deleteEntry(entry) }
+                },
                 onCancel: { editingEntry = nil }
             )
         }
@@ -109,6 +132,7 @@ struct TimelinePaneView: View {
                     durationMinutes: creation.durationMinutes,
                     suggestedDescription: creation.appName,
                     projectCatalog: projectCatalog,
+                    descriptionRequired: descriptionRequired,
                     onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
                         Task {
                             await viewModel.createEntry(
@@ -120,7 +144,8 @@ struct TimelinePaneView: View {
                                 projectName: projectName,
                                 taskName: taskName,
                                 customerName: customerName,
-                                description: description
+                                description: description,
+                                sourceAppBundleId: creation.sourceBundleId
                             )
                         }
                         pendingCreation = nil
@@ -166,7 +191,8 @@ struct TimelinePaneView: View {
                 pendingCreation = (
                     startMinutes: startMinutes,
                     durationMinutes: durationMinutes,
-                    appName: ""
+                    appName: "",
+                    sourceBundleId: nil
                 )
             }
     }
@@ -202,9 +228,15 @@ struct TimelinePaneView: View {
                 .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
                 .help("Drag onto the timeline to set a start time, or right-click to edit")
                 .contextMenu {
-                    if !entry.locked {
+                    if !entry.isReadOnly {
                         Button("Edit entry…") {
                             editingEntry = EditingEntryWrapper(entry: entry)
+                        }
+                        Divider()
+                        Button(role: .destructive) {
+                            Task { await viewModel.deleteEntry(entry) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
                 }
@@ -251,12 +283,17 @@ struct TimelinePaneView: View {
 
     // MARK: - Scrollable Timeline
 
-    private var scrollableTimeline: some View {
+    /// Just the vertically-scrolling time canvas. Column headers live at
+    /// the body level and are NOT part of this view.
+    private var scrollContent: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
                 ZStack(alignment: .topLeading) {
                     // Grid background
-                    TimeAxisGridBackground()
+                    TimeAxisGridBackground(
+                        workdayStartHour: viewModel.workdayStartHour,
+                        workdayEndHour: viewModel.workdayEndHour
+                    )
 
                     // Panes
                     HStack(alignment: .top, spacing: 0) {
@@ -266,6 +303,10 @@ struct TimelinePaneView: View {
                         // App usage column
                         appUsageColumn
                             .frame(width: TimelineLayout.appUsagePaneWidth)
+
+                        // Column divider
+                        theme.divider
+                            .frame(width: 1, height: TimelineLayout.totalHeight)
 
                         // Entry column
                         entryColumn
@@ -287,6 +328,7 @@ struct TimelinePaneView: View {
                 }
                 .frame(height: TimelineLayout.totalHeight)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 // Defer so the ScrollView has completed its initial layout
                 // pass; otherwise scrollTo runs before the anchor has a frame.
@@ -300,6 +342,93 @@ struct TimelinePaneView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Column Headers
+
+    private var columnHeaders: some View {
+        HStack(alignment: .center, spacing: 0) {
+            // Spacer for time axis
+            Color.clear
+                .frame(width: TimelineLayout.timeAxisWidth)
+
+            Text("Recorded Activities")
+                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+                .foregroundStyle(theme.textSecondary)
+                .frame(width: TimelineLayout.appUsagePaneWidth, alignment: .leading)
+                .padding(.leading, 4)
+
+            theme.divider
+                .frame(width: 1, height: 16)
+
+            Text("Booked Entries")
+                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+                .foregroundStyle(theme.textSecondary)
+                .padding(.leading, 8)
+
+            Spacer(minLength: 0)
+
+            // Sync indicator lives on the right edge of the header row,
+            // horizontally aligned with the column labels.
+            syncIndicator
+                .padding(.trailing, 10)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+    }
+
+    // MARK: - Sync Indicator
+
+    @State private var syncLabelTick = Date()
+
+    private var syncIndicator: some View {
+        HStack(spacing: 6) {
+            let _ = syncLabelTick
+            if let lastSync = viewModel.lastSyncedAt {
+                Text(Self.relativeTimeString(since: lastSync))
+                    .font(.system(size: Theme.FontSize.footnote))
+                    .foregroundStyle(theme.textTertiary)
+                    .monospacedDigit()
+            } else {
+                Text("Not synced")
+                    .font(.system(size: Theme.FontSize.footnote))
+                    .foregroundStyle(theme.textTertiary)
+            }
+
+            Button {
+                Task { await viewModel.refreshData() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: Theme.FontSize.subhead, weight: .medium))
+                    .foregroundStyle(theme.textTertiary)
+                    .rotationEffect(viewModel.isRefreshing || viewModel.isSyncing ? .degrees(360) : .zero)
+                    .animation(
+                        viewModel.isRefreshing || viewModel.isSyncing
+                            ? .linear(duration: 0.8).repeatForever(autoreverses: false)
+                            : .default,
+                        value: viewModel.isRefreshing || viewModel.isSyncing
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isRefreshing || viewModel.isSyncing)
+            .accessibilityLabel(String(localized: "sync.refresh"))
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                syncLabelTick = Date()
+            }
+        }
+    }
+
+    private static func relativeTimeString(since date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 5 { return String(localized: "sync.now") }
+        if seconds < 60 { return "\(seconds)s" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let hours = minutes / 60
+        return "\(hours)h"
     }
 
     /// Y position for the scroll anchor: now-line on today, 8:00 AM otherwise.
@@ -319,7 +448,7 @@ struct TimelinePaneView: View {
             ForEach(appUsageBlocks) { block in
                 AppUsageBlockView(
                     block: block,
-                    isSelected: viewModel.selectedAppBlockIds.contains(block.id),
+                    isSelected: viewModel.isAppBlockHighlighted(block),
                     onSelect: { shiftHeld in
                         viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
                     },
@@ -330,7 +459,7 @@ struct TimelinePaneView: View {
                         let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
                         let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
                         let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
-                        pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName)
+                        pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
                     },
                     onDragStarted: {
                         viewModel.startDragCreation(blockId: block.id)
@@ -363,14 +492,26 @@ struct TimelinePaneView: View {
                 .frame(height: TimelineLayout.totalHeight)
                 .gesture(emptyAreaDragGesture)
 
-            ForEach(positionedEntries, id: \.id) { entry in
+            ForEach(viewModel.positionedEntryLayouts) { layout in
+                let entry = layout.entry
+                let availableWidth = max(entryColumnWidth - 8, 0) // 4pt inset per side
+                let columnWidth = layout.columnCount > 0
+                    ? availableWidth / CGFloat(layout.columnCount)
+                    : availableWidth
+                let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
                 EntryBlockView(
                     entry: entry,
                     viewModel: viewModel,
-                    onEdit: { e in editingEntry = EditingEntryWrapper(entry: e) }
+                    isHighlighted: viewModel.isEntryHighlighted(entry),
+                    onEdit: { e in editingEntry = EditingEntryWrapper(entry: e) },
+                    onDelete: { e in Task { await viewModel.deleteEntry(e) } },
+                    onSelect: { viewModel.toggleEntrySelection(entry) }
                 )
-                    .padding(.horizontal, 4)
-                    .offset(y: yOffsetFromTimeString(entry.startTime))
+                    .frame(width: max(columnWidth - gap, 20), alignment: .topLeading)
+                    .offset(
+                        x: 4 + columnWidth * CGFloat(layout.columnIndex),
+                        y: yOffsetFromTimeString(entry.startTime)
+                    )
             }
 
             // Suggestion blocks
@@ -407,14 +548,22 @@ struct TimelinePaneView: View {
         }
         .background(
             GeometryReader { geo in
-                Color.clear.preference(
-                    key: EntryColumnOriginKey.self,
-                    value: geo.frame(in: .global).minY
-                )
+                Color.clear
+                    .preference(
+                        key: EntryColumnOriginKey.self,
+                        value: geo.frame(in: .global).minY
+                    )
+                    .preference(
+                        key: EntryColumnWidthKey.self,
+                        value: geo.size.width
+                    )
             }
         )
         .onPreferenceChange(EntryColumnOriginKey.self) { value in
             entryColumnGlobalOrigin = value
+        }
+        .onPreferenceChange(EntryColumnWidthKey.self) { value in
+            entryColumnWidth = value
         }
     }
 
@@ -509,5 +658,14 @@ private struct EntryColumnOriginKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
+    }
+}
+
+/// Tracks the entry column's laid-out width so overlapping entries can
+/// be split into side-by-side columns of equal fractional width.
+private struct EntryColumnWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

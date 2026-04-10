@@ -14,6 +14,33 @@ import os
     private let shadowEntryStore: ShadowEntryStore
     let autotracker: Autotracker
     let syncState: SyncState
+    let workdayStartHour: Int
+    let workdayEndHour: Int
+    /// Optional reference to the shared DeleteUndoManager so autotracker
+    /// deletes route through the same 5-second undo flow used by the
+    /// main popup's TodayView. Wired by AppDelegate when the window
+    /// opens; nil in test harnesses that don't need undo.
+    weak var deleteUndoManager: DeleteUndoManager?
+    /// Called after entries are created/modified locally. Used to refresh the Today panel.
+    var onEntryChanged: (() async -> Void)?
+    /// Called when the user taps the refresh button. Triggers a full sync cycle.
+    var onRefresh: (() async -> Void)?
+    /// Whether a manual refresh is in progress.
+    private(set) var isRefreshing: Bool = false
+
+    // MARK: - Sync Passthrough
+
+    /// Mirror of `syncState.lastSyncedAt` that forces the autotracker view
+    /// to re-evaluate when the shared SyncState changes. Reading through
+    /// an explicit computed property on this @Observable viewmodel ensures
+    /// SwiftUI's observation tracker picks it up.
+    var lastSyncedAt: Date? {
+        syncState.lastSyncedAt
+    }
+
+    var isSyncing: Bool {
+        syncState.isSyncing
+    }
 
     // MARK: - Published State
 
@@ -28,6 +55,10 @@ import os
     // MARK: - Selection State
 
     var selectedAppBlockIds: Set<String> = []
+    /// The currently selected booked entry (by server id OR localId). `nil`
+    /// when no entry is selected. Used by the UI to highlight the entry and
+    /// any app usage blocks that overlap its time range (and vice versa).
+    var selectedEntryKey: String? = nil
 
     // MARK: - Drag Creation State
 
@@ -35,6 +66,10 @@ import os
     struct DragCreationState {
         let sourceBlockIds: [String]
         let appName: String
+        /// Bundle id of the first source block. Used as the origin link
+        /// when an entry is created from this drag. Empty for drags that
+        /// originated from empty timeline area.
+        let appBundleId: String
         var startMinutes: Int
         var durationMinutes: Int
         var isOverlapping: Bool
@@ -44,10 +79,12 @@ import os
 
     // MARK: - Init
 
-    init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState) {
+    init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState, workdayStartHour: Int = 8, workdayEndHour: Int = 17) {
         self.shadowEntryStore = shadowEntryStore
         self.autotracker = autotracker
         self.syncState = syncState
+        self.workdayStartHour = workdayStartHour
+        self.workdayEndHour = workdayEndHour
     }
 
     // MARK: - Data Loading
@@ -100,6 +137,16 @@ import os
         await loadData()
     }
 
+    // MARK: - Refresh
+
+    func refreshData() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        await onRefresh?()
+        await loadData()
+    }
+
     // MARK: - Date Navigation
 
     func selectPreviousDay() {
@@ -142,7 +189,7 @@ import os
 
     /// Move an entry to a new start time. Locked entries are rejected.
     func moveEntry(_ entry: ShadowEntry, toStartTime newStartTime: String) async {
-        guard !entry.locked, entry.id != nil else { return }
+        guard !entry.isReadOnly, entry.id != nil else { return }
         var updated = entry
         updated.startTime = newStartTime
         updated.syncStatus = .dirty
@@ -151,6 +198,7 @@ import os
             try await shadowEntryStore.update(updated)
             Self.logger.info("Moved entry \(entry.id ?? 0) to \(newStartTime)")
             await loadData()
+            await onEntryChanged?()
         } catch {
             Self.logger.error("Failed to move entry \(entry.id ?? 0): \(error)")
         }
@@ -171,7 +219,7 @@ import os
         startTime: String?,
         durationSeconds: Int
     ) async {
-        guard !entry.locked, entry.id != nil else { return }
+        guard !entry.isReadOnly, entry.id != nil else { return }
         var updated = entry
         updated.projectId = projectId
         updated.taskId = taskId
@@ -189,6 +237,7 @@ import os
             try await shadowEntryStore.update(updated)
             Self.logger.info("Updated entry \(entry.id ?? 0): project=\(projectId) task=\(taskId) startTime=\(startTime ?? "nil") duration=\(durationSeconds)s")
             await loadData()
+            await onEntryChanged?()
         } catch {
             Self.logger.error("Failed to update entry \(entry.id ?? 0): \(error)")
         }
@@ -196,7 +245,7 @@ import os
 
     /// Resize an entry by changing start time and/or duration. Locked entries are rejected.
     func resizeEntry(_ entry: ShadowEntry, newStartTime: String, newDurationSeconds: Int) async {
-        guard !entry.locked, entry.id != nil else { return }
+        guard !entry.isReadOnly, entry.id != nil else { return }
         var updated = entry
         updated.startTime = newStartTime
         updated.seconds = newDurationSeconds
@@ -207,8 +256,45 @@ import os
             try await shadowEntryStore.update(updated)
             Self.logger.info("Resized entry \(entry.id ?? 0) to \(newStartTime), \(newDurationSeconds)s")
             await loadData()
+            await onEntryChanged?()
         } catch {
             Self.logger.error("Failed to resize entry \(entry.id ?? 0): \(error)")
+        }
+    }
+
+    /// Delete an entry. Synced entries are marked pendingDelete for the sync engine
+    /// to remove from Moco; local-only entries are deleted immediately.
+    func deleteEntry(_ entry: ShadowEntry) async {
+        guard !entry.isReadOnly else { return }
+
+        // Prefer the shared DeleteUndoManager — it wraps the delete in
+        // a 5-second undo window, marks the shadow row pendingDelete
+        // (which this view's loadData filters out), and broadcasts the
+        // change back so TodayView stays in sync. Falls back to the
+        // direct store path for local-only rows (no server id yet) or
+        // when no manager is wired in (tests).
+        if let manager = deleteUndoManager, let serverId = entry.id {
+            await manager.deleteActivity(activityId: serverId)
+            // Local state is already updated via the manager's
+            // onStoreChanged callback — no further work needed here.
+            return
+        }
+
+        do {
+            if let localId = entry.localId, entry.id == nil {
+                // Local-only entry — remove directly
+                try await shadowEntryStore.deleteByLocalId(localId)
+            } else if entry.id != nil {
+                var updated = entry
+                updated.syncStatus = .pendingDelete
+                updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+                try await shadowEntryStore.update(updated)
+            }
+            Self.logger.info("Deleted entry \(entry.id ?? 0)")
+            await loadData()
+            await onEntryChanged?()
+        } catch {
+            Self.logger.error("Failed to delete entry \(entry.id ?? 0): \(error)")
         }
     }
 
@@ -230,11 +316,78 @@ import os
                 selectedAppBlockIds = [id]
             }
         }
+        // App-block selection is single-sourced with entry selection —
+        // selecting an app block clears any selected entry.
+        if !selectedAppBlockIds.isEmpty {
+            selectedEntryKey = nil
+        }
         Self.logger.debug("Selection changed: \(self.selectedAppBlockIds.count) blocks selected")
     }
 
     func clearAppBlockSelection() {
         selectedAppBlockIds.removeAll()
+    }
+
+    // MARK: - Entry Selection
+
+    /// Unique key used to identify a ShadowEntry in selection state.
+    /// Nonisolated so struct types (like EntryLayout) can call it from a
+    /// synchronous context when computing their Identifiable id.
+    nonisolated static func entryKey(for entry: ShadowEntry) -> String {
+        if let id = entry.id {
+            return "srv:\(id)"
+        } else if let local = entry.localId {
+            return "loc:\(local)"
+        }
+        return "x"
+    }
+
+    /// Click an entry to select it; click again to deselect. Selecting an
+    /// entry also clears any app block selection to keep highlight
+    /// semantics single-sourced.
+    func toggleEntrySelection(_ entry: ShadowEntry) {
+        let key = Self.entryKey(for: entry)
+        if selectedEntryKey == key {
+            selectedEntryKey = nil
+        } else {
+            selectedEntryKey = key
+            selectedAppBlockIds.removeAll()
+        }
+    }
+
+    func clearEntrySelection() {
+        selectedEntryKey = nil
+    }
+
+    /// The currently selected entry, resolved from its key.
+    var selectedEntry: ShadowEntry? {
+        guard let key = selectedEntryKey else { return nil }
+        return shadowEntries.first { Self.entryKey(for: $0) == key }
+    }
+
+    /// Returns true when the given entry is selected OR was created from
+    /// an app that's currently selected. Origin-based: an entry lights
+    /// up only if its `sourceAppBundleId` matches one of the selected
+    /// app blocks.
+    func isEntryHighlighted(_ entry: ShadowEntry) -> Bool {
+        if selectedEntryKey == Self.entryKey(for: entry) { return true }
+        guard !selectedAppBlockIds.isEmpty,
+              let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty
+        else { return false }
+        let selectedBundleIds = appUsageBlocks
+            .filter { selectedAppBlockIds.contains($0.id) }
+            .map(\.appBundleId)
+        return selectedBundleIds.contains(bundleId)
+    }
+
+    /// Returns true when the given app block is selected OR an entry
+    /// originating from this block's app is currently selected.
+    func isAppBlockHighlighted(_ block: AppUsageBlock) -> Bool {
+        if selectedAppBlockIds.contains(block.id) { return true }
+        guard let entry = selectedEntry,
+              let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty
+        else { return false }
+        return bundleId == block.appBundleId
     }
 
     /// The subset of appUsageBlocks whose ids are in the selection set.
@@ -296,11 +449,13 @@ import os
         }
         let duration = max(maxMinutes - minMinutes, TimelineLayout.snapMinutes)
         let appName = blocks.first?.appName ?? ""
+        let bundleId = blocks.first?.appBundleId ?? ""
 
         let overlaps = !overlappingEntries(startMinutes: minMinutes, durationMinutes: duration).isEmpty
         dragCreationState = DragCreationState(
             sourceBlockIds: ids,
             appName: appName,
+            appBundleId: bundleId,
             startMinutes: minMinutes,
             durationMinutes: duration,
             isOverlapping: overlaps
@@ -322,11 +477,12 @@ import os
 
     /// End the creation drag, returning the final state for sheet presentation.
     /// Returns nil if no drag was in progress.
-    func endDragCreation() -> (startMinutes: Int, durationMinutes: Int, appName: String)? {
+    func endDragCreation() -> (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)? {
         guard let state = dragCreationState else { return nil }
         dragCreationState = nil
         Self.logger.debug("Drag creation ended: \(state.startMinutes)min, \(state.durationMinutes)min duration")
-        return (startMinutes: state.startMinutes, durationMinutes: state.durationMinutes, appName: state.appName)
+        let bundle: String? = state.appBundleId.isEmpty ? nil : state.appBundleId
+        return (startMinutes: state.startMinutes, durationMinutes: state.durationMinutes, appName: state.appName, sourceBundleId: bundle)
     }
 
     /// Cancel drag creation without producing a result.
@@ -352,6 +508,7 @@ import os
         dragCreationState = DragCreationState(
             sourceBlockIds: [],
             appName: "",
+            appBundleId: "",
             startMinutes: snapped,
             durationMinutes: duration,
             isOverlapping: overlaps
@@ -381,6 +538,8 @@ import os
 
     /// Create a new ShadowEntry from timeline drag-to-create. Inserts with
     /// syncStatus .pendingCreate and reloads data so it appears immediately.
+    /// `sourceAppBundleId` records the recorded-activity origin so the
+    /// timeline can show the new entry as linked to that app block.
     func createEntry(
         date: String,
         startTime: String,
@@ -390,7 +549,8 @@ import os
         projectName: String,
         taskName: String,
         customerName: String,
-        description: String
+        description: String,
+        sourceAppBundleId: String? = nil
     ) async {
         let now = ISO8601DateFormatter().string(from: Date())
 
@@ -429,16 +589,142 @@ import os
             syncStatus: .pendingCreate,
             localUpdatedAt: now,
             serverUpdatedAt: now,
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: sourceAppBundleId,
+            sourceRuleId: nil
         )
 
         do {
             try await shadowEntryStore.insert(entry)
             Self.logger.info("Entry created via timeline drag: \(startTime), \(durationSeconds)s, project \(projectId)")
             await loadData()
+            await onEntryChanged?()
         } catch {
             Self.logger.error("Failed to create entry: \(error)")
         }
+    }
+
+    // MARK: - Stats
+
+    /// Total tracked hours for the selected date (excluding pending deletes).
+    var totalHours: Double {
+        shadowEntries.reduce(0) { $0 + $1.hours }
+    }
+
+    /// Billable percentage (0–100) for the selected date.
+    var billablePercentage: Double {
+        let total = shadowEntries.reduce(0.0) { $0 + $1.hours }
+        guard total > 0 else { return 0 }
+        let billable = shadowEntries.filter(\.billable).reduce(0.0) { $0 + $1.hours }
+        return (billable / total) * 100
+    }
+
+    // MARK: - App Block Linkage
+
+    /// Returns the display name of the app this entry was created from,
+    /// resolved via the stored `sourceAppBundleId`. Returns nil for
+    /// manually-typed entries.
+    func linkedAppName(for entry: ShadowEntry) -> String? {
+        guard let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty else {
+            return nil
+        }
+        return appUsageBlocks.first(where: { $0.appBundleId == bundleId })?.appName
+    }
+
+    /// Returns true if this entry was created FROM a recorded activity
+    /// block (via right-click "Create entry from this block", drag-create
+    /// from a block, or a matching TrackingRule). Origin-based — two
+    /// entries simply standing next to each other in time are NOT linked.
+    func isLinkedToAppBlock(_ entry: ShadowEntry) -> Bool {
+        guard let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty else {
+            return false
+        }
+        // Only show the link badge when the originating app block is
+        // still visible on the current day — otherwise the indicator is
+        // meaningless for the user.
+        return appUsageBlocks.contains { $0.appBundleId == bundleId }
+    }
+
+    // MARK: - Overlap Layout
+
+    /// Layout descriptor for a single positioned entry. `columnIndex` is
+    /// 0-based and `columnCount` is the total number of columns used by
+    /// this entry's overlap cluster. A non-overlapping entry has
+    /// `columnIndex == 0` and `columnCount == 1`.
+    struct EntryLayout: Identifiable {
+        let entry: ShadowEntry
+        let columnIndex: Int
+        let columnCount: Int
+        var id: String { TimelineViewModel.entryKey(for: entry) }
+    }
+
+    /// Calendar-style column assignment for positioned entries. Groups
+    /// transitively-overlapping entries into clusters and lays each
+    /// cluster out into the smallest number of columns so that no two
+    /// entries in the same column overlap in time. Entries in the same
+    /// cluster share the same `columnCount` so their rendered widths line
+    /// up.
+    var positionedEntryLayouts: [EntryLayout] {
+        struct Timed {
+            let entry: ShadowEntry
+            let start: Int
+            let end: Int
+        }
+
+        let timed: [Timed] = positionedEntries.compactMap { entry in
+            guard let ts = entry.startTime,
+                  let start = TimelineGeometry.minutesSinceMidnight(from: ts)
+            else { return nil }
+            let end = start + max(entry.seconds / 60, 1)
+            return Timed(entry: entry, start: start, end: end)
+        }.sorted { lhs, rhs in
+            if lhs.start != rhs.start { return lhs.start < rhs.start }
+            return lhs.end > rhs.end
+        }
+
+        var result: [EntryLayout] = []
+        var cluster: [Timed] = []
+        var clusterEnd = Int.min
+
+        func flushCluster() {
+            guard !cluster.isEmpty else { return }
+            var columnEnds: [Int] = []
+            var assignments: [Int] = []
+            for item in cluster {
+                var placed = false
+                for (i, end) in columnEnds.enumerated() where item.start >= end {
+                    columnEnds[i] = item.end
+                    assignments.append(i)
+                    placed = true
+                    break
+                }
+                if !placed {
+                    assignments.append(columnEnds.count)
+                    columnEnds.append(item.end)
+                }
+            }
+            let count = max(columnEnds.count, 1)
+            for (i, item) in cluster.enumerated() {
+                result.append(EntryLayout(
+                    entry: item.entry,
+                    columnIndex: assignments[i],
+                    columnCount: count
+                ))
+            }
+            cluster.removeAll(keepingCapacity: true)
+            clusterEnd = Int.min
+        }
+
+        for item in timed {
+            if item.start >= clusterEnd {
+                flushCluster()
+            }
+            cluster.append(item)
+            clusterEnd = max(clusterEnd, item.end)
+        }
+        flushCluster()
+
+        return result
     }
 
     // MARK: - Overlap Detection

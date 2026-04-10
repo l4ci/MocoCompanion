@@ -14,6 +14,9 @@ final class DeleteUndoManager {
     struct PendingDelete {
         let activity: MocoActivity
         let isYesterday: Bool
+        /// The ShadowEntry that was in the store before we flipped it to
+        /// `pendingDelete`. Kept so undo can restore the exact prior row.
+        let originalShadow: ShadowEntry?
         let task: Task<Void, Never>
     }
 
@@ -26,18 +29,26 @@ final class DeleteUndoManager {
 
     private let clientFactory: () -> (any ActivityAPI)?
     private let activityService: ActivityService
+    private let shadowEntryStore: ShadowEntryStore
     private let notificationDispatcher: NotificationDispatcher
 
     /// Stops the timer before deleting a timed activity.
     var timerStopProvider: (any TimerStopProvider)?
 
+    /// Called after any mutation that should fan out to other views (e.g.
+    /// the autotracker timeline window). Set by the window owner while the
+    /// window is visible; cleared on close.
+    var onStoreChanged: (() async -> Void)?
+
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
         activityService: ActivityService,
+        shadowEntryStore: ShadowEntryStore,
         notificationDispatcher: NotificationDispatcher
     ) {
         self.clientFactory = clientFactory
         self.activityService = activityService
+        self.shadowEntryStore = shadowEntryStore
         self.notificationDispatcher = notificationDispatcher
     }
 
@@ -49,8 +60,8 @@ final class DeleteUndoManager {
         // Check if the activity is locked — reject deletion
         let activity = activityService.todayActivities.first(where: { $0.id == activityId })
             ?? activityService.yesterdayActivities.first(where: { $0.id == activityId })
-        if let activity, activity.locked {
-            logger.warning("Cannot delete locked entry \(activityId)")
+        if let activity, activity.isReadOnly {
+            logger.warning("Cannot delete locked/billed entry \(activityId)")
             return
         }
 
@@ -62,14 +73,22 @@ final class DeleteUndoManager {
         // Cancel any existing pending delete (execute it immediately)
         await commitPendingDelete()
 
-        // Remove locally for instant visual feedback
+        // Remove locally for instant visual feedback in TodayView
         activityService.removeLocal(activityId: activityId)
         notificationDispatcher.entryDeleted()
+
+        // Mirror into the shared SQLite store so any other open view (the
+        // autotracker timeline window in particular) instantly hides this
+        // entry. We flip its syncStatus to .pendingDelete and snapshot the
+        // original row so undoDelete can restore the exact prior state.
+        let originalShadow = await markShadowPendingDelete(id: activityId)
+        await onStoreChanged?()
 
         guard let activity else {
             // Activity wasn't in local arrays — just delete server-side
             do {
                 try await clientFactory()?.deleteActivity(activityId: activityId)
+                try? await shadowEntryStore.delete(id: activityId)
             } catch {
                 handleError(error, label: "deleteActivity")
             }
@@ -83,7 +102,31 @@ final class DeleteUndoManager {
             await self?.executeDelete(activityId: activityId)
         }
 
-        pendingDelete = PendingDelete(activity: activity, isYesterday: wasYesterday, task: deleteTask)
+        pendingDelete = PendingDelete(
+            activity: activity,
+            isYesterday: wasYesterday,
+            originalShadow: originalShadow,
+            task: deleteTask
+        )
+    }
+
+    /// Look up the ShadowEntry for `activityId` and flip it to
+    /// `pendingDelete`. Returns the pre-flip row for undo. Nil if the row
+    /// is not in the store (e.g. hasn't been synced locally yet).
+    private func markShadowPendingDelete(id: Int) async -> ShadowEntry? {
+        do {
+            guard let existing = try await shadowEntryStore.entry(id: id) else {
+                return nil
+            }
+            var updated = existing
+            updated.syncStatus = .pendingDelete
+            updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+            try await shadowEntryStore.update(updated)
+            return existing
+        } catch {
+            logger.error("markShadowPendingDelete(\(id)) failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// Undo the pending delete — restore the activity to the local array.
@@ -95,6 +138,19 @@ final class DeleteUndoManager {
             activityService.restoreYesterday(pending.activity)
         } else {
             activityService.restoreToday(pending.activity)
+        }
+
+        // Roll back the shadow store flip so the autotracker sees the
+        // entry again.
+        if let original = pending.originalShadow {
+            Task { [weak self] in
+                do {
+                    try await self?.shadowEntryStore.update(original)
+                    await self?.onStoreChanged?()
+                } catch {
+                    self?.logger.error("undoDelete store restore failed: \(error.localizedDescription)")
+                }
+            }
         }
 
         pendingDelete = nil
@@ -109,7 +165,10 @@ final class DeleteUndoManager {
         await executeDelete(activityId: pending.activity.id)
     }
 
-    /// Execute the actual API delete.
+    /// Execute the actual API delete, then hard-remove the shadow row.
+    /// The row is already flipped to `.pendingDelete` at this point, so
+    /// the autotracker UI is already hiding it. We do not need to
+    /// broadcast again on success.
     private func executeDelete(activityId: Int) async {
         guard let client = clientFactory() else { return }
         do {
@@ -118,6 +177,11 @@ final class DeleteUndoManager {
         } catch {
             handleError(error, label: "deleteActivity")
         }
+        // Hard-remove the shadow row regardless of API outcome — a 404
+        // means the server already lost the row, so the local tombstone
+        // is also safe to clear. If the delete truly failed the next
+        // full sync will re-pull the row from Moco.
+        try? await shadowEntryStore.delete(id: activityId)
         // Clear pending if this was the one
         if pendingDelete?.activity.id == activityId {
             pendingDelete = nil

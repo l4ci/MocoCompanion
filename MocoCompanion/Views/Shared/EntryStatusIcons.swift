@@ -5,6 +5,7 @@ import SwiftUI
 struct EntryStatusIcons: View {
     var syncStatus: SyncStatus? = nil
     var isLocked: Bool
+    var isBilled: Bool = false
     var isLinkedToAppBlock: Bool = false
     var isFromRule: Bool = false
     var iconSize: CGFloat = Theme.FontSize.subhead
@@ -29,6 +30,13 @@ struct EntryStatusIcons: View {
 
             if let syncStatus {
                 syncIcon(syncStatus)
+            }
+
+            if isBilled {
+                Image(systemName: "banknote")
+                    .font(.system(size: iconSize))
+                    .foregroundStyle(theme.textTertiary)
+                    .help("Billed — read-only")
             }
 
             if isLocked {

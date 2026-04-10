@@ -87,6 +87,7 @@ struct TodayActivityRow: View {
 
                         EntryStatusIcons(
                             isLocked: activity.locked,
+                            isBilled: activity.billed,
                             iconSize: captionSize
                         )
 
@@ -113,7 +114,7 @@ struct TodayActivityRow: View {
     }
 
     private var rowHints: [String] {
-        if activity.locked {
+        if activity.isReadOnly {
             return [String(localized: "hint.enterContinue"), String(localized: "hint.favorite")]
         }
         if isYesterday {

@@ -164,6 +164,7 @@ struct EntryBlockView: View {
         EntryStatusIcons(
             syncStatus: entry.syncStatus,
             isLocked: entry.locked,
+            isBilled: entry.billed,
             isLinkedToAppBlock: viewModel.isLinkedToAppBlock(entry),
             isFromRule: entry.sourceRuleId != nil
         )
@@ -224,11 +225,11 @@ struct EntryBlockView: View {
                     .stroke(Color.accentColor, lineWidth: 2)
                     .opacity(isHighlighted ? 1 : 0)
             )
-            .opacity(entry.locked ? 0.7 : isDragging ? 0.85 : 1.0)
+            .opacity(entry.isReadOnly ? 0.7 : isDragging ? 0.85 : 1.0)
             .shadow(color: .black.opacity(isGestureActive ? 0.2 : 0), radius: isGestureActive ? 4 : 0)
 
             // Edge resize handles (only for unlocked, non-running entries)
-            if !entry.locked && !isRunning {
+            if !entry.isReadOnly && !isRunning {
                 // Top edge handle
                 Color.clear
                     .frame(height: Self.edgeHandleHeight)
@@ -250,17 +251,17 @@ struct EntryBlockView: View {
         }
         .help(tooltipLabel)
         .offset(y: dragOffset + (isResizingTop ? topResizeOffset : 0))
-        .gesture(entry.locked || isRunning ? nil : dragMoveGesture)
+        .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
         }
         .onTapGesture(count: 2) {
-            if !entry.locked {
+            if !entry.isReadOnly {
                 onEdit?(entry)
             }
         }
         .contextMenu {
-            if !entry.locked {
+            if !entry.isReadOnly {
                 Button("Edit entry…") {
                     onEdit?(entry)
                 }
