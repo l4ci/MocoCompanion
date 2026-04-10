@@ -87,6 +87,11 @@ import os
 
     var dragCreationState: DragCreationState?
 
+    /// Anchor minute for an empty-area drag-to-create. Set on
+    /// `beginEmptyAreaDrag` and used by `extendEmptyAreaDrag` so the
+    /// block can grow in either direction from this fixed point.
+    private var dragCreationAnchorMinutes: Int?
+
     // MARK: - Init
 
     init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState, workdayStartHour: Int = 8, workdayEndHour: Int = 17) {
@@ -514,6 +519,7 @@ import os
     func endDragCreation() -> (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)? {
         guard let state = dragCreationState else { return nil }
         dragCreationState = nil
+        dragCreationAnchorMinutes = nil
         Self.logger.debug("Drag creation ended: \(state.startMinutes)min, \(state.durationMinutes)min duration")
         let bundle: String? = state.appBundleId.isEmpty ? nil : state.appBundleId
         return (startMinutes: state.startMinutes, durationMinutes: state.durationMinutes, appName: state.appName, sourceBundleId: bundle)
@@ -522,18 +528,22 @@ import os
     /// Cancel drag creation without producing a result.
     func cancelDragCreation() {
         dragCreationState = nil
+        dragCreationAnchorMinutes = nil
     }
 
     /// Begin a drag-to-create on empty entry-column space. No source block —
     /// `sourceBlockIds` is empty so the view layer can distinguish this flow
-    /// from the app-block drag if needed. Starts with a 5-minute ghost
-    /// anchored at the clicked minute, which `extendEmptyAreaDrag` grows as
-    /// the user drags down.
+    /// from the app-block drag if needed. The drag supports both directions:
+    /// the anchor minute is stored in `dragCreationAnchorMinutes`, and
+    /// `extendEmptyAreaDrag` computes the block as `[min(anchor, current),
+    /// max(anchor, current)]` so dragging upward from the anchor produces
+    /// a block that ends at the anchor and starts at the drag location.
     func beginEmptyAreaDrag(atMinutes startMinutes: Int) {
         let snapped = TimelineGeometry.snapToGrid(
             minutes: Double(startMinutes),
             gridMinutes: TimelineLayout.snapMinutes
         )
+        dragCreationAnchorMinutes = snapped
         let duration = TimelineLayout.snapMinutes
         let overlaps = !overlappingEntries(
             startMinutes: snapped,
@@ -549,21 +559,27 @@ import os
         )
     }
 
-    /// Extend an empty-area drag to `endMinutes`. Grows from the anchor
-    /// downward — dragging upward past the anchor is clamped to the minimum
-    /// snap interval (keeps the UX predictable).
+    /// Extend an empty-area drag to `endMinutes`. The block spans
+    /// `[min(anchor, end), max(anchor, end)]` with a floor of one snap
+    /// interval — so dragging up OR down from the anchor produces a
+    /// correctly-sized block.
     func extendEmptyAreaDrag(toMinutes endMinutes: Int) {
         guard let state = dragCreationState, state.sourceBlockIds.isEmpty else { return }
+        guard let anchor = dragCreationAnchorMinutes else { return }
+        _ = state
         let snapped = TimelineGeometry.snapToGrid(
             minutes: Double(endMinutes),
             gridMinutes: TimelineLayout.snapMinutes
         )
-        let newEnd = max(state.startMinutes + TimelineLayout.snapMinutes, snapped)
-        let newDuration = newEnd - state.startMinutes
+        let lower = min(anchor, snapped)
+        let upper = max(anchor, snapped)
+        let newStart = lower
+        let newDuration = max(upper - lower, TimelineLayout.snapMinutes)
         let overlaps = !overlappingEntries(
-            startMinutes: state.startMinutes,
+            startMinutes: newStart,
             durationMinutes: newDuration
         ).isEmpty
+        dragCreationState?.startMinutes = newStart
         dragCreationState?.durationMinutes = newDuration
         dragCreationState?.isOverlapping = overlaps
     }
