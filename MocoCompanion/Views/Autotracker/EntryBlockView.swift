@@ -275,6 +275,15 @@ struct EntryBlockView: View {
         }
         .help(tooltipLabel)
         .offset(y: visualYOffset)
+        // Never animate positional/size changes on this block — the
+        // preview-target state uses identity math (visualYOffset reaches
+        // zero the instant entry.startTime catches up), so any implicit
+        // animation would tween across correct identical values and
+        // visibly wobble.
+        .animation(nil, value: visualYOffset)
+        .animation(nil, value: displayHeight)
+        .animation(nil, value: dragTargetMinutes)
+        .animation(nil, value: resizeTargetSeconds)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
