@@ -21,6 +21,9 @@ import os
     /// main popup's TodayView. Wired by AppDelegate when the window
     /// opens; nil in test harnesses that don't need undo.
     weak var deleteUndoManager: DeleteUndoManager?
+    /// Optional reference to the SyncEngine so mutations can push to Moco immediately.
+    /// Wired by AppDelegate when the window opens; nil in test harnesses.
+    weak var syncEngine: SyncEngine?
     /// Called after entries are created/modified locally. Used to refresh the Today panel.
     var onEntryChanged: (() async -> Void)?
     /// Called when the user taps the refresh button. Triggers a full sync cycle.
@@ -620,6 +623,12 @@ import os
             Self.logger.info("Entry created via timeline drag: \(startTime), \(durationSeconds)s, project \(projectId)")
             await loadData()
             await onEntryChanged?()
+            // Push to Moco immediately so the local-only row gets a server ID
+            if let engine = syncEngine {
+                let dateStr = TimelineGeometry.dateString(from: selectedDate)
+                await engine.sync(dates: [dateStr])
+                await loadData()
+            }
         } catch {
             Self.logger.error("Failed to create entry: \(error)")
         }
