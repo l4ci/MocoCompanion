@@ -56,7 +56,7 @@ import os
 
         // Load app records for date and merge into blocks
         let records = appRecordStore.records(for: date)
-        let blocks = TimelineViewModel.mergeIntoBlocks(records)
+        let blocks = AppUsageBlock.merge(records)
 
         var newSuggestions: [Suggestion] = []
         var entriesCreated = 0

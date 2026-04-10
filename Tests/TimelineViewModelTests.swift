@@ -79,7 +79,7 @@ struct TimelineViewModelTests {
             makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(240), duration: 60),
         ]
 
-        let blocks = TimelineViewModel.mergeIntoBlocks(records)
+        let blocks = AppUsageBlock.merge(records)
 
         #expect(blocks.count == 1)
         #expect(blocks[0].appBundleId == "com.app.a")
@@ -96,7 +96,7 @@ struct TimelineViewModelTests {
             makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(460), duration: 60),
         ]
 
-        let blocks = TimelineViewModel.mergeIntoBlocks(records)
+        let blocks = AppUsageBlock.merge(records)
 
         #expect(blocks.count == 2)
         #expect(blocks[0].recordCount == 1)
@@ -111,7 +111,7 @@ struct TimelineViewModelTests {
             makeAppRecord(bundleId: "com.app.b", name: "App B", timestamp: base.addingTimeInterval(120), duration: 60),
         ]
 
-        let blocks = TimelineViewModel.mergeIntoBlocks(records)
+        let blocks = AppUsageBlock.merge(records)
 
         #expect(blocks.count == 2)
         #expect(blocks[0].appBundleId == "com.app.a")
@@ -120,7 +120,7 @@ struct TimelineViewModelTests {
 
     @Test("empty records produces empty blocks")
     func emptyRecords() {
-        let blocks = TimelineViewModel.mergeIntoBlocks([])
+        let blocks = AppUsageBlock.merge([])
         #expect(blocks.isEmpty)
     }
 
@@ -133,7 +133,7 @@ struct TimelineViewModelTests {
             makeAppRecord(bundleId: "com.app.a", name: "App A", timestamp: base.addingTimeInterval(140), duration: 60),
         ]
 
-        let blocks = TimelineViewModel.mergeIntoBlocks(records)
+        let blocks = AppUsageBlock.merge(records)
 
         #expect(blocks.count == 3)
         #expect(blocks[0].appBundleId == "com.app.a")

@@ -1,19 +1,6 @@
 import Foundation
 import os
 
-// MARK: - App Usage Block
-
-/// A merged block of consecutive app usage within a 5-minute gap threshold.
-struct AppUsageBlock: Identifiable, Sendable {
-    let id: String
-    let appBundleId: String
-    let appName: String
-    let startTime: Date
-    let endTime: Date
-    let durationSeconds: TimeInterval
-    let recordCount: Int
-}
-
 // MARK: - Timeline ViewModel
 
 /// Drives the Autotracker timeline window: loads shadow entries and app records
@@ -21,9 +8,6 @@ struct AppUsageBlock: Identifiable, Sendable {
 /// entries by positioning status.
 @Observable @MainActor final class TimelineViewModel {
     private static let logger = Logger(category: "TimelineViewModel")
-
-    /// Gap threshold for merging adjacent same-app records into a single block.
-    nonisolated static let mergeGapSeconds: TimeInterval = 300 // 5 minutes
 
     // MARK: - Dependencies
 
@@ -95,7 +79,7 @@ struct AppUsageBlock: Identifiable, Sendable {
 
         let records = appRecordStore.records(for: selectedDate)
         appRecords = records
-        appUsageBlocks = Self.mergeIntoBlocks(records)
+        appUsageBlocks = AppUsageBlock.merge(records)
 
         Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.appUsageBlocks.count) usage blocks for \(dateString)")
 
@@ -143,69 +127,6 @@ struct AppUsageBlock: Identifiable, Sendable {
 
     var isToday: Bool {
         Calendar.current.isDateInToday(selectedDate)
-    }
-
-    // MARK: - App Usage Block Merging
-
-    /// Merges adjacent AppRecords with the same bundleId within a 5-minute gap
-    /// into consolidated AppUsageBlock instances.
-    nonisolated static func mergeIntoBlocks(_ records: [AppRecord]) -> [AppUsageBlock] {
-        guard !records.isEmpty else { return [] }
-
-        let sorted = records.sorted { $0.timestamp < $1.timestamp }
-        var blocks: [AppUsageBlock] = []
-
-        var currentBundleId = sorted[0].appBundleId
-        var currentAppName = sorted[0].appName
-        var blockStart = sorted[0].timestamp
-        var blockEnd = sorted[0].timestamp.addingTimeInterval(sorted[0].durationSeconds)
-        var blockDuration = sorted[0].durationSeconds
-        var recordCount = 1
-
-        for i in 1..<sorted.count {
-            let record = sorted[i]
-            let gap = record.timestamp.timeIntervalSince(blockEnd)
-
-            if record.appBundleId == currentBundleId && gap <= mergeGapSeconds {
-                // Merge into current block
-                let recordEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
-                blockEnd = max(blockEnd, recordEnd)
-                blockDuration += record.durationSeconds
-                recordCount += 1
-            } else {
-                // Flush current block
-                blocks.append(AppUsageBlock(
-                    id: "\(currentBundleId)-\(blockStart.timeIntervalSince1970)",
-                    appBundleId: currentBundleId,
-                    appName: currentAppName,
-                    startTime: blockStart,
-                    endTime: blockEnd,
-                    durationSeconds: blockDuration,
-                    recordCount: recordCount
-                ))
-
-                // Start new block
-                currentBundleId = record.appBundleId
-                currentAppName = record.appName
-                blockStart = record.timestamp
-                blockEnd = record.timestamp.addingTimeInterval(record.durationSeconds)
-                blockDuration = record.durationSeconds
-                recordCount = 1
-            }
-        }
-
-        // Flush last block
-        blocks.append(AppUsageBlock(
-            id: "\(currentBundleId)-\(blockStart.timeIntervalSince1970)",
-            appBundleId: currentBundleId,
-            appName: currentAppName,
-            startTime: blockStart,
-            endTime: blockEnd,
-            durationSeconds: blockDuration,
-            recordCount: recordCount
-        ))
-
-        return blocks
     }
 
     // MARK: - Entry Mutation (Gestures)
