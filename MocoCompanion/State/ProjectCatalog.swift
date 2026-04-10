@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SwiftUI
 
 /// Owns the project list, search index, and loading state.
 /// Extracted from AppState to separate project catalog concerns from service wiring.
@@ -25,6 +26,12 @@ final class ProjectCatalog {
     }
 
     var assignedProjectIds: [Int] { projects.map(\.id) }
+
+    /// Resolved project color from Moco, or nil if the project is unknown or has no color set.
+    func color(for projectId: Int) -> Color? {
+        guard let hex = projects.first(where: { $0.id == projectId })?.color else { return nil }
+        return Color(hex: hex)
+    }
 
     init() {
         let cached = ProjectCache.load()

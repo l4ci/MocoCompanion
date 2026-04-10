@@ -6,6 +6,7 @@ import SwiftUI
 struct EntryBlockView: View {
     let entry: ShadowEntry
     let viewModel: TimelineViewModel
+    let projectCatalog: ProjectCatalog
     var isHighlighted: Bool = false
     var onEdit: ((ShadowEntry) -> Void)? = nil
     var onDelete: ((ShadowEntry) -> Void)? = nil
@@ -95,9 +96,9 @@ struct EntryBlockView: View {
         return theme.surface
     }
 
-    /// Stable color derived from projectId so each project is visually distinct.
+    /// Project color from Moco catalog, falling back to a stable hash-based palette color.
     private var projectColor: Color {
-        ProjectColorPalette.color(for: entry.projectId)
+        projectCatalog.color(for: entry.projectId) ?? ProjectColorPalette.color(for: entry.projectId)
     }
 
     private var originalMinutes: Int {

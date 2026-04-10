@@ -8,6 +8,7 @@ struct MocoProject: Codable, Identifiable, Sendable {
     let name: String
     let active: Bool
     let billable: Bool
+    let color: String?
     let customer: MocoCustomer
     let tasks: [MocoTask]
     let contract: MocoContract?
