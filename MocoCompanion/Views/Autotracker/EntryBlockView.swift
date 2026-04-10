@@ -50,6 +50,7 @@ struct EntryBlockView: View {
     @State private var isResizingTop: Bool = false
     @State private var bottomResizeOffset: CGFloat = 0
     @State private var isResizingBottom: Bool = false
+    @State private var showDeleteConfirm: Bool = false
 
     private var isGestureActive: Bool {
         isDragging || isResizingTop || isResizingBottom
@@ -267,11 +268,21 @@ struct EntryBlockView: View {
                 }
                 Divider()
                 Button(role: .destructive) {
-                    onDelete?(entry)
+                    showDeleteConfirm = true
                 } label: {
                     Label("Delete", systemImage: "trash")
                 }
             }
+        }
+        .confirmationDialog(
+            "Delete this entry?",
+            isPresented: $showDeleteConfirm
+        ) {
+            Button("Delete", role: .destructive) {
+                onDelete?(entry)
+            }
+        } message: {
+            Text("You can undo this for 5 seconds.")
         }
         // When the underlying entry's time/duration changes (after a move
         // or resize completes), reset the visual offsets. This avoids the

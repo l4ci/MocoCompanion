@@ -15,6 +15,7 @@ struct TimelinePaneView: View {
     @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)?
     @State private var ruleEditorConfig: RuleEditorConfig?
     @State private var editingEntry: EditingEntryWrapper?
+    @State private var entryPendingDelete: ShadowEntry?
 
     /// Identifiable wrapper so SwiftUI's `.sheet(item:)` can present the edit
     /// sheet for a `ShadowEntry` (whose `id` is optional and can't conform).
@@ -234,11 +235,27 @@ struct TimelinePaneView: View {
                         }
                         Divider()
                         Button(role: .destructive) {
-                            Task { await viewModel.deleteEntry(entry) }
+                            entryPendingDelete = entry
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     }
+                }
+                .confirmationDialog(
+                    "Delete this entry?",
+                    isPresented: Binding(
+                        get: { entryPendingDelete != nil },
+                        set: { if !$0 { entryPendingDelete = nil } }
+                    )
+                ) {
+                    Button("Delete", role: .destructive) {
+                        if let entry = entryPendingDelete {
+                            entryPendingDelete = nil
+                            Task { await viewModel.deleteEntry(entry) }
+                        }
+                    }
+                } message: {
+                    Text("You can undo this for 5 seconds.")
                 }
                 // Make the row draggable so the user can drop it onto the
                 // timeline to assign a start time. We pass the entry id as
