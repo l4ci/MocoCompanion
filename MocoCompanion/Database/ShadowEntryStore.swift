@@ -25,6 +25,17 @@ actor ShadowEntryStore {
             }
             database.userVersion = 1
         }
+        if database.userVersion < 2 {
+            // Origin tracking columns (local-only metadata). See
+            // ShadowEntry.sourceAppBundleId / sourceRuleId for context.
+            do {
+                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_app_bundle_id TEXT")
+            } catch { /* already exists */ }
+            do {
+                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_rule_id INTEGER")
+            } catch { /* already exists */ }
+            database.userVersion = 2
+        }
     }
 
     private static let createTableSQL = """
@@ -59,7 +70,9 @@ actor ShadowEntryStore {
             sync_status TEXT NOT NULL DEFAULT 'synced',
             local_updated_at TEXT NOT NULL,
             server_updated_at TEXT NOT NULL,
-            conflict_flag INTEGER NOT NULL DEFAULT 0
+            conflict_flag INTEGER NOT NULL DEFAULT 0,
+            source_app_bundle_id TEXT,
+            source_rule_id INTEGER
         )
         """
 
@@ -75,6 +88,12 @@ actor ShadowEntryStore {
     func update(_ entry: ShadowEntry) throws {
         guard let id = entry.id else { return }
         try database.execute(Self.updateSQL, params: updateParams(for: entry) + [id])
+    }
+
+    /// Update a local-only entry (no server id) by its localId.
+    func updateByLocalId(_ entry: ShadowEntry) throws {
+        guard let localId = entry.localId else { return }
+        try database.execute(Self.updateByLocalIdSQL, params: updateParams(for: entry) + [localId])
     }
 
     func delete(id: Int) throws {
@@ -151,8 +170,8 @@ actor ShadowEntryStore {
             task_id, task_name, task_billable, customer_id, customer_name,
             user_id, user_firstname, user_lastname, hourly_rate, timer_started_at,
             start_time, locked, created_at, updated_at, sync_status, local_updated_at,
-            server_updated_at, conflict_flag
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            server_updated_at, conflict_flag, source_app_bundle_id, source_rule_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
     private static let updateSQL = """
@@ -164,8 +183,23 @@ actor ShadowEntryStore {
             user_firstname = ?, user_lastname = ?, hourly_rate = ?,
             timer_started_at = ?, start_time = ?, locked = ?, created_at = ?,
             updated_at = ?, sync_status = ?, local_updated_at = ?,
-            server_updated_at = ?, conflict_flag = ?
+            server_updated_at = ?, conflict_flag = ?,
+            source_app_bundle_id = ?, source_rule_id = ?
         WHERE id = ?
+        """
+
+    private static let updateByLocalIdSQL = """
+        UPDATE shadow_entries SET
+            local_id = ?, date = ?, hours = ?, seconds = ?, worked_seconds = ?,
+            description = ?, billed = ?, billable = ?, tag = ?, project_id = ?,
+            project_name = ?, project_billable = ?, task_id = ?, task_name = ?,
+            task_billable = ?, customer_id = ?, customer_name = ?, user_id = ?,
+            user_firstname = ?, user_lastname = ?, hourly_rate = ?,
+            timer_started_at = ?, start_time = ?, locked = ?, created_at = ?,
+            updated_at = ?, sync_status = ?, local_updated_at = ?,
+            server_updated_at = ?, conflict_flag = ?,
+            source_app_bundle_id = ?, source_rule_id = ?
+        WHERE local_id = ?
         """
 
     private static let updateFromServerSQL = """
@@ -192,6 +226,7 @@ actor ShadowEntryStore {
             e.userFirstname, e.userLastname, e.hourlyRate, e.timerStartedAt,
             e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
             e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
+            e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
         ]
     }
 
@@ -204,6 +239,7 @@ actor ShadowEntryStore {
             e.userFirstname, e.userLastname, e.hourlyRate, e.timerStartedAt,
             e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
             e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
+            e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
         ]
     }
 
@@ -253,7 +289,9 @@ actor ShadowEntryStore {
             syncStatus: SyncStatus(rawValue: row["sync_status"] as? String ?? "synced") ?? .synced,
             localUpdatedAt: row["local_updated_at"] as? String ?? "",
             serverUpdatedAt: row["server_updated_at"] as? String ?? "",
-            conflictFlag: boolFromRow(row, "conflict_flag")
+            conflictFlag: boolFromRow(row, "conflict_flag"),
+            sourceAppBundleId: row["source_app_bundle_id"] as? String,
+            sourceRuleId: (row["source_rule_id"] as? Int64) ?? (row["source_rule_id"] as? Int).map { Int64($0) }
         )
     }
 

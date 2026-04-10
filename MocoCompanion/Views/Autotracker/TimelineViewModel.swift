@@ -189,13 +189,20 @@ import os
 
     /// Move an entry to a new start time. Locked entries are rejected.
     func moveEntry(_ entry: ShadowEntry, toStartTime newStartTime: String) async {
-        guard !entry.isReadOnly, entry.id != nil else { return }
+        guard !entry.isReadOnly else { return }
         var updated = entry
         updated.startTime = newStartTime
-        updated.syncStatus = .dirty
         updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
         do {
-            try await shadowEntryStore.update(updated)
+            if entry.id != nil {
+                updated.syncStatus = .dirty
+                try await shadowEntryStore.update(updated)
+            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
+                updated.syncStatus = .pendingCreate
+                try await shadowEntryStore.updateByLocalId(updated)
+            } else {
+                return
+            }
             Self.logger.info("Moved entry \(entry.id ?? 0) to \(newStartTime)")
             await loadData()
             await onEntryChanged?()
@@ -219,7 +226,7 @@ import os
         startTime: String?,
         durationSeconds: Int
     ) async {
-        guard !entry.isReadOnly, entry.id != nil else { return }
+        guard !entry.isReadOnly else { return }
         var updated = entry
         updated.projectId = projectId
         updated.taskId = taskId
@@ -231,10 +238,17 @@ import os
         updated.startTime = startTime
         updated.seconds = durationSeconds
         updated.hours = Double(durationSeconds) / 3600.0
-        updated.syncStatus = .dirty
         updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
         do {
-            try await shadowEntryStore.update(updated)
+            if entry.id != nil {
+                updated.syncStatus = .dirty
+                try await shadowEntryStore.update(updated)
+            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
+                updated.syncStatus = .pendingCreate
+                try await shadowEntryStore.updateByLocalId(updated)
+            } else {
+                return
+            }
             Self.logger.info("Updated entry \(entry.id ?? 0): project=\(projectId) task=\(taskId) startTime=\(startTime ?? "nil") duration=\(durationSeconds)s")
             await loadData()
             await onEntryChanged?()
@@ -245,15 +259,22 @@ import os
 
     /// Resize an entry by changing start time and/or duration. Locked entries are rejected.
     func resizeEntry(_ entry: ShadowEntry, newStartTime: String, newDurationSeconds: Int) async {
-        guard !entry.isReadOnly, entry.id != nil else { return }
+        guard !entry.isReadOnly else { return }
         var updated = entry
         updated.startTime = newStartTime
         updated.seconds = newDurationSeconds
         updated.hours = Double(newDurationSeconds) / 3600.0
-        updated.syncStatus = .dirty
         updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
         do {
-            try await shadowEntryStore.update(updated)
+            if entry.id != nil {
+                updated.syncStatus = .dirty
+                try await shadowEntryStore.update(updated)
+            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
+                updated.syncStatus = .pendingCreate
+                try await shadowEntryStore.updateByLocalId(updated)
+            } else {
+                return
+            }
             Self.logger.info("Resized entry \(entry.id ?? 0) to \(newStartTime), \(newDurationSeconds)s")
             await loadData()
             await onEntryChanged?()
