@@ -44,13 +44,10 @@ struct TimelinePaneView: View {
                 Divider()
             }
 
-            // Column headers pinned to the top of the pane (directly below
-            // the date-nav divider). Kept OUT of any ScrollViewReader so
-            // its layout is unambiguous — the headers are siblings of the
-            // ScrollView, not children of a nested VStack that can get
-            // squeezed when wrapping a flexible ScrollView.
-            columnHeaders
-            theme.divider.frame(height: 1)
+            // (Column header row removed — the divider between panes
+            // and the icon-led content inside each column carry enough
+            // meaning on their own. The toolbar's refresh button sits in
+            // the window chrome, so no extra header row is needed here.)
 
             // Main timeline scroll area. Always rendered so the entry
             // column remains a valid drop target even on empty days; the
@@ -391,32 +388,6 @@ struct TimelinePaneView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Column Headers
-
-    private var columnHeaders: some View {
-        HStack(alignment: .center, spacing: 0) {
-            // Spacer for time axis
-            Color.clear
-                .frame(width: TimelineLayout.timeAxisWidth)
-
-            Text("Recorded Activities")
-                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
-                .foregroundStyle(theme.textSecondary)
-                .frame(width: TimelineLayout.appUsagePaneWidth, alignment: .leading)
-                .padding(.leading, 4)
-
-            theme.divider
-                .frame(width: 1, height: 16)
-
-            Text("Booked Entries")
-                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
-                .foregroundStyle(theme.textSecondary)
-                .padding(.leading, 8)
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 4)
     }
 
     /// Y position for the scroll anchor: now-line on today, 8:00 AM otherwise.
