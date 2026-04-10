@@ -45,11 +45,16 @@ struct EntryBlockView: View {
 
     // MARK: - Gesture State
 
-    @State private var dragOffset: CGFloat = 0
+    /// Gesture target state. When non-nil, overrides the values derived
+    /// from the `entry` prop. The key design point: these are cleared
+    /// ONLY after the underlying entry has caught up to the target, so
+    /// the effective (displayed) value is identical before and after
+    /// the clear — eliminating the resize/drag flicker that plagued
+    /// offset-based approaches.
+    @State private var dragTargetMinutes: Int?
+    @State private var resizeTargetSeconds: Int?
     @State private var isDragging: Bool = false
-    @State private var topResizeOffset: CGFloat = 0
     @State private var isResizingTop: Bool = false
-    @State private var bottomResizeOffset: CGFloat = 0
     @State private var isResizingBottom: Bool = false
     @State private var showDeleteConfirm: Bool = false
 
@@ -63,27 +68,48 @@ struct EntryBlockView: View {
         entry.timerStartedAt != nil
     }
 
-    /// Base height in points based on entry seconds (or elapsed time for running timer).
+    /// Start minutes for layout — either the gesture target or the
+    /// entry's current value if no gesture is in flight.
+    private var effectiveStartMinutes: Int {
+        dragTargetMinutes ?? entryStartMinutes
+    }
+
+    private var entryStartMinutes: Int {
+        TimelineGeometry.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
+    }
+
+    /// Duration in seconds — gesture target wins while a resize is live
+    /// or pending the VM round-trip.
+    private var effectiveSeconds: Int {
+        resizeTargetSeconds ?? entry.seconds
+    }
+
+    /// Height in points. During a running timer, grows with elapsed
+    /// wall-clock seconds; otherwise derived from `effectiveSeconds`.
     private var baseHeight: CGFloat {
         let seconds: CGFloat
         if isRunning, let startedAt = parsedTimerStart {
             seconds = CGFloat(max(Date().timeIntervalSince(startedAt), 60))
         } else {
-            seconds = CGFloat(entry.seconds)
+            seconds = CGFloat(effectiveSeconds)
         }
         return max(seconds / 60 * TimelineLayout.pixelsPerMinute, 20)
     }
 
-    /// Height adjusted during resize gestures.
+    /// Display height — alias for baseHeight now that resize uses
+    /// target-based seconds instead of an offset overlay.
     private var displayHeight: CGFloat {
-        var h = baseHeight
-        if isResizingTop {
-            h -= topResizeOffset
-        }
-        if isResizingBottom {
-            h += bottomResizeOffset
-        }
-        return max(h, TimelineLayout.pixelsPerMinute * CGFloat(TimelineLayout.snapMinutes))
+        max(baseHeight, TimelineLayout.pixelsPerMinute * CGFloat(TimelineLayout.snapMinutes))
+    }
+
+    /// Visual Y offset applied on top of the parent's `entry.startTime`-
+    /// based position. Computed as the delta between the gesture's
+    /// intended start and the entry's current start — it decays to zero
+    /// automatically as the entry catches up to the target, so the
+    /// clear in `onChange` is a no-op visually.
+    private var visualYOffset: CGFloat {
+        let delta = effectiveStartMinutes - entryStartMinutes
+        return CGFloat(delta) * TimelineLayout.pixelsPerMinute
     }
 
     private var parsedTimerStart: Date? {
@@ -99,10 +125,6 @@ struct EntryBlockView: View {
     /// Project color from Moco catalog, falling back to a stable hash-based palette color.
     private var projectColor: Color {
         projectCatalog.color(for: entry.projectId) ?? ProjectColorPalette.color(for: entry.projectId)
-    }
-
-    private var originalMinutes: Int {
-        TimelineGeometry.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
     }
 
     // MARK: - Text Layouts
@@ -252,7 +274,7 @@ struct EntryBlockView: View {
             }
         }
         .help(tooltipLabel)
-        .offset(y: dragOffset + (isResizingTop ? topResizeOffset : 0))
+        .offset(y: visualYOffset)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
@@ -288,27 +310,23 @@ struct EntryBlockView: View {
         } message: {
             Text("You can undo this for 5 seconds.")
         }
-        // When the underlying entry's time/duration changes (after a move
-        // or resize completes), reset the visual offsets IMMEDIATELY on
-        // the same tick as the new data arrives — and crucially, with
-        // animations disabled so the reset doesn't tween visibly. This
-        // eliminates the resize snap-back flicker: the new base position
-        // and zero offset appear in the same render frame.
+        // Clear the gesture targets once the underlying entry has caught
+        // up to them. Because `effectiveStartMinutes` and `effectiveSeconds`
+        // fall back to the entry when the target matches, the visual is
+        // byte-for-byte identical before and after the clear — no flicker.
         .onChange(of: entry.startTime) { _, _ in
-            withTransaction(Transaction(animation: nil)) {
-                dragOffset = 0
-                topResizeOffset = 0
-                isDragging = false
-                isResizingTop = false
+            if dragTargetMinutes == entryStartMinutes {
+                dragTargetMinutes = nil
             }
+            isDragging = false
+            isResizingTop = false
         }
         .onChange(of: entry.seconds) { _, _ in
-            withTransaction(Transaction(animation: nil)) {
-                topResizeOffset = 0
-                bottomResizeOffset = 0
-                isResizingTop = false
-                isResizingBottom = false
+            if resizeTargetSeconds == entry.seconds {
+                resizeTargetSeconds = nil
             }
+            isResizingTop = false
+            isResizingBottom = false
         }
 
         if isRunning {
@@ -326,22 +344,13 @@ struct EntryBlockView: View {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
                 isDragging = true
-                // Snap to 15-minute grid live during drag
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newMinutes = TimelineGeometry.snapToGrid(
-                    minutes: Double(originalMinutes) + deltaMinutes,
-                    gridMinutes: TimelineLayout.snapMinutes
-                )
-                dragOffset = CGFloat(newMinutes - originalMinutes) * TimelineLayout.pixelsPerMinute
+                let newMinutes = snappedStartMinutes(gestureDelta: value.translation.height)
+                dragTargetMinutes = newMinutes
             }
             .onEnded { value in
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newMinutes = TimelineGeometry.snapToGrid(
-                    minutes: Double(originalMinutes) + deltaMinutes,
-                    gridMinutes: TimelineLayout.snapMinutes
-                )
+                let newMinutes = snappedStartMinutes(gestureDelta: value.translation.height)
+                dragTargetMinutes = newMinutes
                 let newTime = TimelineGeometry.timeString(fromMinutes: newMinutes)
-                dragOffset = CGFloat(newMinutes - originalMinutes) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.moveEntry(entry, toStartTime: newTime)
                 }
@@ -354,30 +363,16 @@ struct EntryBlockView: View {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
                 isResizingTop = true
-                // Snap to 15-minute grid live during drag
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newStartMinutes = TimelineGeometry.snapToGrid(
-                    minutes: Double(originalMinutes) + deltaMinutes,
-                    gridMinutes: TimelineLayout.snapMinutes
-                )
-                let movedBy = newStartMinutes - originalMinutes
-                topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
+                let (newStart, newDurationMinutes) = snappedTopResize(gestureDelta: value.translation.height)
+                dragTargetMinutes = newStart
+                resizeTargetSeconds = newDurationMinutes * 60
             }
             .onEnded { value in
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newStartMinutes = TimelineGeometry.snapToGrid(
-                    minutes: Double(originalMinutes) + deltaMinutes,
-                    gridMinutes: TimelineLayout.snapMinutes
-                )
-                let originalDurationMinutes = entry.seconds / 60
-                let movedBy = newStartMinutes - originalMinutes
-                let newDurationMinutes = max(originalDurationMinutes - movedBy, TimelineLayout.snapMinutes)
-                let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
+                let (newStart, newDurationMinutes) = snappedTopResize(gestureDelta: value.translation.height)
+                dragTargetMinutes = newStart
+                resizeTargetSeconds = newDurationMinutes * 60
+                let newTime = TimelineGeometry.timeString(fromMinutes: newStart)
                 let newDurationSeconds = newDurationMinutes * 60
-                topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
-                // Don't reset offsets here — the onChange handler on
-                // entry.startTime/seconds does it atomically with the
-                // new base position (animation disabled to prevent flicker).
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
                 }
@@ -390,31 +385,52 @@ struct EntryBlockView: View {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
                 isResizingBottom = true
-                // Snap to 15-minute grid live during drag
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let originalDurationMinutes = entry.seconds / 60
-                let snappedDuration = max(
-                    originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes,
-                    TimelineLayout.snapMinutes
-                )
-                bottomResizeOffset = CGFloat(snappedDuration - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
+                let newDurationMinutes = snappedBottomDuration(gestureDelta: value.translation.height)
+                resizeTargetSeconds = newDurationMinutes * 60
             }
             .onEnded { value in
-                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let originalDurationMinutes = entry.seconds / 60
-                let newDurationMinutes = max(
-                    originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes,
-                    TimelineLayout.snapMinutes
-                )
+                let newDurationMinutes = snappedBottomDuration(gestureDelta: value.translation.height)
+                resizeTargetSeconds = newDurationMinutes * 60
                 let newDurationSeconds = newDurationMinutes * 60
-                bottomResizeOffset = CGFloat(newDurationMinutes - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
-                // Don't reset offsets here — the onChange handler on
-                // entry.seconds does it atomically with the new base
-                // position (animation disabled to prevent flicker).
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
                 }
             }
+    }
+
+    // MARK: - Snap Helpers
+
+    /// Compute the snapped start minute for a drag-move gesture with the given pixel delta.
+    private func snappedStartMinutes(gestureDelta: CGFloat) -> Int {
+        let deltaMinutes = Double(gestureDelta) / Double(TimelineLayout.pixelsPerMinute)
+        return TimelineGeometry.snapToGrid(
+            minutes: Double(entryStartMinutes) + deltaMinutes,
+            gridMinutes: TimelineLayout.snapMinutes
+        )
+    }
+
+    /// Compute the snapped (startMinutes, durationMinutes) pair for a top-edge resize.
+    /// The bottom edge stays put, so duration shrinks by the same amount the top moves.
+    private func snappedTopResize(gestureDelta: CGFloat) -> (Int, Int) {
+        let deltaMinutes = Double(gestureDelta) / Double(TimelineLayout.pixelsPerMinute)
+        let newStartMinutes = TimelineGeometry.snapToGrid(
+            minutes: Double(entryStartMinutes) + deltaMinutes,
+            gridMinutes: TimelineLayout.snapMinutes
+        )
+        let originalDurationMinutes = entry.seconds / 60
+        let movedBy = newStartMinutes - entryStartMinutes
+        let newDurationMinutes = max(originalDurationMinutes - movedBy, TimelineLayout.snapMinutes)
+        return (newStartMinutes, newDurationMinutes)
+    }
+
+    /// Compute the snapped duration in minutes for a bottom-edge resize.
+    private func snappedBottomDuration(gestureDelta: CGFloat) -> Int {
+        let deltaMinutes = Double(gestureDelta) / Double(TimelineLayout.pixelsPerMinute)
+        let originalDurationMinutes = entry.seconds / 60
+        return max(
+            originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes,
+            TimelineLayout.snapMinutes
+        )
     }
 }
 
