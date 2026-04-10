@@ -103,7 +103,7 @@ final class YesterdayService: PollingMonitor {
 
     /// Recheck the warning using locally cached yesterday activities.
     /// Called directly after edits/deletes — no API call, instant feedback.
-    func recheckLocally(yesterdayActivities: [MocoActivity]) {
+    func recheckLocally(yesterdayActivities: [ShadowEntry]) {
         guard let existing = warning else { return }
         let yesterdayHours = yesterdayActivities.reduce(0.0) { $0 + $1.hours }
         let ratio = yesterdayHours / existing.expectedHours

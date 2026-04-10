@@ -21,14 +21,14 @@ final class ActivityService: ActivitySyncing {
 
     // MARK: - Observable State
 
-    private(set) var todayActivities: [MocoActivity] = []
+    private(set) var todayActivities: [ShadowEntry] = []
     private(set) var todayTotalHours: Double = 0
     private(set) var todayBillablePercentage: Double = 0
-    private(set) var yesterdayActivities: [MocoActivity] = []
+    private(set) var yesterdayActivities: [ShadowEntry] = []
 
     /// Cached sorted arrays — invalidated when activities change.
-    private var _sortedToday: [MocoActivity]?
-    private var _sortedYesterday: [MocoActivity]?
+    private var _sortedToday: [ShadowEntry]?
+    private var _sortedYesterday: [ShadowEntry]?
 
     // MARK: - Dependencies
 
@@ -60,7 +60,7 @@ final class ActivityService: ActivitySyncing {
 
     // MARK: - Derived State (cached)
 
-    var sortedTodayActivities: [MocoActivity] {
+    var sortedTodayActivities: [ShadowEntry] {
         if let cached = _sortedToday { return cached }
         let sorted = todayActivities.sorted { a, b in
             if a.isTimerRunning && !b.isTimerRunning { return true }
@@ -71,7 +71,7 @@ final class ActivityService: ActivitySyncing {
         return sorted
     }
 
-    var sortedYesterdayActivities: [MocoActivity] {
+    var sortedYesterdayActivities: [ShadowEntry] {
         if let cached = _sortedYesterday { return cached }
         let sorted = yesterdayActivities.sorted { $0.updatedAt > $1.updatedAt }
         _sortedYesterday = sorted
@@ -97,7 +97,7 @@ final class ActivityService: ActivitySyncing {
 
         do {
             let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
-            applyFetchedTodayActivities(activities)
+            applyFetchedTodayActivities(activities.map { ShadowEntry.from($0) })
         } catch {
             logger.error("refreshTodayStats failed: \(error.localizedDescription)")
         }
@@ -105,7 +105,7 @@ final class ActivityService: ActivitySyncing {
 
     /// Apply already-fetched today activities without making an API call.
     /// Used by timer sync to avoid a duplicate fetch.
-    func applyFetchedTodayActivities(_ activities: [MocoActivity]) {
+    func applyFetchedTodayActivities(_ activities: [ShadowEntry]) {
         todayActivities = activities
         recomputeTodayStats()
         invalidateSortedCaches()
@@ -115,7 +115,7 @@ final class ActivityService: ActivitySyncing {
     func refreshYesterdayActivities() async {
         if let syncEngine, let yesterday = DateUtilities.yesterdayString() {
             await syncEngine.sync(dates: [yesterday])
-            let activities = await syncEngine.entriesForUI(date: yesterday)
+            let activities = await syncEngine.entries(forDate: yesterday)
             yesterdayActivities = activities
             _sortedYesterday = nil
             yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
@@ -132,7 +132,7 @@ final class ActivityService: ActivitySyncing {
 
         do {
             let activities = try await client.fetchActivities(from: yesterday, to: yesterday, userId: userId)
-            yesterdayActivities = activities
+            yesterdayActivities = activities.map { ShadowEntry.from($0) }
             _sortedYesterday = nil
             yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
             logger.info("Yesterday sync: \(activities.count) entries")
@@ -150,7 +150,7 @@ final class ActivityService: ActivitySyncing {
         if let syncEngine {
             do {
                 try await syncEngine.updateEntry(id: activityId, description: apiDescription, tag: tag)
-                let activities = await syncEngine.entriesForUI(date: DateUtilities.todayString())
+                let activities = await syncEngine.entries(forDate: DateUtilities.todayString())
                 applyFetchedTodayActivities(activities)
                 await onStoreChanged?()
             } catch {
@@ -163,7 +163,7 @@ final class ActivityService: ActivitySyncing {
         guard let client = clientFactory() else { return }
         do {
             let updated = try await client.updateActivity(activityId: activityId, description: apiDescription, tag: tag)
-            upsertToday(updated)
+            upsertToday(ShadowEntry.from(updated))
             notificationDispatcher.descriptionUpdated()
         } catch {
             handleError(error, label: "updateDescription")
@@ -175,7 +175,7 @@ final class ActivityService: ActivitySyncing {
             do {
                 try await syncEngine.updateEntry(id: activityId, description: description, tag: tag, seconds: seconds)
                 let today = DateUtilities.todayString()
-                let activities = await syncEngine.entriesForUI(date: today)
+                let activities = await syncEngine.entries(forDate: today)
                 applyFetchedTodayActivities(activities)
                 await refreshYesterdayActivities()
                 await onStoreChanged?()
@@ -191,8 +191,9 @@ final class ActivityService: ActivitySyncing {
             let updated = try await client.updateActivity(
                 activityId: activityId, description: description, tag: tag, seconds: seconds
             )
-            upsertToday(updated)
-            upsertYesterday(updated)
+            let entry = ShadowEntry.from(updated)
+            upsertToday(entry)
+            upsertYesterday(entry)
             notificationDispatcher.entryUpdated()
         } catch {
             handleError(error, label: "editActivity")
@@ -204,7 +205,7 @@ final class ActivityService: ActivitySyncing {
             do {
                 try await syncEngine.updateEntry(id: activityId, projectId: projectId, taskId: taskId)
                 let today = DateUtilities.todayString()
-                let activities = await syncEngine.entriesForUI(date: today)
+                let activities = await syncEngine.entries(forDate: today)
                 applyFetchedTodayActivities(activities)
                 await refreshYesterdayActivities()
                 await onStoreChanged?()
@@ -221,8 +222,9 @@ final class ActivityService: ActivitySyncing {
                 activityId: activityId, projectId: projectId, taskId: taskId,
                 description: nil, tag: nil, seconds: nil
             )
-            upsertToday(updated)
-            upsertYesterday(updated)
+            let entry = ShadowEntry.from(updated)
+            upsertToday(entry)
+            upsertYesterday(entry)
             notificationDispatcher.entryUpdated()
         } catch {
             handleError(error, label: "reassignActivity")
@@ -231,7 +233,7 @@ final class ActivityService: ActivitySyncing {
 
     func bookManualEntry(
         date: String, projectId: Int, taskId: Int, description: String, seconds: Int
-    ) async -> Result<MocoActivity, MocoError> {
+    ) async -> Result<ShadowEntry, MocoError> {
         guard let client = clientFactory() else { return .failure(.invalidConfiguration) }
 
         let tag = TagExtractor.extract(from: description)
@@ -242,29 +244,31 @@ final class ActivityService: ActivitySyncing {
                 date: date, projectId: projectId, taskId: taskId,
                 description: apiDescription, seconds: seconds, tag: tag
             )
-            appendToday(created)
+            let entry = ShadowEntry.from(created)
+            appendToday(entry)
             usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)
-            notificationDispatcher.manualEntry(projectName: created.project.name, hours: Double(seconds) / 3600.0)
-            return .success(created)
+            notificationDispatcher.manualEntry(projectName: entry.projectName, hours: Double(seconds) / 3600.0)
+            return .success(entry)
         } catch {
             handleError(error, label: "bookManualEntry")
             return .failure(MocoError.from(error))
         }
     }
 
-    func duplicateToToday(activity: MocoActivity) async -> Result<MocoActivity, MocoError> {
+    func duplicateToToday(entry source: ShadowEntry) async -> Result<ShadowEntry, MocoError> {
         guard let client = clientFactory() else { return .failure(.invalidConfiguration) }
 
         let today = DateUtilities.todayString()
         do {
             let created = try await client.createActivity(
-                date: today, projectId: activity.project.id, taskId: activity.task.id,
-                description: activity.description, seconds: activity.seconds,
-                tag: activity.tag.isEmpty ? nil : activity.tag
+                date: today, projectId: source.projectId, taskId: source.taskId,
+                description: source.description, seconds: source.seconds,
+                tag: source.tag.isEmpty ? nil : source.tag
             )
-            appendToday(created)
-            notificationDispatcher.entryDuplicated(projectName: created.project.name, hours: created.hours)
-            return .success(created)
+            let entry = ShadowEntry.from(created)
+            appendToday(entry)
+            notificationDispatcher.entryDuplicated(projectName: entry.projectName, hours: entry.hours)
+            return .success(entry)
         } catch {
             handleError(error, label: "duplicateToToday")
             return .failure(MocoError.from(error))
@@ -274,7 +278,7 @@ final class ActivityService: ActivitySyncing {
     // MARK: - Local State Mutations (optimistic)
 
     /// Public: upsert an activity from an external source (e.g., TimerService after pause/resume).
-    func upsertActivity(_ activity: MocoActivity) {
+    func upsertActivity(_ activity: ShadowEntry) {
         upsertToday(activity)
     }
 
@@ -291,21 +295,21 @@ final class ActivityService: ActivitySyncing {
     }
 
     /// Restore a today activity after undo. Called by DeleteUndoManager.
-    func restoreToday(_ activity: MocoActivity) {
+    func restoreToday(_ activity: ShadowEntry) {
         todayActivities.append(activity)
         recomputeTodayStats()
         invalidateSortedCaches()
     }
 
     /// Restore a yesterday activity after undo. Called by DeleteUndoManager.
-    func restoreYesterday(_ activity: MocoActivity) {
+    func restoreYesterday(_ activity: ShadowEntry) {
         yesterdayActivities.append(activity)
         _sortedYesterday = nil
         yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
     }
 
     /// Insert or update an activity in the today array.
-    private func upsertToday(_ activity: MocoActivity) {
+    private func upsertToday(_ activity: ShadowEntry) {
         if let idx = todayActivities.firstIndex(where: { $0.id == activity.id }) {
             todayActivities[idx] = activity
         }
@@ -318,7 +322,7 @@ final class ActivityService: ActivitySyncing {
     }
 
     /// Update an activity in the yesterday array if present.
-    private func upsertYesterday(_ activity: MocoActivity) {
+    private func upsertYesterday(_ activity: ShadowEntry) {
         if let idx = yesterdayActivities.firstIndex(where: { $0.id == activity.id }) {
             yesterdayActivities[idx] = activity
             _sortedYesterday = nil
@@ -327,7 +331,7 @@ final class ActivityService: ActivitySyncing {
     }
 
     /// Append a newly created activity to today.
-    private func appendToday(_ activity: MocoActivity) {
+    private func appendToday(_ activity: ShadowEntry) {
         todayActivities.append(activity)
         recomputeTodayStats()
         invalidateSortedCaches()
@@ -335,10 +339,8 @@ final class ActivityService: ActivitySyncing {
 
     /// Recompute today's stats from the local activities array.
     private func recomputeTodayStats() {
-        let total = todayActivities.reduce(0.0) { $0 + $1.hours }
-        let billable = todayActivities.filter(\.billable).reduce(0.0) { $0 + $1.hours }
-        todayTotalHours = total
-        todayBillablePercentage = total > 0 ? (billable / total) * 100.0 : 0
+        todayTotalHours = todayActivities.totalHours
+        todayBillablePercentage = todayActivities.billablePercentage
     }
 
     /// Invalidate cached sorted arrays so they recompute on next access.

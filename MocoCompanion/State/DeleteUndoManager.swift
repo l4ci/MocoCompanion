@@ -12,7 +12,7 @@ final class DeleteUndoManager {
 
     /// A pending delete that can be undone within the grace period.
     struct PendingDelete {
-        let activity: MocoActivity
+        let activity: ShadowEntry
         let isYesterday: Bool
         /// The ShadowEntry that was in the store before we flipped it to
         /// `pendingDelete`. Kept so undo can restore the exact prior row.
@@ -154,7 +154,7 @@ final class DeleteUndoManager {
         }
 
         pendingDelete = nil
-        logger.info("Undo delete: restored activity \(pending.activity.id)")
+        logger.info("Undo delete: restored activity \(pending.activity.id ?? 0)")
     }
 
     /// Immediately commit the pending delete (called on timeout or before a new delete).
@@ -162,7 +162,11 @@ final class DeleteUndoManager {
         guard let pending = pendingDelete else { return }
         pending.task.cancel()
         pendingDelete = nil
-        await executeDelete(activityId: pending.activity.id)
+        guard let activityId = pending.activity.id else {
+            pendingDelete = nil
+            return
+        }
+        await executeDelete(activityId: activityId)
     }
 
     /// Execute the actual API delete, then hard-remove the shadow row.

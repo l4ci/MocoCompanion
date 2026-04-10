@@ -30,9 +30,9 @@ final class BudgetDepletionMonitor: PollingMonitor {
         guard case .running = timerService.timerState,
               let activity = timerService.currentActivity else { return [] }
 
-        let projectId = activity.project.id
-        let taskId = activity.task.id
-        let projectName = activity.project.name
+        let projectId = activity.projectId
+        let taskId = activity.taskId
+        let projectName = activity.projectName
 
         // Refresh budget data so we check against latest server state.
         await budgetService.refreshProject(projectId)

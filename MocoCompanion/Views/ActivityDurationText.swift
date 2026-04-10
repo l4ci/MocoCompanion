@@ -4,7 +4,7 @@ import SwiftUI
 /// Shows live-updating elapsed time for running activities,
 /// static compact hours for stopped ones.
 struct ActivityDurationText: View {
-    let activity: MocoActivity
+    let activity: ShadowEntry
     let isSelected: Bool
 
     var font: Font? = nil
@@ -42,7 +42,7 @@ struct ActivityDurationText: View {
 
 /// Large padded elapsed time display (HH:MM:SS) for the status popover timer section.
 struct ElapsedTimeText: View {
-    let activity: MocoActivity?
+    let activity: ShadowEntry?
 
     var body: some View {
         if let activity,

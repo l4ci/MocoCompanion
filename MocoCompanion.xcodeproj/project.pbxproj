@@ -137,6 +137,7 @@
 		C45A386412B8D01E4DB25BBB /* ProjectSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04785C855EE4166447EC3C31 /* ProjectSearchField.swift */; };
 		C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AA040396C6E5C43AF2FDB4 /* AppState.swift */; };
 		C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155477772B61048004E7FA09 /* ShadowEntry.swift */; };
+		AA0C0901A1B2C3D4E5F60030 /* ShadowEntry+Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60031 /* ShadowEntry+Stats.swift */; };
 		C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */; };
 		C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */; };
 		CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */; };
@@ -217,6 +218,7 @@
 		14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoPlanningModels.swift; sourceTree = "<group>"; };
 		154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		155477772B61048004E7FA09 /* ShadowEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowEntry.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60031 /* ShadowEntry+Stats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShadowEntry+Stats.swift"; sourceTree = "<group>"; };
 		166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecorderTests.swift; sourceTree = "<group>"; };
 		16F5FEA3B2CCB6B815D8C914 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		181B2C9AADBB7C2084B3AF0E /* MocoCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MocoCompanion.entitlements; sourceTree = "<group>"; };
@@ -502,6 +504,7 @@
 			isa = PBXGroup;
 			children = (
 				155477772B61048004E7FA09 /* ShadowEntry.swift */,
+				AA0C0901A1B2C3D4E5F60031 /* ShadowEntry+Stats.swift */,
 				7A88696E2E8B7B27A41E1DBE /* ShadowEntryStore.swift */,
 				66DE9273BAC48AA9D33A8BCF /* SyncEngine.swift */,
 				6A2226E9DDDD80446816FD36 /* SyncState.swift */,
@@ -889,6 +892,7 @@
 				907F693566D37220983C0CC0 /* SettingsView.swift in Sources */,
 				C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */,
 				C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60030 /* ShadowEntry+Stats.swift in Sources */,
 				393C9D7D30979342F260B138 /* ShadowEntryStore.swift in Sources */,
 				AB01F7E2C3D4E5F6A7B80001 /* TrackingRule.swift in Sources */,
 				AB01F7E2C3D4E5F6A7B80002 /* RuleStore.swift in Sources */,

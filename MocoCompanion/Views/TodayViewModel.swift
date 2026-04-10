@@ -118,7 +118,7 @@ final class TodayViewModel {
     var todayBillablePercentage: Double { activityService.todayBillablePercentage }
 
     /// Yesterday's activities — used by stats footer when isYesterday is true.
-    var yesterdayActivities: [MocoActivity] { activityService.yesterdayActivities }
+    var yesterdayActivities: [ShadowEntry] { activityService.yesterdayActivities }
 
     // MARK: - Forwarded State (DeleteUndoManager)
 
@@ -150,7 +150,7 @@ final class TodayViewModel {
     // MARK: - Forwarded State (TimerService)
 
     /// Whether the given activity is currently paused.
-    func isPausedActivity(_ activity: MocoActivity) -> Bool {
+    func isPausedActivity(_ activity: ShadowEntry) -> Bool {
         timerService.isPausedActivity(activity)
     }
 
@@ -159,7 +159,7 @@ final class TodayViewModel {
     var isYesterday: Bool { selectedDay == .yesterday }
     var isTomorrow: Bool { selectedDay == .tomorrow }
 
-    var sortedActivities: [MocoActivity] {
+    var sortedActivities: [ShadowEntry] {
         switch selectedDay {
         case .today:
             return activityService.sortedTodayActivities
@@ -284,12 +284,12 @@ final class TodayViewModel {
         if isYesterday {
             Task {
                 _ = await timerService.startTimer(
-                    projectId: activity.project.id,
-                    taskId: activity.task.id,
+                    projectId: activity.projectId,
+                    taskId: activity.taskId,
                     description: activity.description
                 )
             }
-            return .startedTimer(projectId: activity.project.id, taskId: activity.task.id, description: activity.description)
+            return .startedTimer(projectId: activity.projectId, taskId: activity.taskId, description: activity.description)
         }
 
         return toggleTimerForActivity(activity)
@@ -321,11 +321,11 @@ final class TodayViewModel {
         guard sortedActivities.indices.contains(selectedIndex) else { return }
         let activity = sortedActivities[selectedIndex]
         let entry = SearchEntry(
-            projectId: activity.project.id,
-            taskId: activity.task.id,
-            customerName: activity.customer.name,
-            projectName: activity.project.name,
-            taskName: activity.task.name
+            projectId: activity.projectId,
+            taskId: activity.taskId,
+            customerName: activity.customerName,
+            projectName: activity.projectName,
+            taskName: activity.taskName
         )
         favoritesManager.toggle(entry)
     }
@@ -339,7 +339,7 @@ final class TodayViewModel {
 
     // MARK: - Private
 
-    private func toggleTimerForActivity(_ activity: MocoActivity) -> TimerActionResult {
+    private func toggleTimerForActivity(_ activity: ShadowEntry) -> TimerActionResult {
         switch timerService.timerState {
         case .running(let runningId, _) where runningId == activity.id:
             Task { await timerService.pauseTimer() }
@@ -350,10 +350,11 @@ final class TodayViewModel {
             return .resumedTimer(activityId: pausedId, projectName: projectName)
 
         default:
+            guard let activityId = activity.id else { return .noOp }
             Task {
-                await timerService.toggleTimer(for: activity.id, projectName: activity.project.name)
+                await timerService.toggleTimer(for: activityId, projectName: activity.projectName)
             }
-            return .continuedTimer(activityId: activity.id, projectName: activity.project.name)
+            return .continuedTimer(activityId: activityId, projectName: activity.projectName)
         }
     }
 

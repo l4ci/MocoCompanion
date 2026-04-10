@@ -5,8 +5,8 @@ import os
 /// ActivityService conforms; TimerService depends on the protocol.
 @MainActor
 protocol ActivitySyncing: AnyObject {
-    func upsertActivity(_ activity: MocoActivity)
-    func applyFetchedTodayActivities(_ activities: [MocoActivity])
+    func upsertActivity(_ activity: ShadowEntry)
+    func applyFetchedTodayActivities(_ activities: [ShadowEntry])
     func refreshTodayStats() async
 }
 
@@ -24,7 +24,7 @@ final class TimerService: TimerStopProvider {
     // MARK: - Observable State
 
     private(set) var timerState: TimerState = .idle
-    private(set) var currentActivity: MocoActivity?
+    private(set) var currentActivity: ShadowEntry?
     var lastError: MocoError?
 
     /// The ID of the currently running or paused activity, or nil if idle.
@@ -71,7 +71,7 @@ final class TimerService: TimerStopProvider {
     // MARK: - Public API
 
     /// Start a new timer for a project+task. Stops any running timer first.
-    func startTimer(projectId: Int, taskId: Int, description: String) async -> Result<MocoActivity, MocoError> {
+    func startTimer(projectId: Int, taskId: Int, description: String) async -> Result<ShadowEntry, MocoError> {
         guard let client = clientFactory() else {
             let error = MocoError.invalidConfiguration
             lastError = error
@@ -95,19 +95,20 @@ final class TimerService: TimerStopProvider {
             )
             logger.info("Created activity id=\(created.id) project=\(created.project.name)")
 
-            var activity = created
+            var apiActivity = created
             if !created.isTimerRunning {
-                activity = try await client.startTimer(activityId: created.id)
+                apiActivity = try await client.startTimer(activityId: created.id)
                 logger.info("Timer started via explicit startTimer call")
             } else {
                 logger.info("Timer already running after createActivity — skipping startTimer")
             }
 
+            let activity = ShadowEntry.from(apiActivity)
             currentActivity = activity
-            timerState = .running(activityId: activity.id, projectName: activity.project.name)
+            timerState = .running(activityId: apiActivity.id, projectName: activity.projectName)
             lastError = nil
 
-            onEvent?(.started(projectId: projectId, taskId: taskId, description: description, projectName: activity.project.name))
+            onEvent?(.started(projectId: projectId, taskId: taskId, description: description, projectName: activity.projectName))
 
             return .success(activity)
         } catch {
@@ -142,7 +143,7 @@ final class TimerService: TimerStopProvider {
             timerState = .paused(activityId: activityId, projectName: projectName)
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
             onEvent?(.paused(projectName: projectName))
-            activitySync?.upsertActivity(stopped)
+            activitySync?.upsertActivity(ShadowEntry.from(stopped))
         } catch {
             handleError(error, label: "pauseTimer")
         }
@@ -157,7 +158,8 @@ final class TimerService: TimerStopProvider {
         }
 
         do {
-            let started = try await client.startTimer(activityId: activityId)
+            let startedApi = try await client.startTimer(activityId: activityId)
+            let started = ShadowEntry.from(startedApi)
             currentActivity = started
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
@@ -217,9 +219,9 @@ final class TimerService: TimerStopProvider {
         }
     }
 
-    /// Whether an activity is the currently paused timer.
-    func isPausedActivity(_ activity: MocoActivity) -> Bool {
-        if case .paused(let id, _) = timerState { return activity.id == id }
+    /// Whether an entry is the currently paused timer.
+    func isPausedActivity(_ entry: ShadowEntry) -> Bool {
+        if case .paused(let id, _) = timerState { return entry.id == id }
         return false
     }
 
@@ -245,16 +247,17 @@ final class TimerService: TimerStopProvider {
         await stopRunningTimerQuietly(client: client)
 
         do {
-            let started = try await client.startTimer(activityId: activityId)
+            let startedApi = try await client.startTimer(activityId: activityId)
+            let started = ShadowEntry.from(startedApi)
             currentActivity = started
-            timerState = .running(activityId: started.id, projectName: projectName)
+            timerState = .running(activityId: startedApi.id, projectName: projectName)
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
-            onEvent?(.continued(projectId: started.project.id, taskId: started.task.id, projectName: projectName))
+            onEvent?(.continued(projectId: started.projectId, taskId: started.taskId, projectName: projectName))
             activitySync?.upsertActivity(started)
         } catch {
             handleError(error, label: "continueTimer")
-            await syncCurrentTimer()
+            _ = await syncCurrentTimer()
         }
     }
 
@@ -292,7 +295,7 @@ final class TimerService: TimerStopProvider {
         }
     }
 
-    private func syncCurrentTimer() async -> [MocoActivity]? {
+    private func syncCurrentTimer() async -> [ShadowEntry]? {
         guard let client = clientFactory() else { return nil }
         guard let userId = userIdProvider() else {
             logger.warning("syncCurrentTimer skipped — userId not available yet")
@@ -301,17 +304,19 @@ final class TimerService: TimerStopProvider {
         let today = DateUtilities.todayString()
 
         do {
-            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
-            if let running = activities.first(where: { $0.isTimerRunning }) {
-                if case .running(let currentId, _) = timerState, currentId == running.id { return activities }
+            let apiActivities = try await client.fetchActivities(from: today, to: today, userId: userId)
+            let entries = apiActivities.map { ShadowEntry.from($0) }
+            if let runningApi = apiActivities.first(where: { $0.isTimerRunning }) {
+                let running = ShadowEntry.from(runningApi)
+                if case .running(let currentId, _) = timerState, currentId == runningApi.id { return entries }
                 currentActivity = running
-                timerState = .running(activityId: running.id, projectName: running.project.name)
-                logger.info("Synced running timer: activityId=\(running.id) project=\(running.project.name)")
+                timerState = .running(activityId: runningApi.id, projectName: running.projectName)
+                logger.info("Synced running timer: activityId=\(runningApi.id) project=\(running.projectName)")
             } else if case .running = timerState {
                 clearTimerState()
                 logger.info("Timer stopped externally — cleared local state")
             }
-            return activities
+            return entries
         } catch {
             logger.error("syncCurrentTimer failed: \(error.localizedDescription)")
             return nil

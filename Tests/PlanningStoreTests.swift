@@ -11,7 +11,7 @@ struct PlanningStoreTests {
     private func makeStore(
         api: MockActivityAPI = MockActivityAPI(),
         userId: Int? = 42,
-        todayActivities: @escaping () -> [MocoActivity] = { [] }
+        todayActivities: @escaping () -> [ShadowEntry] = { [] }
     ) -> (PlanningStore, MockActivityAPI) {
         let capturedAPI = api
         let store = PlanningStore(
@@ -76,7 +76,7 @@ struct PlanningStoreTests {
     @Test("unplannedTasks filters out tasks already tracked in today activities")
     @MainActor func unplannedFiltersTracked() async {
         var api = MockActivityAPI()
-        let tracked = TestFactories.makeActivity(id: 1, projectId: 100, taskId: 200)
+        let tracked = TestFactories.makeShadowEntry(id: 1, projectId: 100, taskId: 200)
         let planned1 = TestFactories.makePlanningEntry(id: 10, projectId: 100, taskId: 200)
         let planned2 = TestFactories.makePlanningEntry(id: 11, projectId: 101, taskId: 201)
         api.fetchPlanningEntriesHandler = { _, _ in [planned1, planned2] }

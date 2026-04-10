@@ -61,6 +61,9 @@ struct ShadowEntry: Sendable, Equatable {
     /// Id of the TrackingRule that created this entry, if any.
     var sourceRuleId: Int64?
 
+    /// Whether the timer is currently running on this entry.
+    var isTimerRunning: Bool { timerStartedAt != nil }
+
     /// Whether the entry is read-only (locked by Moco or already billed/invoiced).
     var isReadOnly: Bool { locked || billed }
 
@@ -116,28 +119,4 @@ struct ShadowEntry: Sendable, Equatable {
         return String(iso[timeStart..<timeEnd])
     }
 
-    // MARK: - Conversion to MocoActivity
-
-    func toMocoActivity() -> MocoActivity {
-        MocoActivity(
-            id: id ?? 0,
-            date: date,
-            hours: hours,
-            seconds: seconds,
-            workedSeconds: workedSeconds,
-            description: description,
-            billed: billed,
-            billable: billable,
-            tag: tag,
-            project: ActivityProject(id: projectId, name: projectName, billable: projectBillable),
-            task: ActivityTask(id: taskId, name: taskName, billable: taskBillable),
-            customer: MocoCustomer(id: customerId, name: customerName),
-            user: MocoUser(id: userId, firstname: userFirstname, lastname: userLastname),
-            hourlyRate: hourlyRate,
-            timerStartedAt: timerStartedAt,
-            locked: locked,
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
-    }
 }

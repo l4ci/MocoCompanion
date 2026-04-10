@@ -37,6 +37,7 @@ struct TodayViewModelTests {
         let deleteUndo = DeleteUndoManager(
             clientFactory: { activityAPI },
             activityService: activityService,
+            shadowEntryStore: try! ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
             notificationDispatcher: dispatcher
         )
 
@@ -207,7 +208,7 @@ struct TodayViewModelTests {
         #expect(vm.selectedIndex == 1)
 
         // Simulate removing entry 2 — apply directly (mock is a struct, can't mutate after capture)
-        activityService.applyFetchedTodayActivities([a1])
+        activityService.applyFetchedTodayActivities([ShadowEntry.from(a1)])
 
         // Now sortedActivities has only 1 item, selectedActivityId=2 won't be found
         vm.syncSelectionAfterDataChange()

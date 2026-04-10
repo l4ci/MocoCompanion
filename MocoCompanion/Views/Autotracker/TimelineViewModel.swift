@@ -607,17 +607,10 @@ import os
     // MARK: - Stats
 
     /// Total tracked hours for the selected date (excluding pending deletes).
-    var totalHours: Double {
-        shadowEntries.reduce(0) { $0 + $1.hours }
-    }
+    var totalHours: Double { shadowEntries.totalHours }
 
     /// Billable percentage (0–100) for the selected date.
-    var billablePercentage: Double {
-        let total = shadowEntries.reduce(0.0) { $0 + $1.hours }
-        guard total > 0 else { return 0 }
-        let billable = shadowEntries.filter(\.billable).reduce(0.0) { $0 + $1.hours }
-        return (billable / total) * 100
-    }
+    var billablePercentage: Double { shadowEntries.billablePercentage }
 
     // MARK: - App Block Linkage
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// Shows idle, running (with stop button), or paused state.
 struct StatusTimerSection: View {
     let timerState: TimerState
-    let currentActivity: MocoActivity?
+    let currentActivity: ShadowEntry?
     var onStop: () -> Void
 
     var body: some View {

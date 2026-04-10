@@ -3,7 +3,7 @@ import SwiftUI
 /// A single activity row in the status popover.
 /// Compact layout with project name, task, duration, and inline description editing.
 struct StatusActivityRow: View {
-    let activity: MocoActivity
+    let activity: ShadowEntry
     let isCurrentActivity: Bool
 
     @Binding var editingActivityId: Int?
@@ -27,7 +27,7 @@ struct StatusActivityRow: View {
                         .padding(.trailing, 6)
                 }
 
-                Text(activity.project.name)
+                Text(activity.projectName)
                     .font(.system(size: 13, weight: isRunning ? .semibold : .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -43,7 +43,7 @@ struct StatusActivityRow: View {
             }
 
             // Row 2: Task name
-            Text(activity.task.name)
+            Text(activity.taskName)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -102,6 +102,7 @@ struct StatusActivityRow: View {
     private func saveDescription() {
         let newDesc = descriptionDraft
         editingActivityId = nil
-        Task { await activityService.updateDescription(activityId: activity.id, description: newDesc) }
+        guard let activityId = activity.id else { return }
+        Task { await activityService.updateDescription(activityId: activityId, description: newDesc) }
     }
 }

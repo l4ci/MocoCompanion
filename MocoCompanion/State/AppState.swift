@@ -43,7 +43,7 @@ final class AppState {
 
         // Today's tracked activities
         for activity in activityService.todayActivities {
-            ids.insert(activity.project.id)
+            ids.insert(activity.projectId)
         }
 
         // Today's planning entries
@@ -131,6 +131,13 @@ final class AppState {
         self.syncState = sState
         self.syncEngine = sEngine
 
+        // Initialize catalog and session early — Swift requires all `let` properties
+        // to be set before `self` can be captured in closures.
+        let projectCatalog = ProjectCatalog()
+        self.catalog = projectCatalog
+        let sessionMgr = SessionManager(userIdBox: userIdBox)
+        self.session = sessionMgr
+
         let budgetSvc = BudgetService(
             clientFactory: clientFactory,
             userIdProvider: userIdProvider
@@ -184,6 +191,7 @@ final class AppState {
         let deleteUndo = DeleteUndoManager(
             clientFactory: clientFactory,
             activityService: activitySvc,
+            shadowEntryStore: shadowStore,
             notificationDispatcher: dispatcher
         )
         self.deleteUndoManager = deleteUndo
@@ -205,12 +213,10 @@ final class AppState {
             settings: settings
         )
 
-        // Create extracted submodules
-        let projectCatalog = ProjectCatalog()
-        self.catalog = projectCatalog
-
-        let sessionMgr = SessionManager(userIdBox: userIdBox)
-        self.session = sessionMgr
+        // When autotracker creates entries, refresh the Today panel so they appear
+        self.autotracker.onEntryCreated = { [weak activitySvc] in
+            await activitySvc?.refreshTodayStats()
+        }
 
         // Keep the search entries box in sync when catalog projects change
         searchEntriesBox.value = projectCatalog.searchEntries
@@ -255,6 +261,15 @@ final class AppState {
             await self.fetchProjects()
             await self.timerService.sync()
             await self.syncQueuedEntries()
+        }
+
+        // Auto-detect "description required" from Moco validation errors
+        sEngine.onDescriptionRequired = { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !self.settings.descriptionRequired else { return }
+                self.settings.descriptionRequired = true
+                self.logger.info("Auto-detected: Moco requires non-empty descriptions")
+            }
         }
     }
 

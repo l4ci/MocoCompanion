@@ -215,18 +215,18 @@ actor SyncEngine {
     // MARK: - Read Helpers
 
     /// Sync the given date and return entries mapped to MocoActivity.
-    func refresh(date: String) async -> [MocoActivity] {
+    /// Sync the given date and return entries from the local store.
+    func refresh(date: String) async -> [ShadowEntry] {
         await sync(dates: [date])
-        return await entriesForUI(date: date)
+        return await entries(forDate: date)
     }
 
-    /// Query entries for a date, mapped to MocoActivity for the existing UI layer.
-    func entriesForUI(date: String) async -> [MocoActivity] {
+    /// Query entries for a date from the local store.
+    func entries(forDate date: String) async -> [ShadowEntry] {
         do {
-            let entries = try await store.entries(forDate: date)
-            return entries.map { $0.toMocoActivity() }
+            return try await store.entries(forDate: date)
         } catch {
-            logger.error("entriesForUI failed: \(error.localizedDescription)")
+            logger.error("entries(forDate:) failed: \(error.localizedDescription)")
             return []
         }
     }

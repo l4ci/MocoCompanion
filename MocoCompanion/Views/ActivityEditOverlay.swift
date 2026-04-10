@@ -3,7 +3,7 @@ import SwiftUI
 /// Shared inline edit overlay for activity descriptions, hours, and project/task reassignment.
 /// Used by both TodayView (panel) and StatusPopoverView (popover).
 struct ActivityEditOverlay: View {
-    let activity: MocoActivity
+    let activity: ShadowEntry
     @Binding var descriptionDraft: String
     @Binding var hoursDraft: String
     var onSave: () -> Void
@@ -45,7 +45,7 @@ struct ActivityEditOverlay: View {
                 if projects != nil {
                     editableHeader
                 } else {
-                    Text("\(activity.project.name) › \(activity.task.name)")
+                    Text("\(activity.projectName) › \(activity.taskName)")
                         .font(.system(size: bodySize, weight: .medium))
                         .foregroundStyle(.primary.opacity(0.7))
                         .lineLimit(1)
@@ -84,8 +84,8 @@ struct ActivityEditOverlay: View {
             }
         }
         .onAppear {
-            selectedProjectId = activity.project.id
-            selectedTaskId = activity.task.id
+            selectedProjectId = activity.projectId
+            selectedTaskId = activity.taskId
             if autoFocus {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     focusedField = showHours ? .hours : .description
@@ -143,8 +143,8 @@ struct ActivityEditOverlay: View {
     // MARK: - Helpers
 
     private var currentProjectName: String {
-        guard let projects else { return activity.project.name }
-        return projects.first(where: { $0.id == selectedProjectId })?.name ?? activity.project.name
+        guard let projects else { return activity.projectName }
+        return projects.first(where: { $0.id == selectedProjectId })?.name ?? activity.projectName
     }
 
     private func selectProject(_ project: MocoProject) {
@@ -156,8 +156,8 @@ struct ActivityEditOverlay: View {
     }
 
     private func handleSave() {
-        let projectChanged = selectedProjectId != activity.project.id
-        let taskChanged = selectedTaskId != activity.task.id
+        let projectChanged = selectedProjectId != activity.projectId
+        let taskChanged = selectedTaskId != activity.taskId
 
         if (projectChanged || taskChanged), let onReassign {
             onReassign(selectedProjectId, selectedTaskId)
@@ -170,7 +170,7 @@ struct ActivityEditOverlay: View {
 
 extension ActivityEditOverlay {
     init(
-        activity: MocoActivity,
+        activity: ShadowEntry,
         descriptionDraft: Binding<String>,
         onSave: @escaping () -> Void,
         onCancel: @escaping () -> Void,

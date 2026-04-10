@@ -13,7 +13,7 @@ struct MenuBarDisplayState: Equatable {
     /// Compute the current display state from timer state and error info.
     static func from(
         timerState: TimerState,
-        currentActivity: MocoActivity?,
+        currentActivity: ShadowEntry?,
         hasError: Bool
     ) -> MenuBarDisplayState {
         if hasError {
@@ -35,7 +35,7 @@ struct MenuBarDisplayState: Equatable {
             )
 
         case .running(_, let projectName):
-            let label = formatMenuBarLabel(projectName: projectName, taskName: currentActivity?.task.name)
+            let label = formatMenuBarLabel(projectName: projectName, taskName: currentActivity?.taskName)
             let elapsed = computeElapsedString(from: currentActivity)
             return MenuBarDisplayState(
                 iconName: "timer",
@@ -55,7 +55,7 @@ struct MenuBarDisplayState: Equatable {
     }
 
     /// Compute the elapsed time string for a running activity.
-    static func elapsedString(from activity: MocoActivity?) -> String {
+    static func elapsedString(from activity: ShadowEntry?) -> String {
         computeElapsedString(from: activity)
     }
 
@@ -106,7 +106,7 @@ struct MenuBarDisplayState: Equatable {
         return "\(prefix)…\(suffix)"
     }
 
-    private static func computeElapsedString(from activity: MocoActivity?) -> String {
+    private static func computeElapsedString(from activity: ShadowEntry?) -> String {
         guard let activity,
               let startedAt = activity.timerStartedAt,
               let start = DateUtilities.parseISO8601(startedAt) else { return "" }

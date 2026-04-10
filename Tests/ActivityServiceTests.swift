@@ -97,6 +97,7 @@ struct ActivityServiceTests {
         let deleteUndo = DeleteUndoManager(
             clientFactory: { capturedAPI },
             activityService: service,
+            shadowEntryStore: try! ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
             notificationDispatcher: dispatcher
         )
         let mockTimer = MockTimerStopProvider()
@@ -206,7 +207,7 @@ struct ActivityServiceTests {
         }
 
         let (service, _) = makeService(api: api)
-        let result = await service.duplicateToToday(activity: source)
+        let result = await service.duplicateToToday(entry: ShadowEntry.from(source))
 
         switch result {
         case .success(let activity):
@@ -230,12 +231,12 @@ struct ActivityServiceTests {
         #expect(service.todayActivities.count == 1)
 
         // Update existing
-        let updatedExisting = TestFactories.makeActivity(id: 30, seconds: 7200, hours: 2.0)
+        let updatedExisting = TestFactories.makeShadowEntry(id: 30, seconds: 7200, hours: 2.0)
         service.upsertActivity(updatedExisting)
         #expect(service.todayActivities.first(where: { $0.id == 30 })?.seconds == 7200)
 
         // Insert new (activity with today's date not already in array)
-        let brand = TestFactories.makeActivity(id: 31, seconds: 1800, hours: 0.5)
+        let brand = TestFactories.makeShadowEntry(id: 31, seconds: 1800, hours: 0.5)
         service.upsertActivity(brand)
         #expect(service.todayActivities.count == 2)
         #expect(service.todayActivities.contains(where: { $0.id == 31 }))

@@ -11,7 +11,7 @@ struct StatusPopoverView: View {
     @State private var descriptionDraft = ""
     @State private var hoveredActivityId: Int?
 
-    private var sortedActivities: [MocoActivity] {
+    private var sortedActivities: [ShadowEntry] {
         activityService.sortedTodayActivities
     }
 
@@ -63,7 +63,7 @@ struct StatusPopoverView: View {
 
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(sortedActivities) { activity in
+                    ForEach(sortedActivities, id: \.id) { activity in
                         StatusActivityRow(
                             activity: activity,
                             isCurrentActivity: timerService.currentActivity?.id == activity.id,

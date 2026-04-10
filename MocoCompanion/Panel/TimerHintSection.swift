@@ -4,7 +4,7 @@ import SwiftUI
 /// Shows the current project/task with elapsed time and pause/resume hint.
 struct TimerHintSection: View {
     let timerState: TimerState
-    let currentActivity: MocoActivity?
+    let currentActivity: ShadowEntry?
     @Binding var selectedIndex: Int
 
     @Environment(\.theme) private var theme
@@ -17,14 +17,14 @@ struct TimerHintSection: View {
                 iconColor: .green,
                 projectName: projectName,
                 hint: String(localized: "hint.enterPause"),
-                taskName: currentActivity?.task.name
+                taskName: currentActivity?.taskName
             )
         case .paused(_, let projectName):
             timerHintRow(
                 iconColor: .orange,
                 projectName: projectName,
                 hint: String(localized: "hint.enterResume"),
-                taskName: currentActivity?.task.name
+                taskName: currentActivity?.taskName
             )
         case .idle:
             EmptyView()

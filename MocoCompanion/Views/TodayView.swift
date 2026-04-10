@@ -84,7 +84,7 @@ struct TodayView: View {
             // Undo toast — shown after deleting an entry
             if let pending = vm.pendingDelete {
                 UndoToastView(
-                    projectName: pending.activity.project.name,
+                    projectName: pending.activity.projectName,
                     onUndo: { vm.undoDelete() }
                 )
             }
@@ -348,7 +348,7 @@ struct TodayView: View {
                             isPaused: !vm.isYesterday && vm.isPausedActivity(activity),
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
-                            plannedHours: vm.isYesterday ? nil : vm.plannedHours(projectId: activity.project.id, taskId: activity.task.id),
+                            plannedHours: vm.isYesterday ? nil : vm.plannedHours(projectId: activity.projectId, taskId: activity.taskId),
                             projects: appState.catalog.projects,
                             budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,

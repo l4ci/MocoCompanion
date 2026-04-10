@@ -169,7 +169,7 @@ struct YesterdayServiceTests {
         let service = makeService()
         service.warning = YesterdayWarning(bookedHours: 3.0, expectedHours: 8.0)
 
-        let activities = [TestFactories.makeActivity(hours: 7.0)]
+        let activities = [TestFactories.makeShadowEntry(hours: 7.0)]
         service.recheckLocally(yesterdayActivities: activities)
 
         // 7/8 = 87.5% >= 85% → warning cleared
@@ -181,7 +181,7 @@ struct YesterdayServiceTests {
         let service = makeService()
         service.warning = YesterdayWarning(bookedHours: 3.0, expectedHours: 8.0)
 
-        let activities = [TestFactories.makeActivity(hours: 4.0)]
+        let activities = [TestFactories.makeShadowEntry(hours: 4.0)]
         service.recheckLocally(yesterdayActivities: activities)
 
         // 4/8 = 50% < 85% → warning updated with new hours
@@ -194,7 +194,7 @@ struct YesterdayServiceTests {
         let service = makeService()
         #expect(service.warning == nil)
 
-        let activities = [TestFactories.makeActivity(hours: 1.0)]
+        let activities = [TestFactories.makeShadowEntry(hours: 1.0)]
         service.recheckLocally(yesterdayActivities: activities)
 
         #expect(service.warning == nil)

@@ -3,7 +3,7 @@ import SwiftUI
 /// A single activity row in the Today/Yesterday tab.
 /// Handles four states: normal display, inline edit (description + optional hours), delete confirmation.
 struct TodayActivityRow: View {
-    let activity: MocoActivity
+    let activity: ShadowEntry
     let index: Int
     let isSelected: Bool
     let isHovered: Bool
@@ -63,18 +63,18 @@ struct TodayActivityRow: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             } else {
-                let badge = budgetService?.status(projectId: activity.project.id, taskId: activity.task.id).effectiveBadge ?? .none
+                let badge = budgetService?.status(projectId: activity.projectId, taskId: activity.taskId).effectiveBadge ?? .none
                 EntryRow(
-                    projectName: activity.project.name,
-                    customerName: activity.customer.name,
-                    taskName: activity.task.name,
+                    projectName: activity.projectName,
+                    customerName: activity.customerName,
+                    taskName: activity.taskName,
                     description: activity.description.isEmpty ? nil : activity.description,
                     isSelected: isSelected,
                     isHovered: isHovered,
                     isRunning: isRunning,
                     isPaused: isPaused,
                     shortcutIndex: shortcutIndex,
-                    isFavorite: favoritesManager?.isFavorite(projectId: activity.project.id, taskId: activity.task.id),
+                    isFavorite: favoritesManager?.isFavorite(projectId: activity.projectId, taskId: activity.taskId),
                     onToggleFavorite: favoritesManager != nil ? { toggleFavorite() } : nil,
                     hints: rowHints,
                     budgetBadge: badge
@@ -127,7 +127,7 @@ struct TodayActivityRow: View {
 
     private var deleteConfirmation: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(String(localized: "action.deleteConfirm \(activity.project.name)"))
+            Text(String(localized: "action.deleteConfirm \(activity.projectName)"))
                 .font(.system(size: 14 + fontBoost, weight: .medium))
                 .foregroundStyle(.red)
                 .lineLimit(2)
@@ -176,7 +176,7 @@ struct TodayActivityRow: View {
     }
 
     private func confirmDelete() {
-        let id = activity.id
+        guard let id = activity.id else { return }
         deletingActivityId = nil
         onFocusList()  // restore focus immediately before async work
         Task {
@@ -192,7 +192,7 @@ struct TodayActivityRow: View {
     private func saveEdit() {
         let newDesc = descriptionDraft
         let newHours = hoursDraft
-        let activityId = activity.id
+        guard let activityId = activity.id else { return }
         editingActivityId = nil
         onFocusList()
 
@@ -215,17 +215,17 @@ struct TodayActivityRow: View {
     private func toggleFavorite() {
         guard let fm = favoritesManager else { return }
         let entry = SearchEntry(
-            projectId: activity.project.id,
-            taskId: activity.task.id,
-            customerName: activity.customer.name,
-            projectName: activity.project.name,
-            taskName: activity.task.name
+            projectId: activity.projectId,
+            taskId: activity.taskId,
+            customerName: activity.customerName,
+            projectName: activity.projectName,
+            taskName: activity.taskName
         )
         fm.toggle(entry)
     }
 
     private func reassign(projectId: Int, taskId: Int) {
-        let activityId = activity.id
+        guard let activityId = activity.id else { return }
         Task {
             await activityService.reassignActivity(activityId: activityId, projectId: projectId, taskId: taskId)
         }

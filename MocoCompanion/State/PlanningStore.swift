@@ -20,12 +20,12 @@ final class PlanningStore {
 
     private let clientFactory: () -> (any ActivityAPI)?
     private let userIdProvider: () -> Int?
-    private let todayActivitiesProvider: () -> [MocoActivity]
+    private let todayActivitiesProvider: () -> [ShadowEntry]
 
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
         userIdProvider: @escaping () -> Int?,
-        todayActivitiesProvider: @escaping () -> [MocoActivity]
+        todayActivitiesProvider: @escaping () -> [ShadowEntry]
     ) {
         self.clientFactory = clientFactory
         self.userIdProvider = userIdProvider
@@ -139,7 +139,7 @@ final class PlanningStore {
 
     var unplannedTasks: [UnplannedTask] {
         let activities = todayActivitiesProvider()
-        let trackedKeys = Set(activities.map { "\($0.project.id)-\($0.task.id)" })
+        let trackedKeys = Set(activities.map { "\($0.projectId)-\($0.taskId)" })
         return todayPlanningEntries.compactMap { entry in
             guard let project = entry.project, let task = entry.task else { return nil }
             let key = "\(project.id)-\(task.id)"
