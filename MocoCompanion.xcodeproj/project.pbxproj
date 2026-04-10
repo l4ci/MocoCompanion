@@ -41,6 +41,8 @@
 		E64B72EAD7DD5220D605A533 /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66DE9273BAC48AA9D33A8BCF /* SyncEngine.swift */; };
 		0A682359D2685383573C7647 /* SyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A2226E9DDDD80446816FD36 /* SyncState.swift */; };
 		3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */; };
+		AB01F7E2C3D4E5F6A7B80001 /* TrackingRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01F7E2C3D4E5F6A7B80010 /* TrackingRule.swift */; };
+		AB01F7E2C3D4E5F6A7B80002 /* RuleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01F7E2C3D4E5F6A7B80020 /* RuleStore.swift */; };
 		40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */; };
 		41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
 		431F1AE5B1C92CEB1E74C3F6 /* TodayStatsFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56CE3EE0D21EB33F2A9E833 /* TodayStatsFooter.swift */; };
@@ -67,6 +69,7 @@
 		6E39DF30FC9E0F6AEB54C3BB /* MocoActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */; };
 		6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0707079AFDBAE016F65B7B5D /* AppDelegate.swift */; };
 		7010C7AC55A2D772AC9E01DD /* ShadowEntryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88E848494BEBDFFA8CC2A5F /* ShadowEntryStoreTests.swift */; };
+		AB01F7E2C3D4E5F6A7B80003 /* RuleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01F7E2C3D4E5F6A7B80030 /* RuleStoreTests.swift */; };
 		B5EA434E7DDB36579507712A /* SyncEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042974644A9A957C240ADD7 /* SyncEngineTests.swift */; };
 		712210B5065C630BCBB0889A /* RecentEntriesTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */; };
 		7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */; };
@@ -259,6 +262,9 @@
 		69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockYesterdayAPI.swift; sourceTree = "<group>"; };
 		6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDatabase.swift; sourceTree = "<group>"; };
+		AB01F7E2C3D4E5F6A7B80010 /* TrackingRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingRule.swift; sourceTree = "<group>"; };
+		AB01F7E2C3D4E5F6A7B80020 /* RuleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleStore.swift; sourceTree = "<group>"; };
+		AB01F7E2C3D4E5F6A7B80030 /* RuleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleStoreTests.swift; sourceTree = "<group>"; };
 		6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractor.swift; sourceTree = "<group>"; };
 		715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncService.swift; sourceTree = "<group>"; };
 		71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayStateTests.swift; sourceTree = "<group>"; };
@@ -406,6 +412,7 @@
 				AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */,
 				2644CC1AD406CCF9B26CA0D4 /* SecurityAuditTests.swift */,
 				B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */,
+				AB01F7E2C3D4E5F6A7B80030 /* RuleStoreTests.swift */,
 				F88E848494BEBDFFA8CC2A5F /* ShadowEntryStoreTests.swift */,
 				E042974644A9A957C240ADD7 /* SyncEngineTests.swift */,
 				2571D3B463887787904F8C7E /* TagExtractorTests.swift */,
@@ -481,6 +488,8 @@
 				66DE9273BAC48AA9D33A8BCF /* SyncEngine.swift */,
 				6A2226E9DDDD80446816FD36 /* SyncState.swift */,
 				6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */,
+				AB01F7E2C3D4E5F6A7B80010 /* TrackingRule.swift */,
+				AB01F7E2C3D4E5F6A7B80020 /* RuleStore.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -850,6 +859,8 @@
 				C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */,
 				C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */,
 				393C9D7D30979342F260B138 /* ShadowEntryStore.swift in Sources */,
+				AB01F7E2C3D4E5F6A7B80001 /* TrackingRule.swift in Sources */,
+				AB01F7E2C3D4E5F6A7B80002 /* RuleStore.swift in Sources */,
 				E64B72EAD7DD5220D605A533 /* SyncEngine.swift in Sources */,
 				0A682359D2685383573C7647 /* SyncState.swift in Sources */,
 				EF0832E0F708C9A6295E651C /* ShortcutRecorderView.swift in Sources */,
@@ -921,6 +932,7 @@
 				4C9ED8D96E4EA2DF2091F006 /* SecurityAuditTests.swift in Sources */,
 				EABC473DB3DCD76D67F5FD67 /* SessionManagerTests.swift in Sources */,
 				7010C7AC55A2D772AC9E01DD /* ShadowEntryStoreTests.swift in Sources */,
+				AB01F7E2C3D4E5F6A7B80003 /* RuleStoreTests.swift in Sources */,
 				B5EA434E7DDB36579507712A /* SyncEngineTests.swift in Sources */,
 				58E2B52E3EB487A5724A0126 /* TagExtractorTests.swift in Sources */,
 				688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */,
