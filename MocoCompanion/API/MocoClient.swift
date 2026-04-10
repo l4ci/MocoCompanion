@@ -246,7 +246,7 @@ struct MocoClient: MocoClientProtocol, Sendable {
             await AppLogger.shared.apiRequest(method: method, url: url, statusCode: 404, duration: duration, error: "Not found")
             throw MocoError.notFound
         case 422:
-            let message = String(data: data, encoding: .utf8) ?? "Unprocessable entity"
+            let message = Self.extractErrorMessage(from: data, fallback: "Unprocessable entity")
             await AppLogger.shared.apiRequest(method: method, url: url, statusCode: 422, duration: duration, error: message)
             throw MocoError.validationError(message: message)
         case 429:
@@ -255,10 +255,58 @@ struct MocoClient: MocoClientProtocol, Sendable {
             await rateGate?.recordRetryAfter(seconds: retryAfter)
             throw MocoError.rateLimited(retryAfter: retryAfter)
         default:
-            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            let message = Self.extractErrorMessage(from: data, fallback: "HTTP \(httpResponse.statusCode)")
             await AppLogger.shared.apiRequest(method: method, url: url, statusCode: httpResponse.statusCode, duration: duration, error: message)
             throw MocoError.serverError(statusCode: httpResponse.statusCode, message: message)
         }
+    }
+
+    /// Extract a human-readable error message from a Moco API error response body.
+    /// Handles common shapes: `{"message": ...}`, `{"error": ...}`, `{"errors": {...}}`,
+    /// `[{"key": ..., "message": ...}]`, plain text, and empty bodies.
+    static func extractErrorMessage(from data: Data, fallback: String) -> String {
+        // Empty body → use fallback (prior code returned "" which logged as "ERROR: ")
+        guard !data.isEmpty, let raw = String(data: data, encoding: .utf8) else {
+            return fallback
+        }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return fallback }
+
+        // Try to parse as JSON and extract a readable message
+        if let json = try? JSONSerialization.jsonObject(with: data) {
+            // Shape: {"message": "..."} or {"error": "..."}
+            if let dict = json as? [String: Any] {
+                if let msg = dict["message"] as? String, !msg.isEmpty { return msg }
+                if let err = dict["error"] as? String, !err.isEmpty { return err }
+                // Shape: {"errors": {"field": ["msg1", "msg2"]}}
+                if let errors = dict["errors"] as? [String: [String]] {
+                    let parts = errors.map { "\($0.key): \($0.value.joined(separator: ", "))" }
+                    if !parts.isEmpty { return parts.joined(separator: "; ") }
+                }
+                // Shape: {"errors": ["msg1", "msg2"]}
+                if let errors = dict["errors"] as? [String], !errors.isEmpty {
+                    return errors.joined(separator: "; ")
+                }
+            }
+            // Shape: [{"key": "field", "message": "msg"}]
+            if let array = json as? [[String: Any]] {
+                let messages = array.compactMap { item -> String? in
+                    let msg = item["message"] as? String
+                    if let key = item["key"] as? String, let msg, !msg.isEmpty {
+                        return "\(key): \(msg)"
+                    }
+                    return msg
+                }
+                if !messages.isEmpty { return messages.joined(separator: "; ") }
+            }
+            // Shape: ["msg1", "msg2"]
+            if let array = json as? [String], !array.isEmpty {
+                return array.joined(separator: "; ")
+            }
+        }
+
+        // Fall back to the raw body (JSON or plain text)
+        return trimmed
     }
 
     /// Execute and decode the response as a Decodable type.
