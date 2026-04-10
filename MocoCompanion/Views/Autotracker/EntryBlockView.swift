@@ -52,9 +52,6 @@ struct EntryBlockView: View {
     @State private var bottomResizeOffset: CGFloat = 0
     @State private var isResizingBottom: Bool = false
     @State private var showDeleteConfirm: Bool = false
-    /// Set to true while a resize Task is in flight so onChange(of: entry.seconds)
-    /// doesn't zero the offset before the VM's updated entry.seconds is observed.
-    @State private var isApplyingResize: Bool = false
 
     private var isGestureActive: Bool {
         isDragging || isResizingTop || isResizingBottom
@@ -292,25 +289,26 @@ struct EntryBlockView: View {
             Text("You can undo this for 5 seconds.")
         }
         // When the underlying entry's time/duration changes (after a move
-        // or resize completes), reset the visual offsets. This avoids the
-        // snap-back flicker: we keep the dragged offset until the new
-        // entry data arrives, then the base y-position shifts and the
-        // offset clears on the same frame.
+        // or resize completes), reset the visual offsets IMMEDIATELY on
+        // the same tick as the new data arrives — and crucially, with
+        // animations disabled so the reset doesn't tween visibly. This
+        // eliminates the resize snap-back flicker: the new base position
+        // and zero offset appear in the same render frame.
         .onChange(of: entry.startTime) { _, _ in
-            dragOffset = 0
-            topResizeOffset = 0
-            isDragging = false
-            isResizingTop = false
+            withTransaction(Transaction(animation: nil)) {
+                dragOffset = 0
+                topResizeOffset = 0
+                isDragging = false
+                isResizingTop = false
+            }
         }
         .onChange(of: entry.seconds) { _, _ in
-            // Only clear resize offsets when no resize task is in flight.
-            // The onEnded handlers clear them after the await returns,
-            // which prevents the snap-back flicker.
-            guard !isApplyingResize else { return }
-            topResizeOffset = 0
-            bottomResizeOffset = 0
-            isResizingTop = false
-            isResizingBottom = false
+            withTransaction(Transaction(animation: nil)) {
+                topResizeOffset = 0
+                bottomResizeOffset = 0
+                isResizingTop = false
+                isResizingBottom = false
+            }
         }
 
         if isRunning {
@@ -377,12 +375,11 @@ struct EntryBlockView: View {
                 let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
                 topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
-                isApplyingResize = true
+                // Don't reset offsets here — the onChange handler on
+                // entry.startTime/seconds does it atomically with the
+                // new base position (animation disabled to prevent flicker).
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
-                    topResizeOffset = 0
-                    isResizingTop = false
-                    isApplyingResize = false
                 }
             }
     }
@@ -411,12 +408,11 @@ struct EntryBlockView: View {
                 )
                 let newDurationSeconds = newDurationMinutes * 60
                 bottomResizeOffset = CGFloat(newDurationMinutes - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
-                isApplyingResize = true
+                // Don't reset offsets here — the onChange handler on
+                // entry.seconds does it atomically with the new base
+                // position (animation disabled to prevent flicker).
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
-                    bottomResizeOffset = 0
-                    isResizingBottom = false
-                    isApplyingResize = false
                 }
             }
     }
