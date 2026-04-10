@@ -10,6 +10,8 @@ actor SyncEngine {
     private let clientFactory: () -> (any ActivityAPI & TimerAPI)?
     private let userIdProvider: () -> Int?
     private let syncState: SyncState
+    /// Called when a validation error indicates the Moco instance requires descriptions.
+    nonisolated(unsafe) var onDescriptionRequired: (() -> Void)?
     private let logger = Logger(subsystem: "com.mococompanion", category: "SyncEngine")
 
     init(
@@ -45,6 +47,11 @@ actor SyncEngine {
         } catch {
             let mocoError = MocoError.from(error)
             await MainActor.run { syncState.setLastError(mocoError) }
+            // Auto-detect "description required" from Moco validation errors
+            if case .validationError(let message) = mocoError,
+               message.localizedLowercase.contains("description") {
+                onDescriptionRequired?()
+            }
             logger.error("Sync failed: \(error.localizedDescription)")
         }
     }
@@ -120,7 +127,13 @@ actor SyncEngine {
                 if let localId = entry.localId {
                     try await store.deleteByLocalId(localId)
                 }
-                let serverShadow = ShadowEntry.from(created)
+                // Preserve origin metadata across the API round-trip.
+                // `ShadowEntry.from(MocoActivity)` zeroes these fields
+                // because Moco doesn't know about them; we copy them
+                // back from the dirty local row.
+                var serverShadow = ShadowEntry.from(created)
+                serverShadow.sourceAppBundleId = entry.sourceAppBundleId
+                serverShadow.sourceRuleId = entry.sourceRuleId
                 try await store.insert(serverShadow)
                 pushCount += 1
 
@@ -128,6 +141,8 @@ actor SyncEngine {
                 guard let id = entry.id else { continue }
                 let updated = try await client.updateActivity(
                     activityId: id,
+                    projectId: entry.projectId,
+                    taskId: entry.taskId,
                     description: entry.description,
                     tag: entry.tag.isEmpty ? nil : entry.tag,
                     seconds: entry.seconds
@@ -167,6 +182,43 @@ actor SyncEngine {
     }
 
     // MARK: - UI Convenience
+
+    // MARK: - Entry Mutation
+
+    /// Update specific fields on a synced entry, mark it dirty, and push immediately.
+    func updateEntry(
+        id: Int,
+        projectId: Int? = nil,
+        taskId: Int? = nil,
+        description: String? = nil,
+        tag: String? = nil,
+        seconds: Int? = nil
+    ) async throws {
+        guard var entry = try await store.entry(id: id) else {
+            logger.warning("updateEntry: entry \(id) not found in store")
+            return
+        }
+        if let projectId { entry.projectId = projectId }
+        if let taskId { entry.taskId = taskId }
+        if let description { entry.description = description }
+        if let tag { entry.tag = tag }
+        if let seconds {
+            entry.seconds = seconds
+            entry.hours = Double(seconds) / 3600.0
+        }
+        entry.syncStatus = .dirty
+        entry.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        try await store.update(entry)
+        try await pushDirty()
+    }
+
+    // MARK: - Read Helpers
+
+    /// Sync the given date and return entries mapped to MocoActivity.
+    func refresh(date: String) async -> [MocoActivity] {
+        await sync(dates: [date])
+        return await entriesForUI(date: date)
+    }
 
     /// Query entries for a date, mapped to MocoActivity for the existing UI layer.
     func entriesForUI(date: String) async -> [MocoActivity] {

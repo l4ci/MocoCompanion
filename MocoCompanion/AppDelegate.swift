@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var settingsWindow: NSWindow?
     private var setupWizardWindow: NSWindow?
     private var autotrackerWindow: NSWindow?
+    private var autotrackerViewModel: TimelineViewModel?
     private let updateChecker = UpdateChecker()
 
     // Background tasks
@@ -177,16 +178,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         [.banner, .sound]
     }
 
-    /// Handle notification click — opens update URL if present.
+    /// Handle notification actions — opens update URL or autotracker window.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
         let userInfo = response.notification.request.content.userInfo
+
+        if response.actionIdentifier == NotificationDispatcher.openAutotrackerActionId {
+            let targetDateStr = userInfo["targetDate"] as? String
+            await MainActor.run {
+                self.showAutotrackerWindow(dateString: targetDateStr)
+            }
+            return
+        }
+
         if let urlString = userInfo["updateURL"] as? String,
            let url = URL(string: urlString) {
             await MainActor.run {
-                NSWorkspace.shared.open(url)
+                _ = NSWorkspace.shared.open(url)
             }
         }
     }
@@ -272,17 +282,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // MARK: - Autotracker Window
 
     func showAutotrackerWindow() {
+        showAutotrackerWindow(dateString: nil)
+    }
+
+    /// Show the autotracker window, optionally navigating to a specific date (YYYY-MM-DD).
+    func showAutotrackerWindow(dateString: String?) {
         if let existing = autotrackerWindow, existing.isVisible {
+            // If a target date was requested, navigate to it via the view model
+            if let dateString, let date = Self.parseDate(dateString) {
+                autotrackerViewModel?.selectDate(date)
+            }
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
-        let timelineView = TimelineWindow(
+        let vm = TimelineViewModel(
             shadowEntryStore: appState.shadowEntryStore,
+            autotracker: appState.autotracker,
+            syncState: appState.syncState,
+            workdayStartHour: appState.settings.workingHoursStart,
+            workdayEndHour: appState.settings.workingHoursEnd
+        )
+        vm.deleteUndoManager = appState.deleteUndoManager
+        vm.onEntryChanged = { [weak self] in
+            await self?.appState.activityService.refreshTodayStats()
+        }
+        vm.onRefresh = { [weak self] in
+            guard let self else { return }
+            let dateStr = TimelineGeometry.dateString(from: vm.selectedDate)
+            await self.appState.syncEngine.sync(dates: [dateStr])
+        }
+        // Let TodayView mutations reach back into this window: when
+        // DeleteUndoManager flips a row to pendingDelete, reload the
+        // timeline so the entry disappears immediately. The closure holds
+        // the viewmodel weakly so it becomes a no-op after a window close.
+        appState.deleteUndoManager.onStoreChanged = { [weak vm] in
+            await vm?.loadData()
+        }
+        appState.activityService.onStoreChanged = { [weak vm] in
+            await vm?.loadData()
+        }
+        autotrackerViewModel = vm
+
+        // Navigate to target date if specified
+        if let dateString, let date = Self.parseDate(dateString) {
+            vm.selectDate(date)
+        }
+
+        let timelineView = TimelineWindow(
+            viewModel: vm,
             syncState: appState.syncState,
             projectCatalog: appState.catalog,
-            autotracker: appState.autotracker
+            autotracker: appState.autotracker,
+            descriptionRequired: appState.settings.descriptionRequired,
+            deleteUndoManager: appState.deleteUndoManager
         )
 
         let hostingView = NSHostingController(rootView: timelineView)
@@ -298,6 +352,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         autotrackerWindow = window
         Self.logger.info("Autotracker window opened")
+    }
+
+    private static func parseDate(_ s: String) -> Date? {
+        let parts = s.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else { return nil }
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        return Calendar.current.date(from: comps)
     }
 
     // MARK: - Hotkey

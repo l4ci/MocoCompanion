@@ -45,6 +45,9 @@ final class ActivityService: ActivitySyncing {
     /// Shadow DB sync engine — when set, reads go through the local DB instead of API.
     var syncEngine: SyncEngine?
 
+    /// Fired after mutations that change the shadow store, so the timeline can reload.
+    var onStoreChanged: (() async -> Void)?
+
     init(
         clientFactory: @escaping () -> (any ActivityAPI)?,
         notificationDispatcher: NotificationDispatcher,
@@ -81,8 +84,7 @@ final class ActivityService: ActivitySyncing {
         let today = DateUtilities.todayString()
 
         if let syncEngine {
-            await syncEngine.sync(dates: [today])
-            let activities = await syncEngine.entriesForUI(date: today)
+            let activities = await syncEngine.refresh(date: today)
             applyFetchedTodayActivities(activities)
             return
         }
@@ -142,10 +144,23 @@ final class ActivityService: ActivitySyncing {
     // MARK: - CRUD (optimistic local updates)
 
     func updateDescription(activityId: Int, description: String) async {
-        guard let client = clientFactory() else { return }
         let tag = TagExtractor.extract(from: description)
         let apiDescription = TagExtractor.stripTags(from: description)
 
+        if let syncEngine {
+            do {
+                try await syncEngine.updateEntry(id: activityId, description: apiDescription, tag: tag)
+                let activities = await syncEngine.entriesForUI(date: DateUtilities.todayString())
+                applyFetchedTodayActivities(activities)
+                await onStoreChanged?()
+            } catch {
+                handleError(error, label: "updateDescription")
+            }
+            notificationDispatcher.descriptionUpdated()
+            return
+        }
+
+        guard let client = clientFactory() else { return }
         do {
             let updated = try await client.updateActivity(activityId: activityId, description: apiDescription, tag: tag)
             upsertToday(updated)
@@ -156,8 +171,22 @@ final class ActivityService: ActivitySyncing {
     }
 
     func editActivity(activityId: Int, seconds: Int, description: String? = nil, tag: String? = nil) async {
-        guard let client = clientFactory() else { return }
+        if let syncEngine {
+            do {
+                try await syncEngine.updateEntry(id: activityId, description: description, tag: tag, seconds: seconds)
+                let today = DateUtilities.todayString()
+                let activities = await syncEngine.entriesForUI(date: today)
+                applyFetchedTodayActivities(activities)
+                await refreshYesterdayActivities()
+                await onStoreChanged?()
+            } catch {
+                handleError(error, label: "editActivity")
+            }
+            notificationDispatcher.entryUpdated()
+            return
+        }
 
+        guard let client = clientFactory() else { return }
         do {
             let updated = try await client.updateActivity(
                 activityId: activityId, description: description, tag: tag, seconds: seconds
@@ -171,8 +200,22 @@ final class ActivityService: ActivitySyncing {
     }
 
     func reassignActivity(activityId: Int, projectId: Int, taskId: Int) async {
-        guard let client = clientFactory() else { return }
+        if let syncEngine {
+            do {
+                try await syncEngine.updateEntry(id: activityId, projectId: projectId, taskId: taskId)
+                let today = DateUtilities.todayString()
+                let activities = await syncEngine.entriesForUI(date: today)
+                applyFetchedTodayActivities(activities)
+                await refreshYesterdayActivities()
+                await onStoreChanged?()
+            } catch {
+                handleError(error, label: "reassignActivity")
+            }
+            notificationDispatcher.entryUpdated()
+            return
+        }
 
+        guard let client = clientFactory() else { return }
         do {
             let updated = try await client.updateActivity(
                 activityId: activityId, projectId: projectId, taskId: taskId,
