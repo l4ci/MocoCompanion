@@ -1,0 +1,78 @@
+import SwiftUI
+
+/// Renders a single app usage block on the timeline.
+/// Positioned by the parent via offset; height derived from duration.
+struct AppUsageBlockView: View {
+    let block: AppUsageBlock
+    let isSelected: Bool
+    var onSelect: (_ shiftHeld: Bool) -> Void = { _ in }
+    var onCreateRule: ((_ bundleId: String, _ appName: String) -> Void)?
+    var onDragStarted: () -> Void = {}
+    var onDragUpdated: (_ targetY: CGFloat) -> Void = { _ in }
+    var onDragEnded: () -> Void = {}
+    @Environment(\.theme) private var theme
+    @State private var isDragging: Bool = false
+
+    private var height: CGFloat {
+        max(CGFloat(block.durationSeconds / 60) * TimelineLayout.pixelsPerMinute, 12)
+    }
+
+    private var durationLabel: String {
+        let totalMinutes = Int(block.durationSeconds) / 60
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 {
+            return "\(block.appName) — \(hours)h \(minutes)m"
+        }
+        return "\(block.appName) — \(minutes)m"
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left color accent bar
+            RoundedRectangle(cornerRadius: 1)
+                .fill(Color.accentColor.opacity(0.6))
+                .frame(width: 3)
+
+            Text(block.appName)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(theme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.horizontal, 4)
+
+            Spacer(minLength: 0)
+        }
+        .frame(width: TimelineLayout.appUsagePaneWidth - 8, height: height)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+                .stroke(Color.accentColor, lineWidth: 2)
+                .opacity(isSelected ? 1 : 0)
+        )
+        .help(durationLabel)
+        .opacity(isDragging ? 0.5 : 1.0)
+        .gesture(
+            DragGesture(minimumDistance: 8, coordinateSpace: .global)
+                .onChanged { value in
+                    if !isDragging {
+                        isDragging = true
+                        onDragStarted()
+                    }
+                    onDragUpdated(value.location.y)
+                }
+                .onEnded { _ in
+                    isDragging = false
+                    onDragEnded()
+                }
+        )
+        .onTapGesture {
+            onSelect(NSEvent.modifierFlags.contains(.shift))
+        }
+        .contextMenu {
+            Button("Create rule for \"\(block.appName)\"…") {
+                onCreateRule?(block.appBundleId, block.appName)
+            }
+        }
+    }
+}
