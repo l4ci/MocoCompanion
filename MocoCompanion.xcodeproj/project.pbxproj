@@ -128,6 +128,7 @@
 		A6BEE81E03F3E085106C3697 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FBFFE8C2F878C02B6BE6DF7 /* Assets.xcassets */; };
 		A7109E76E8E3AB2B124D79CD /* EntryQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011B6721B43C2268A3D0C31E /* EntryQueue.swift */; };
 		A7AE1FACA62C403054FC315A /* RuleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD8FA186D23756850CE8C10 /* RuleEditorSheet.swift */; };
+		E336C6B8C0A64002B5AEBEB7 /* RunningAppPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 716E66165A7643928FD03EC3 /* RunningAppPicker.swift */; };
 		A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DE3813688601F145EE7C4 /* StatusItemController.swift */; };
 		AC06679248047DEE5547D1A7 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */; };
 		AD81C4D9CFCEF08DC91800B5 /* KeyCombo+System.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC92CE67BD12A7846E9B0B9 /* KeyCombo+System.swift */; };
@@ -388,6 +389,7 @@
 		FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetCalculatorTests.swift; sourceTree = "<group>"; };
 		FBE23E7BB04E6B5E42EE1E3E /* TimelineWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineWindow.swift; sourceTree = "<group>"; };
 		FDD8FA186D23756850CE8C10 /* RuleEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEditorSheet.swift; sourceTree = "<group>"; };
+		716E66165A7643928FD03EC3 /* RunningAppPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningAppPicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -636,6 +638,7 @@
 				542F69EC4669870DF22A52B3 /* NowLineView.swift */,
 				54CA7B6B62279BC2D5F0B2A7 /* ProjectColorPalette.swift */,
 				FDD8FA186D23756850CE8C10 /* RuleEditorSheet.swift */,
+				716E66165A7643928FD03EC3 /* RunningAppPicker.swift */,
 				9D43B7617F698207021D2FF5 /* RuleListView.swift */,
 				7A8F39DFDDC280D9E571D9C0 /* SuggestionBlockView.swift */,
 				5B1C24EE54DC09B10BC61F26 /* TimeAxisView.swift */,
@@ -894,6 +897,7 @@
 				B37F973122A37C765EF8D154 /* RecencyTracker.swift in Sources */,
 				712210B5065C630BCBB0889A /* RecentEntriesTracker.swift in Sources */,
 				A7AE1FACA62C403054FC315A /* RuleEditorSheet.swift in Sources */,
+				E336C6B8C0A64002B5AEBEB7 /* RunningAppPicker.swift in Sources */,
 				C0028E3693FD48C607C45A88 /* RuleListView.swift in Sources */,
 				4E18D9BD063F8B9A86BFAD8B /* RuleStore.swift in Sources */,
 				3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */,

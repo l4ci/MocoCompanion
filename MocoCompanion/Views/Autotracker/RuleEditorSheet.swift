@@ -29,30 +29,6 @@ struct RuleEditorSheet: View {
 
     private var isEditing: Bool { existingRule != nil }
 
-    /// A user-facing app detected via `NSWorkspace.runningApplications`.
-    struct RunningAppOption: Identifiable, Hashable {
-        let id: String       // bundle identifier
-        let name: String     // localized display name
-    }
-
-    /// Fetch the currently running user-facing applications (activation
-    /// policy `.regular`) so the user can pick from a list instead of
-    /// typing a bundle identifier.
-    private static func fetchRunningApps() -> [RunningAppOption] {
-        NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular }
-            .compactMap { app -> RunningAppOption? in
-                guard let bundleId = app.bundleIdentifier,
-                      let displayName = app.localizedName
-                else { return nil }
-                return RunningAppOption(id: bundleId, name: displayName)
-            }
-            .reduce(into: [RunningAppOption]()) { acc, item in
-                if !acc.contains(where: { $0.id == item.id }) { acc.append(item) }
-            }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
@@ -73,7 +49,7 @@ struct RuleEditorSheet: View {
         .frame(width: 420, alignment: .topLeading)
         .onAppear {
             populateFields()
-            runningApps = Self.fetchRunningApps()
+            runningApps = fetchRunningApps()
         }
     }
 
@@ -119,7 +95,7 @@ struct RuleEditorSheet: View {
                     }
                     Divider()
                     Button("Refresh list") {
-                        runningApps = Self.fetchRunningApps()
+                        runningApps = fetchRunningApps()
                     }
                 } label: {
                     HStack(spacing: 6) {

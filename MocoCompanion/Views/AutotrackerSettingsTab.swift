@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Settings tab for the Autotracker feature: toggle recording, view status, configure retention.
@@ -7,7 +8,6 @@ struct AutotrackerSettingsTab: View {
     var projectCatalog: ProjectCatalog?
 
     @Environment(\.theme) private var theme
-    @State private var newExcludedBundleId = ""
     @State private var showRuleList = false
     @State private var ruleCount: Int = 0
 
@@ -63,7 +63,9 @@ struct AutotrackerSettingsTab: View {
                 Section(String(localized: "autotracker.excludedApps")) {
                     ForEach(settings.autotrackerExcludedApps, id: \.self) { bundleId in
                         HStack {
-                            Text(bundleId)
+                            // Show app display name when the app is currently running,
+                            // otherwise fall back to the bundle id string.
+                            Text(runningAppName(for: bundleId).map { "\($0) (\(bundleId))" } ?? bundleId)
                                 .font(.system(size: Theme.FontSize.body))
                             Spacer()
                             Button {
@@ -76,15 +78,10 @@ struct AutotrackerSettingsTab: View {
                         }
                     }
 
-                    HStack(spacing: 8) {
-                        TextField(String(localized: "autotracker.excludedApps.placeholder"), text: $newExcludedBundleId)
-                            .font(.system(size: Theme.FontSize.body))
-                            .textFieldStyle(.roundedBorder)
-                            .onSubmit { addExcludedApp() }
-                        Button(String(localized: "autotracker.excludedApps.add")) {
-                            addExcludedApp()
+                    RunningAppPicker(label: String(localized: "autotracker.excludedApps.add")) { bundleId, _ in
+                        if !settings.autotrackerExcludedApps.contains(bundleId) {
+                            settings.addExcludedApp(bundleId)
                         }
-                        .disabled(newExcludedBundleId.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
             }
@@ -148,8 +145,10 @@ struct AutotrackerSettingsTab: View {
         }
     }
 
-    private func addExcludedApp() {
-        settings.addExcludedApp(newExcludedBundleId)
-        newExcludedBundleId = ""
+    /// Returns the display name for a bundle id if the app is currently running, nil otherwise.
+    private func runningAppName(for bundleId: String) -> String? {
+        NSWorkspace.shared.runningApplications
+            .first(where: { $0.bundleIdentifier == bundleId })?
+            .localizedName
     }
 }
