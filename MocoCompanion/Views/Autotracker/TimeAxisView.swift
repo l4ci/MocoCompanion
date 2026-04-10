@@ -4,7 +4,7 @@ import SwiftUI
 enum TimelineLayout {
     static let pixelsPerMinute: CGFloat = 1.5
     static let timeAxisWidth: CGFloat = 50
-    static let appUsagePaneWidth: CGFloat = 140
+    static let appUsagePaneWidth: CGFloat = 200
     static let blockCornerRadius: CGFloat = Theme.Radius.medium
     /// Coarse snap for timeline gestures (drag-move, edge-resize, drag-create).
     /// For finer-grained edits (precise minute adjustment), use the Edit sheet.
@@ -33,11 +33,20 @@ struct TimeAxisView: View {
 
 /// Full-width background grid drawn behind both panes.
 struct TimeAxisGridBackground: View {
+    var workdayStartHour: Int = 8
+    var workdayEndHour: Int = 17
     @Environment(\.theme) private var theme
 
     var body: some View {
         Canvas { context, size in
             let ppm = TimelineLayout.pixelsPerMinute
+
+            // Workday background band
+            let workStart = CGFloat(workdayStartHour * 60) * ppm
+            let workEnd = CGFloat(workdayEndHour * 60) * ppm
+            let workRect = CGRect(x: 0, y: workStart, width: size.width, height: workEnd - workStart)
+            context.fill(Path(workRect), with: .color(Color.accentColor.opacity(0.04)))
+
             // Hour lines
             for hour in 0...24 {
                 let y = CGFloat(hour * 60) * ppm

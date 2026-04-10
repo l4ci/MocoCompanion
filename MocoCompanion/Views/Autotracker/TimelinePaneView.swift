@@ -467,11 +467,21 @@ struct TimelinePaneView: View {
                     onDelete: { e in Task { await viewModel.deleteEntry(e) } },
                     onSelect: { viewModel.toggleEntrySelection(entry) }
                 )
-                    .frame(width: max(columnWidth - gap, 20), alignment: .topLeading)
+                    .frame(width: max(columnWidth - gap, 14), alignment: .topLeading)
                     .offset(
                         x: 4 + columnWidth * CGFloat(layout.columnIndex),
                         y: yOffsetFromTimeString(entry.startTime)
                     )
+                    // Suppress implicit animation on the parent-applied
+                    // .offset(y:) and .frame(width:) when entry.startTime
+                    // or entry.seconds changes — otherwise SwiftUI tweens
+                    // the positional change after a resize/move, which
+                    // visually competes with the child's own preview
+                    // offset and produces the flicker.
+                    .animation(nil, value: entry.startTime)
+                    .animation(nil, value: entry.seconds)
+                    .animation(nil, value: layout.columnIndex)
+                    .animation(nil, value: layout.columnCount)
             }
 
             // Suggestion blocks
