@@ -200,7 +200,7 @@ final class AppState {
 
         let recordStore = AppRecordStore()
         self.appRecordStore = recordStore
-        self.appRecorder = AppRecorder(store: recordStore)
+        self.appRecorder = AppRecorder(store: recordStore, settings: settings)
 
         let rulesDb = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
         let rStore = try! RuleStore(database: rulesDb)

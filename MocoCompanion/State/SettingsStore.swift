@@ -29,6 +29,7 @@ final class SettingsStore {
         static let entryFontSizeBoost = "entryFontSizeBoost"
         static let autotrackerEnabled = "autotrackerEnabled"
         static let autotrackerRetentionDays = "autotrackerRetentionDays"
+        static let autotrackerExcludedApps = "autotrackerExcludedApps"
         static let panelPositionX = "panelPositionX"
         static let panelPositionY = "panelPositionY"
         static let hasSavedPanelPosition = "hasSavedPanelPosition"
@@ -49,6 +50,17 @@ final class SettingsStore {
 
     private static func save(_ key: String, _ value: Any) {
         UserDefaults.standard.set(value, forKey: key)
+    }
+
+    private static func saveJSON<T: Encodable>(_ key: String, _ value: T) {
+        if let data = try? JSONEncoder().encode(value) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private static func loadJSON<T: Decodable>(_ key: String, default fallback: T) -> T {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return fallback }
+        return (try? JSONDecoder().decode(T.self, from: data)) ?? fallback
     }
 
     // MARK: - Credentials
@@ -193,6 +205,21 @@ final class SettingsStore {
         didSet { Self.save(Key.autotrackerRetentionDays, autotrackerRetentionDays) }
     }
 
+    /// Bundle IDs excluded from autotracker recording. Persisted as JSON array in UserDefaults.
+    var autotrackerExcludedApps: [String] {
+        didSet { Self.saveJSON(Key.autotrackerExcludedApps, autotrackerExcludedApps) }
+    }
+
+    func addExcludedApp(_ bundleId: String) {
+        let trimmed = bundleId.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !autotrackerExcludedApps.contains(trimmed) else { return }
+        autotrackerExcludedApps.append(trimmed)
+    }
+
+    func removeExcludedApp(_ bundleId: String) {
+        autotrackerExcludedApps.removeAll { $0 == bundleId }
+    }
+
     // MARK: - Preferences: Debug
 
     /// API log level (0=debug, 1=info, 2=warning, 3=error).
@@ -235,6 +262,7 @@ final class SettingsStore {
         self.appLanguage = Self.read(Key.appLanguage, default: "system")
         self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
         self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
+        self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: [])
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
@@ -292,6 +320,7 @@ final class SettingsStore {
         appLogLevel = .info
         autotrackerEnabled = false
         autotrackerRetentionDays = 14
+        autotrackerExcludedApps = []
 
         Self.logger.info("All app data has been reset")
     }
