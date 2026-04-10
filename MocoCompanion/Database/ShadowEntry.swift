@@ -44,6 +44,23 @@ struct ShadowEntry: Sendable, Equatable {
     var serverUpdatedAt: String
     var conflictFlag: Bool
 
+    // MARK: - Origin Tracking
+    //
+    // Local-only metadata that records where the entry came from when it
+    // was created inside MocoCompanion. Moco has no API field for this,
+    // so these columns are purged on pull from server and re-applied on
+    // local insert. Used by the timeline view to decide whether an entry
+    // is "linked" to a recorded activity block.
+
+    /// Bundle identifier of the app whose recorded activity this entry
+    /// was created from (right-click "Create entry from this block",
+    /// drag-create from a block, or a matching TrackingRule). Nil for
+    /// manually-typed entries.
+    var sourceAppBundleId: String?
+
+    /// Id of the TrackingRule that created this entry, if any.
+    var sourceRuleId: Int64?
+
     // MARK: - Conversion from MocoActivity
 
     static func from(_ activity: MocoActivity) -> ShadowEntry {
@@ -78,7 +95,9 @@ struct ShadowEntry: Sendable, Equatable {
             syncStatus: .synced,
             localUpdatedAt: activity.updatedAt,
             serverUpdatedAt: activity.updatedAt,
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: nil,
+            sourceRuleId: nil
         )
     }
 
@@ -97,42 +116,25 @@ struct ShadowEntry: Sendable, Equatable {
     // MARK: - Conversion to MocoActivity
 
     func toMocoActivity() -> MocoActivity {
-        let json: [String: Any] = [
-            "id": id ?? 0,
-            "date": date,
-            "hours": hours,
-            "seconds": seconds,
-            "worked_seconds": workedSeconds,
-            "description": description,
-            "billed": billed,
-            "billable": billable,
-            "tag": tag,
-            "project": [
-                "id": projectId,
-                "name": projectName,
-                "billable": projectBillable,
-            ] as [String: Any],
-            "task": [
-                "id": taskId,
-                "name": taskName,
-                "billable": taskBillable,
-            ] as [String: Any],
-            "customer": [
-                "id": customerId,
-                "name": customerName,
-            ] as [String: Any],
-            "user": [
-                "id": userId,
-                "firstname": userFirstname,
-                "lastname": userLastname,
-            ] as [String: Any],
-            "hourly_rate": hourlyRate,
-            "timer_started_at": timerStartedAt as Any,
-            "locked": locked,
-            "created_at": createdAt,
-            "updated_at": updatedAt,
-        ]
-        let data = try! JSONSerialization.data(withJSONObject: json)
-        return try! JSONDecoder().decode(MocoActivity.self, from: data)
+        MocoActivity(
+            id: id ?? 0,
+            date: date,
+            hours: hours,
+            seconds: seconds,
+            workedSeconds: workedSeconds,
+            description: description,
+            billed: billed,
+            billable: billable,
+            tag: tag,
+            project: ActivityProject(id: projectId, name: projectName, billable: projectBillable),
+            task: ActivityTask(id: taskId, name: taskName, billable: taskBillable),
+            customer: MocoCustomer(id: customerId, name: customerName),
+            user: MocoUser(id: userId, firstname: userFirstname, lastname: userLastname),
+            hourlyRate: hourlyRate,
+            timerStartedAt: timerStartedAt,
+            locked: locked,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
     }
 }

@@ -6,8 +6,41 @@ import SwiftUI
 struct EntryBlockView: View {
     let entry: ShadowEntry
     let viewModel: TimelineViewModel
+    var isHighlighted: Bool = false
     var onEdit: ((ShadowEntry) -> Void)? = nil
+    var onDelete: ((ShadowEntry) -> Void)? = nil
+    var onSelect: (() -> Void)? = nil
     @Environment(\.theme) private var theme
+
+    /// Height threshold below which the three-line layout is collapsed
+    /// into a single compact row (project — task — description).
+    private static let compactThreshold: CGFloat = 44
+
+    private var isCompact: Bool {
+        displayHeight < Self.compactThreshold
+    }
+
+    /// Full info string used for the hover tooltip — always shown, both
+    /// compact and expanded variants.
+    private var tooltipLabel: String {
+        var lines: [String] = [entry.projectName]
+        if !entry.taskName.isEmpty { lines.append(entry.taskName) }
+        if !entry.description.isEmpty { lines.append(entry.description) }
+        if let start = entry.startTime {
+            lines.append("\(start) • \(durationLabel)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Human-friendly duration string, e.g. "1h 30min", "45min".
+    private var durationLabel: String {
+        let totalMinutes = max(entry.seconds / 60, 0)
+        let h = totalMinutes / 60
+        let m = totalMinutes % 60
+        if h > 0 && m > 0 { return "\(h)h \(m)min" }
+        if h > 0 { return "\(h)h" }
+        return "\(m)min"
+    }
 
     // MARK: - Gesture State
 
@@ -61,8 +94,79 @@ struct EntryBlockView: View {
         return theme.surface
     }
 
+    /// Stable color derived from projectId so each project is visually distinct.
+    private var projectColor: Color {
+        ProjectColorPalette.color(for: entry.projectId)
+    }
+
     private var originalMinutes: Int {
         TimelineGeometry.minutesSinceMidnight(from: entry.startTime ?? "00:00") ?? 0
+    }
+
+    // MARK: - Text Layouts
+
+    /// Three-line layout used when the entry is tall enough (>= 44pt).
+    private var expandedTextContent: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(entry.projectName)
+                .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Text(entry.taskName)
+                .font(.system(size: Theme.FontSize.subhead))
+                .foregroundStyle(theme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            if !entry.description.isEmpty {
+                Text(entry.description)
+                    .font(.system(size: Theme.FontSize.subhead))
+                    .foregroundStyle(theme.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+    }
+
+    /// Single-row layout used when the entry is short. Puts project name
+    /// first (bold) and appends the task + description inline, separated
+    /// by bullets, with a tail ellipsis so it never overflows the row.
+    private var compactTextContent: some View {
+        HStack(spacing: 6) {
+            Text(entry.projectName)
+                .font(.system(size: Theme.FontSize.subhead, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+
+            Text(inlineSecondaryText)
+                .font(.system(size: Theme.FontSize.subhead))
+                .foregroundStyle(theme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+    }
+
+    /// Task + description merged into a single string for the compact row.
+    private var inlineSecondaryText: String {
+        var parts: [String] = []
+        if !entry.taskName.isEmpty { parts.append(entry.taskName) }
+        if !entry.description.isEmpty { parts.append(entry.description) }
+        return parts.joined(separator: " • ")
+    }
+
+    // MARK: - Icon Badges
+
+    private var iconBadges: some View {
+        EntryStatusIcons(
+            syncStatus: entry.syncStatus,
+            isLocked: entry.locked,
+            isLinkedToAppBlock: viewModel.isLinkedToAppBlock(entry),
+            isFromRule: entry.sourceRuleId != nil
+        )
     }
 
     // MARK: - Edge Handle Size
@@ -75,44 +179,51 @@ struct EntryBlockView: View {
         let content = ZStack(alignment: .topLeading) {
             // Main block content
             HStack(spacing: 0) {
-                // Left accent bar
+                // Left accent bar — colored per project
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(Color.accentColor)
+                    .fill(projectColor)
                     .frame(width: 3)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 4) {
-                        Text(entry.projectName)
-                            .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
-                            .foregroundStyle(theme.textPrimary)
-                            .lineLimit(1)
-
-                        if entry.locked {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: Theme.FontSize.caption))
-                                .foregroundStyle(theme.textTertiary)
+                ZStack {
+                    // Text content — compact or expanded. Fills the cell,
+                    // leaves room on the right for the icons column and on
+                    // the bottom for the duration label.
+                    Group {
+                        if isCompact {
+                            compactTextContent
+                        } else {
+                            expandedTextContent
                         }
                     }
+                    .padding(.trailing, 40) // room for icons
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                    Text(entry.taskName)
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
+                    // Status icons — always pinned top-right regardless
+                    // of entry height.
+                    iconBadges
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
-                    if !entry.description.isEmpty {
-                        Text(entry.description)
-                            .font(.system(size: Theme.FontSize.caption))
+                    // Duration badge — bottom-right. Hidden on ultra-
+                    // short entries that don't have room for a second
+                    // row of text.
+                    if !isCompact {
+                        Text(durationLabel)
+                            .font(.system(size: Theme.FontSize.footnote, design: .rounded).monospacedDigit())
                             .foregroundStyle(theme.textTertiary)
                             .lineLimit(1)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     }
                 }
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
-
-                Spacer(minLength: 0)
+                .padding(.horizontal, 6)
+                .padding(.vertical, isCompact ? 3 : 4)
             }
             .frame(height: displayHeight)
             .background(background, in: RoundedRectangle(cornerRadius: TimelineLayout.blockCornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: TimelineLayout.blockCornerRadius, style: .continuous)
+                    .stroke(Color.accentColor, lineWidth: 2)
+                    .opacity(isHighlighted ? 1 : 0)
+            )
             .opacity(entry.locked ? 0.7 : isDragging ? 0.85 : 1.0)
             .shadow(color: .black.opacity(isGestureActive ? 0.2 : 0), radius: isGestureActive ? 4 : 0)
 
@@ -137,12 +248,27 @@ struct EntryBlockView: View {
                 .frame(height: displayHeight)
             }
         }
+        .help(tooltipLabel)
         .offset(y: dragOffset + (isResizingTop ? topResizeOffset : 0))
         .gesture(entry.locked || isRunning ? nil : dragMoveGesture)
+        .onTapGesture(count: 1) {
+            onSelect?()
+        }
+        .onTapGesture(count: 2) {
+            if !entry.locked {
+                onEdit?(entry)
+            }
+        }
         .contextMenu {
             if !entry.locked {
                 Button("Edit entry…") {
                     onEdit?(entry)
+                }
+                Divider()
+                Button(role: .destructive) {
+                    onDelete?(entry)
+                } label: {
+                    Label("Delete", systemImage: "trash")
                 }
             }
         }
@@ -178,18 +304,22 @@ struct EntryBlockView: View {
     private var dragMoveGesture: some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
-                dragOffset = value.translation.height
                 isDragging = true
+                // Snap to 15-minute grid live during drag
+                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
+                let newMinutes = TimelineGeometry.snapToGrid(
+                    minutes: Double(originalMinutes) + deltaMinutes,
+                    gridMinutes: TimelineLayout.snapMinutes
+                )
+                dragOffset = CGFloat(newMinutes - originalMinutes) * TimelineLayout.pixelsPerMinute
             }
             .onEnded { value in
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newMinutes = TimelineGeometry.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
+                let newMinutes = TimelineGeometry.snapToGrid(
+                    minutes: Double(originalMinutes) + deltaMinutes,
+                    gridMinutes: TimelineLayout.snapMinutes
+                )
                 let newTime = TimelineGeometry.timeString(fromMinutes: newMinutes)
-                // Snap the visual offset to the final grid position so the
-                // block sits exactly where it will land once the update
-                // commits. `.onChange(of: entry.startTime)` clears this
-                // offset when the new entry data arrives — same frame as
-                // the base y-position updates — so there's no snap-back.
                 dragOffset = CGFloat(newMinutes - originalMinutes) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.moveEntry(entry, toStartTime: newTime)
@@ -202,20 +332,27 @@ struct EntryBlockView: View {
     private var topResizeGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
-                topResizeOffset = value.translation.height
                 isResizingTop = true
+                // Snap to 15-minute grid live during drag
+                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
+                let newStartMinutes = TimelineGeometry.snapToGrid(
+                    minutes: Double(originalMinutes) + deltaMinutes,
+                    gridMinutes: TimelineLayout.snapMinutes
+                )
+                let movedBy = newStartMinutes - originalMinutes
+                topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
             }
             .onEnded { value in
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
-                let newStartMinutes = TimelineGeometry.snapToGrid(minutes: Double(originalMinutes) + deltaMinutes)
+                let newStartMinutes = TimelineGeometry.snapToGrid(
+                    minutes: Double(originalMinutes) + deltaMinutes,
+                    gridMinutes: TimelineLayout.snapMinutes
+                )
                 let originalDurationMinutes = entry.seconds / 60
                 let movedBy = newStartMinutes - originalMinutes
                 let newDurationMinutes = max(originalDurationMinutes - movedBy, TimelineLayout.snapMinutes)
                 let newTime = TimelineGeometry.timeString(fromMinutes: newStartMinutes)
                 let newDurationSeconds = newDurationMinutes * 60
-                // Snap offset to final grid position so the block stays
-                // visually where it will land. Cleared by `.onChange` when
-                // the data arrives.
                 topResizeOffset = CGFloat(movedBy) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
@@ -228,17 +365,24 @@ struct EntryBlockView: View {
     private var bottomResizeGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
-                bottomResizeOffset = value.translation.height
                 isResizingBottom = true
+                // Snap to 15-minute grid live during drag
+                let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
+                let originalDurationMinutes = entry.seconds / 60
+                let snappedDuration = max(
+                    originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes,
+                    TimelineLayout.snapMinutes
+                )
+                bottomResizeOffset = CGFloat(snappedDuration - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
             }
             .onEnded { value in
                 let deltaMinutes = Double(value.translation.height) / Double(TimelineLayout.pixelsPerMinute)
                 let originalDurationMinutes = entry.seconds / 60
-                let newDurationMinutes = max(originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes, TimelineLayout.snapMinutes)
+                let newDurationMinutes = max(
+                    originalDurationMinutes + Int(round(deltaMinutes / Double(TimelineLayout.snapMinutes))) * TimelineLayout.snapMinutes,
+                    TimelineLayout.snapMinutes
+                )
                 let newDurationSeconds = newDurationMinutes * 60
-                // Snap visual offset to the final grid height so the block
-                // stays at its committed size until the new entry data
-                // arrives (cleared by `.onChange(of: entry.seconds)`).
                 bottomResizeOffset = CGFloat(newDurationMinutes - originalDurationMinutes) * TimelineLayout.pixelsPerMinute
                 Task {
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)

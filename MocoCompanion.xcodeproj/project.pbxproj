@@ -184,6 +184,9 @@
 		AA0C0901A1B2C3D4E5F60017 /* SuggestionBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */; };
 		AA0C0901A1B2C3D4E5F60019 /* RuleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */; };
 		AA0C0901A1B2C3D4E5F6001B /* RuleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F6001A /* RuleListView.swift */; };
+		AA0C0901A1B2C3D4E5F6001D /* ProjectColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F6001C /* ProjectColorPalette.swift */; };
+		AA0C0901A1B2C3D4E5F60021 /* ProjectPickerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60020 /* ProjectPickerRow.swift */; };
+		AA0C0901A1B2C3D4E5F60023 /* EntryStatusIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0C0901A1B2C3D4E5F60022 /* EntryStatusIcons.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -378,6 +381,9 @@
 		AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionBlockView.swift; sourceTree = "<group>"; };
 		AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEditorSheet.swift; sourceTree = "<group>"; };
 		AA0C0901A1B2C3D4E5F6001A /* RuleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleListView.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F6001C /* ProjectColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColorPalette.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60020 /* ProjectPickerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPickerRow.swift; sourceTree = "<group>"; };
+		AA0C0901A1B2C3D4E5F60022 /* EntryStatusIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryStatusIcons.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -606,6 +612,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		AA0C0901A1B2C3D4E5F60024 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA0C0901A1B2C3D4E5F60022 /* EntryStatusIcons.swift */,
+				AA0C0901A1B2C3D4E5F60020 /* ProjectPickerRow.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		AA0C0901A1B2C3D4E5F60009 /* Autotracker */ = {
 			isa = PBXGroup;
 			children = (
@@ -613,6 +628,7 @@
 				AA0C0901A1B2C3D4E5F60003 /* DateNavigationView.swift */,
 				AA0C0901A1B2C3D4E5F6000E /* EntryBlockView.swift */,
 				AA0C0901A1B2C3D4E5F60010 /* NowLineView.swift */,
+				AA0C0901A1B2C3D4E5F6001C /* ProjectColorPalette.swift */,
 				AA0C0901A1B2C3D4E5F60018 /* RuleEditorSheet.swift */,
 				AA0C0901A1B2C3D4E5F6001A /* RuleListView.swift */,
 				AA0C0901A1B2C3D4E5F60016 /* SuggestionBlockView.swift */,
@@ -632,6 +648,7 @@
 				03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */,
 				C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */,
 				AA0C0901A1B2C3D4E5F60009 /* Autotracker */,
+				AA0C0901A1B2C3D4E5F60024 /* Shared */,
 				B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */,
 				F1CE438DC586E0B8BDB2776F /* DaySelection.swift */,
 				AA28DB32922B2C0DBBB5BCBB /* DebugSettingsTab.swift */,
@@ -895,6 +912,9 @@
 				AA0C0901A1B2C3D4E5F60017 /* SuggestionBlockView.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60019 /* RuleEditorSheet.swift in Sources */,
 				AA0C0901A1B2C3D4E5F6001B /* RuleListView.swift in Sources */,
+				AA0C0901A1B2C3D4E5F6001D /* ProjectColorPalette.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60021 /* ProjectPickerRow.swift in Sources */,
+				AA0C0901A1B2C3D4E5F60023 /* EntryStatusIcons.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60015 /* TimelineEntryCreationSheet.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60013 /* TimelinePaneView.swift in Sources */,
 				AA0C0901A1B2C3D4E5F60002 /* TimelineViewModel.swift in Sources */,

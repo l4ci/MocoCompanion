@@ -22,29 +22,26 @@ enum TestFactories {
         timerStartedAt: String? = nil,
         locked: Bool = false
     ) -> MocoActivity {
-        let resolvedDate = date ?? todayString()
-        let json: [String: Any] = [
-            "id": id,
-            "date": resolvedDate,
-            "hours": hours,
-            "seconds": seconds,
-            "worked_seconds": seconds,
-            "description": description,
-            "billed": false,
-            "billable": billable,
-            "tag": tag,
-            "project": ["id": projectId, "name": projectName, "billable": billable],
-            "task": ["id": taskId, "name": taskName, "billable": billable],
-            "customer": ["id": customerId, "name": customerName],
-            "user": ["id": 42, "firstname": "Test", "lastname": "User"],
-            "hourly_rate": 100.0,
-            "timer_started_at": timerStartedAt as Any,
-            "locked": locked,
-            "created_at": "2025-01-01T00:00:00Z",
-            "updated_at": "2025-01-01T00:00:00Z",
-        ]
-        let data = try! JSONSerialization.data(withJSONObject: json)
-        return try! JSONDecoder().decode(MocoActivity.self, from: data)
+        MocoActivity(
+            id: id,
+            date: date ?? todayString(),
+            hours: hours,
+            seconds: seconds,
+            workedSeconds: seconds,
+            description: description,
+            billed: false,
+            billable: billable,
+            tag: tag,
+            project: ActivityProject(id: projectId, name: projectName, billable: billable),
+            task: ActivityTask(id: taskId, name: taskName, billable: billable),
+            customer: MocoCustomer(id: customerId, name: customerName),
+            user: MocoUser(id: 42, firstname: "Test", lastname: "User"),
+            hourlyRate: 100.0,
+            timerStartedAt: timerStartedAt,
+            locked: locked,
+            createdAt: "2025-01-01T00:00:00Z",
+            updatedAt: "2025-01-01T00:00:00Z"
+        )
     }
 
     // MARK: - ShadowEntry
@@ -98,7 +95,9 @@ enum TestFactories {
             syncStatus: syncStatus,
             localUpdatedAt: "2025-01-01T00:00:00Z",
             serverUpdatedAt: "2025-01-01T00:00:00Z",
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: nil,
+            sourceRuleId: nil
         )
     }
 

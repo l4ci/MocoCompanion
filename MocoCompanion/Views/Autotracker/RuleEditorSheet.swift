@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Sheet for creating or editing a TrackingRule. Follows the same pattern
@@ -24,8 +25,33 @@ struct RuleEditorSheet: View {
     @State private var enabled: Bool = true
     @State private var searchText: String = ""
     @State private var errorMessage: String?
+    @State private var runningApps: [RunningAppOption] = []
 
     private var isEditing: Bool { existingRule != nil }
+
+    /// A user-facing app detected via `NSWorkspace.runningApplications`.
+    struct RunningAppOption: Identifiable, Hashable {
+        let id: String       // bundle identifier
+        let name: String     // localized display name
+    }
+
+    /// Fetch the currently running user-facing applications (activation
+    /// policy `.regular`) so the user can pick from a list instead of
+    /// typing a bundle identifier.
+    private static func fetchRunningApps() -> [RunningAppOption] {
+        NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap { app -> RunningAppOption? in
+                guard let bundleId = app.bundleIdentifier,
+                      let displayName = app.localizedName
+                else { return nil }
+                return RunningAppOption(id: bundleId, name: displayName)
+            }
+            .reduce(into: [RunningAppOption]()) { acc, item in
+                if !acc.contains(where: { $0.id == item.id }) { acc.append(item) }
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -44,8 +70,11 @@ struct RuleEditorSheet: View {
             buttonRow
         }
         .padding(16)
-        .frame(width: 400, alignment: .topLeading)
-        .onAppear { populateFields() }
+        .frame(width: 420, alignment: .topLeading)
+        .onAppear {
+            populateFields()
+            runningApps = Self.fetchRunningApps()
+        }
     }
 
     // MARK: - Header
@@ -59,7 +88,7 @@ struct RuleEditorSheet: View {
     // MARK: - Match Criteria
 
     private var matchCriteriaSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Match Criteria")
                 .font(.system(size: Theme.FontSize.caption, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
@@ -68,24 +97,87 @@ struct RuleEditorSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            TextField("App Bundle ID", text: $appBundleId)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
+            // App picker — chooses from currently running user-facing
+            // applications. Sets both the bundle id (used for matching)
+            // and a display name so the rule list reads nicely.
+            VStack(alignment: .leading, spacing: 2) {
+                Menu {
+                    if runningApps.isEmpty {
+                        Text("No running apps detected")
+                    } else {
+                        ForEach(runningApps) { app in
+                            Button {
+                                appBundleId = app.id
+                                appNamePattern = app.name
+                                if name.trimmingCharacters(in: .whitespaces).isEmpty {
+                                    name = app.name
+                                }
+                            } label: {
+                                Text("\(app.name)  (\(app.id))")
+                            }
+                        }
+                    }
+                    Divider()
+                    Button("Refresh list") {
+                        runningApps = Self.fetchRunningApps()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "app.dashed")
+                            .foregroundStyle(theme.textTertiary)
+                        Text(appPickerLabel)
+                            .foregroundStyle(appBundleId.isEmpty ? theme.textTertiary : theme.textPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(theme.textTertiary.opacity(0.3), lineWidth: 1)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize(horizontal: false, vertical: true)
 
-            TextField("App Name (contains)", text: $appNamePattern)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
+                if !appBundleId.isEmpty {
+                    Text(appBundleId)
+                        .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(.leading, 2)
+                }
+            }
 
-            TextField("Window Title Pattern", text: $windowTitlePattern)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-                .disabled(true)
-                .foregroundStyle(theme.textTertiary)
+            VStack(alignment: .leading, spacing: 2) {
+                TextField("Window Title Pattern", text: $windowTitlePattern)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: Theme.FontSize.body))
+                    .disabled(true)
+                    .foregroundStyle(theme.textTertiary)
 
-            Text("Window title matching is not available in sandboxed mode")
-                .font(.system(size: Theme.FontSize.caption))
-                .foregroundStyle(theme.textTertiary)
+                Text("Window title matching is not available in sandboxed mode")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                Text("Examples:  •  \"Pull request\"   •  \"#\\d+\" (regex)")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+            }
         }
+    }
+
+    /// Label shown in the app picker button.
+    private var appPickerLabel: String {
+        if appBundleId.isEmpty {
+            return "Choose running app…"
+        }
+        if !appNamePattern.isEmpty {
+            return appNamePattern
+        }
+        return appBundleId
     }
 
     // MARK: - Action
@@ -116,7 +208,7 @@ struct RuleEditorSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            let entries = filteredEntries
+            let entries = projectCatalog.filter(query: searchText)
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
                     .font(.system(size: Theme.FontSize.caption))
@@ -126,60 +218,29 @@ struct RuleEditorSheet: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(entries.prefix(20), id: \.taskId) { entry in
-                            projectRow(entry)
+                            ProjectPickerRow(
+                                entry: entry,
+                                isSelected: selectedEntry?.projectId == entry.projectId
+                                    && selectedEntry?.taskId == entry.taskId,
+                                onTap: { selectedEntry = entry }
+                            )
                         }
                     }
                 }
                 .frame(maxHeight: 150)
             }
 
-            TextField("Description template", text: $descriptionText)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-        }
-    }
-
-    private func projectRow(_ entry: SearchEntry) -> some View {
-        let isSelected = selectedEntry?.projectId == entry.projectId
-            && selectedEntry?.taskId == entry.taskId
-
-        return HStack(spacing: 6) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(entry.customerName)
+            VStack(alignment: .leading, spacing: 2) {
+                TextField("Description template", text: $descriptionText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: Theme.FontSize.body))
+                Text("Example: \"Code review — {app}\" — the text is used as-is when the rule fires.")
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundStyle(theme.textTertiary)
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(entry.projectName)
-                        .font(.system(size: Theme.FontSize.callout, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
-                    Text("›")
-                        .foregroundStyle(theme.textTertiary)
-                    Text(entry.taskName)
-                        .font(.system(size: Theme.FontSize.callout))
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
-                }
             }
-            Spacer(minLength: 0)
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                    .font(.system(size: Theme.FontSize.callout))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            isSelected ? Color.accentColor.opacity(0.1) : Color.clear,
-            in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            selectedEntry = entry
         }
     }
+
 
     // MARK: - Enabled Toggle
 
@@ -285,12 +346,4 @@ struct RuleEditorSheet: View {
         }
     }
 
-    // MARK: - Filtering
-
-    private var filteredEntries: [SearchEntry] {
-        let all = projectCatalog.searchEntries
-        guard !searchText.isEmpty else { return all }
-        let matches = FuzzyMatcher.search(query: searchText, in: all)
-        return matches.map(\.entry)
-    }
 }

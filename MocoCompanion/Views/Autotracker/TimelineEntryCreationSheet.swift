@@ -10,6 +10,7 @@ struct TimelineEntryCreationSheet: View {
     let durationMinutes: Int
     let suggestedDescription: String
     let projectCatalog: ProjectCatalog
+    var descriptionRequired: Bool = false
 
     /// (projectId, taskId, projectName, taskName, customerName, description)
     let onSubmit: (Int, Int, String, String, String, String) -> Void
@@ -70,7 +71,7 @@ struct TimelineEntryCreationSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            let entries = filteredEntries
+            let entries = projectCatalog.filter(query: searchText)
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
                     .font(.system(size: Theme.FontSize.caption))
@@ -80,7 +81,12 @@ struct TimelineEntryCreationSheet: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(entries.prefix(20), id: \.taskId) { entry in
-                            projectRow(entry)
+                            ProjectPickerRow(
+                                entry: entry,
+                                isSelected: selectedEntry?.projectId == entry.projectId
+                                    && selectedEntry?.taskId == entry.taskId,
+                                onTap: { selectedEntry = entry }
+                            )
                         }
                     }
                 }
@@ -89,56 +95,22 @@ struct TimelineEntryCreationSheet: View {
         }
     }
 
-    private func projectRow(_ entry: SearchEntry) -> some View {
-        let isSelected = selectedEntry?.projectId == entry.projectId
-            && selectedEntry?.taskId == entry.taskId
-
-        return HStack(spacing: 6) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(entry.customerName)
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(entry.projectName)
-                        .font(.system(size: Theme.FontSize.callout, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
-                    Text("›")
-                        .foregroundStyle(theme.textTertiary)
-                    Text(entry.taskName)
-                        .font(.system(size: Theme.FontSize.callout))
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer(minLength: 0)
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                    .font(.system(size: Theme.FontSize.callout))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            isSelected ? Color.accentColor.opacity(0.1) : Color.clear,
-            in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            selectedEntry = entry
-        }
-    }
 
     // MARK: - Description
 
     private var descriptionField: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Description")
-                .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                .foregroundStyle(theme.textSecondary)
-            TextField("Optional description", text: $descriptionText)
+            HStack(spacing: 2) {
+                Text("Description")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                if descriptionRequired {
+                    Text("*")
+                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+            }
+            TextField(descriptionRequired ? "Description (required)" : "Optional description", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
         }
@@ -167,7 +139,7 @@ struct TimelineEntryCreationSheet: View {
                 )
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil)
+            .disabled(selectedEntry == nil || (descriptionRequired && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty))
         }
     }
 
@@ -195,13 +167,6 @@ struct TimelineEntryCreationSheet: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM d"
         return formatter.string(from: d)
-    }
-
-    private var filteredEntries: [SearchEntry] {
-        let all = projectCatalog.searchEntries
-        guard !searchText.isEmpty else { return all }
-        let matches = FuzzyMatcher.search(query: searchText, in: all)
-        return matches.map(\.entry)
     }
 }
 
@@ -238,8 +203,12 @@ struct TimelineEntryEditSheet: View {
     /// (shouldn't happen in practice; safety net).
     let fallbackDate: Date
     let projectCatalog: ProjectCatalog
+    /// Name of the linked app usage block, if any. Display-only.
+    var linkedAppName: String? = nil
+    var descriptionRequired: Bool = false
 
     let onSave: (EditedEntryFields) -> Void
+    let onDelete: (() -> Void)?
     let onCancel: () -> Void
 
     @Environment(\.theme) private var theme
@@ -247,7 +216,8 @@ struct TimelineEntryEditSheet: View {
     @State private var editedDate: Date
     @State private var startHour: Int
     @State private var startMinute: Int
-    @State private var hasStartTime: Bool
+    // (hasStartTime toggle removed — start time is always required in the edit sheet)
+    @State private var showDeleteConfirmation: Bool = false
     @State private var durationMinutes: Int
     @State private var descriptionText: String
     @State private var selectedEntry: SearchEntry?
@@ -258,13 +228,19 @@ struct TimelineEntryEditSheet: View {
         entry: ShadowEntry,
         fallbackDate: Date,
         projectCatalog: ProjectCatalog,
+        linkedAppName: String? = nil,
+        descriptionRequired: Bool = false,
         onSave: @escaping (EditedEntryFields) -> Void,
+        onDelete: (() -> Void)? = nil,
         onCancel: @escaping () -> Void
     ) {
         self.entry = entry
         self.fallbackDate = fallbackDate
         self.projectCatalog = projectCatalog
+        self.linkedAppName = linkedAppName
+        self.descriptionRequired = descriptionRequired
         self.onSave = onSave
+        self.onDelete = onDelete
         self.onCancel = onCancel
 
         // Initialize state fields from the entry's current values so the
@@ -276,11 +252,9 @@ struct TimelineEntryEditSheet: View {
            let total = TimelineGeometry.minutesSinceMidnight(from: timeStr) {
             _startHour = State(initialValue: total / 60)
             _startMinute = State(initialValue: total % 60)
-            _hasStartTime = State(initialValue: true)
         } else {
             _startHour = State(initialValue: 9)
             _startMinute = State(initialValue: 0)
-            _hasStartTime = State(initialValue: false)
         }
 
         _durationMinutes = State(initialValue: max(entry.seconds / 60, 1))
@@ -289,13 +263,39 @@ struct TimelineEntryEditSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Edit Entry")
-                .font(.system(size: Theme.FontSize.callout, weight: .semibold))
-                .foregroundStyle(theme.textPrimary)
+            HStack {
+                Text("Edit Entry")
+                    .font(.system(size: Theme.FontSize.callout, weight: .semibold))
+                    .foregroundStyle(theme.textPrimary)
+                Spacer()
+                if onDelete != nil, !entry.locked {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: Theme.FontSize.body))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.red)
+                    .help("Delete entry")
+                }
+            }
 
             Divider()
 
             timeSection
+
+            if let linkedAppName {
+                HStack(spacing: 6) {
+                    Image(systemName: "link")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundStyle(theme.textTertiary)
+                    Text("Linked to recorded activity: \(linkedAppName)")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .padding(.vertical, 2)
+            }
 
             Divider()
 
@@ -318,6 +318,18 @@ struct TimelineEntryEditSheet: View {
                 $0.projectId == entry.projectId && $0.taskId == entry.taskId
             }
         }
+        .confirmationDialog(
+            "Delete entry?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                onDelete?()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("You can undo this for 5 seconds before it is pushed to Moco.")
+        }
     }
 
     // MARK: - Time Section
@@ -339,28 +351,20 @@ struct TimelineEntryEditSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 4) {
-                        Text("Start")
-                            .font(.system(size: Theme.FontSize.caption))
-                            .foregroundStyle(theme.textTertiary)
-                        Toggle("", isOn: $hasStartTime)
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
-                            .labelsHidden()
-                    }
+                    Text("Start")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundStyle(theme.textTertiary)
                     HStack(spacing: 2) {
                         TextField("", value: $startHour, format: .number)
                             .frame(width: 34)
                             .multilineTextAlignment(.center)
                             .textFieldStyle(.roundedBorder)
-                            .disabled(!hasStartTime)
                         Text(":")
                             .foregroundStyle(theme.textTertiary)
                         TextField("", value: $startMinute, format: .number)
                             .frame(width: 34)
                             .multilineTextAlignment(.center)
                             .textFieldStyle(.roundedBorder)
-                            .disabled(!hasStartTime)
                     }
                     .font(.system(size: Theme.FontSize.body, design: .monospaced))
                 }
@@ -467,7 +471,7 @@ struct TimelineEntryEditSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            let entries = filteredEntries
+            let entries = projectCatalog.filter(query: searchText)
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
                     .font(.system(size: Theme.FontSize.caption))
@@ -477,7 +481,15 @@ struct TimelineEntryEditSheet: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(entries.prefix(20), id: \.taskId) { row in
-                            projectRow(row)
+                            ProjectPickerRow(
+                                entry: row,
+                                isSelected: selectedEntry?.projectId == row.projectId
+                                    && selectedEntry?.taskId == row.taskId,
+                                onTap: {
+                                    selectedEntry = row
+                                    isProjectPickerExpanded = false
+                                }
+                            )
                         }
                     }
                 }
@@ -486,59 +498,22 @@ struct TimelineEntryEditSheet: View {
         }
     }
 
-    private func projectRow(_ row: SearchEntry) -> some View {
-        let isSelected = selectedEntry?.projectId == row.projectId
-            && selectedEntry?.taskId == row.taskId
-
-        return HStack(spacing: 6) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(row.customerName)
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(row.projectName)
-                        .font(.system(size: Theme.FontSize.callout, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
-                    Text("›")
-                        .foregroundStyle(theme.textTertiary)
-                    Text(row.taskName)
-                        .font(.system(size: Theme.FontSize.callout))
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer(minLength: 0)
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                    .font(.system(size: Theme.FontSize.callout))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(
-            isSelected ? Color.accentColor.opacity(0.1) : Color.clear,
-            in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            selectedEntry = row
-            // Auto-collapse the picker after a selection to bring the user
-            // back to the compact edit view.
-            isProjectPickerExpanded = false
-        }
-    }
 
     // MARK: - Description
 
     private var descriptionField: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Description")
-                .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                .foregroundStyle(theme.textSecondary)
-            TextField("Optional description", text: $descriptionText)
+            HStack(spacing: 2) {
+                Text("Description")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                if descriptionRequired {
+                    Text("*")
+                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+            }
+            TextField(descriptionRequired ? "Description (required)" : "Optional description", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
         }
@@ -558,11 +533,11 @@ struct TimelineEntryEditSheet: View {
             Button("Save") {
                 guard let selected = selectedEntry else { return }
                 let dateStr = TimelineGeometry.dateString(from: editedDate)
-                let startTimeStr: String? = hasStartTime
-                    ? String(format: "%02d:%02d",
-                             max(0, min(23, startHour)),
-                             max(0, min(59, startMinute)))
-                    : nil
+                let startTimeStr: String? = String(
+                    format: "%02d:%02d",
+                    max(0, min(23, startHour)),
+                    max(0, min(59, startMinute))
+                )
                 onSave(EditedEntryFields(
                     projectId: selected.projectId,
                     taskId: selected.taskId,
@@ -576,18 +551,11 @@ struct TimelineEntryEditSheet: View {
                 ))
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || durationMinutes <= 0)
+            .disabled(selectedEntry == nil || durationMinutes <= 0 || (descriptionRequired && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty))
         }
     }
 
     // MARK: - Helpers
-
-    private var filteredEntries: [SearchEntry] {
-        let all = projectCatalog.searchEntries
-        guard !searchText.isEmpty else { return all }
-        let matches = FuzzyMatcher.search(query: searchText, in: all)
-        return matches.map(\.entry)
-    }
 
     /// Parses "YYYY-MM-DD" into a `Date` at start-of-day in the current
     /// calendar. Returns nil for malformed input.

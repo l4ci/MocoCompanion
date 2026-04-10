@@ -85,11 +85,10 @@ struct TodayActivityRow: View {
                             isSelected: isSelected
                         )
 
-                        if activity.locked {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: captionSize))
-                                .foregroundStyle(.secondary)
-                        }
+                        EntryStatusIcons(
+                            isLocked: activity.locked,
+                            iconSize: captionSize
+                        )
 
                         if let planned = plannedHours {
                             Text("of \(String(format: "%.0fh", planned))")

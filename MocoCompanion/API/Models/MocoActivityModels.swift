@@ -54,6 +54,46 @@ struct MocoActivity: Codable, Identifiable, Sendable, Equatable {
         updatedAt = try container.decode(String.self, forKey: .updatedAt)
     }
 
+    init(
+        id: Int,
+        date: String,
+        hours: Double,
+        seconds: Int,
+        workedSeconds: Int,
+        description: String,
+        billed: Bool,
+        billable: Bool,
+        tag: String,
+        project: ActivityProject,
+        task: ActivityTask,
+        customer: MocoCustomer,
+        user: MocoUser,
+        hourlyRate: Double,
+        timerStartedAt: String? = nil,
+        locked: Bool = false,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.date = date
+        self.hours = hours
+        self.seconds = seconds
+        self.workedSeconds = workedSeconds
+        self.description = description
+        self.billed = billed
+        self.billable = billable
+        self.tag = tag
+        self.project = project
+        self.task = task
+        self.customer = customer
+        self.user = user
+        self.hourlyRate = hourlyRate
+        self.timerStartedAt = timerStartedAt
+        self.locked = locked
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
     /// Whether the timer is currently running on this activity.
     var isTimerRunning: Bool {
         timerStartedAt != nil
