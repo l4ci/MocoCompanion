@@ -224,6 +224,9 @@ import os
             Self.logger.info("Moved entry \(entry.id ?? 0) to \(newStartTime)")
             await loadData()
             await onEntryChanged?()
+            // Push to Moco immediately so the move persists.
+            await syncEngine?.sync(dates: [entry.date])
+            await loadData()
         } catch {
             Self.logger.error("Failed to move entry \(entry.id ?? 0): \(error)")
         }
@@ -270,6 +273,10 @@ import os
             Self.logger.info("Updated entry \(entry.id ?? 0): project=\(projectId) task=\(taskId) startTime=\(startTime ?? "nil") duration=\(durationSeconds)s")
             await loadData()
             await onEntryChanged?()
+            // Push to Moco immediately so the edit doesn't sit as a
+            // pending-dirty row waiting for the next periodic sync.
+            await syncEngine?.sync(dates: [date])
+            await loadData()
         } catch {
             Self.logger.error("Failed to update entry \(entry.id ?? 0): \(error)")
         }
@@ -296,6 +303,10 @@ import os
             Self.logger.info("Resized entry \(entry.id ?? 0) to \(newStartTime), \(newDurationSeconds)s")
             await loadData()
             await onEntryChanged?()
+            // Push to Moco immediately so the resize persists without
+            // waiting for the next periodic sync.
+            await syncEngine?.sync(dates: [entry.date])
+            await loadData()
         } catch {
             Self.logger.error("Failed to resize entry \(entry.id ?? 0): \(error)")
         }
