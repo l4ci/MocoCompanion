@@ -8,17 +8,28 @@ struct RuleEditorSheet: View {
     let existingRule: TrackingRule?
     let prefillBundleId: String?
     let prefillAppName: String?
+    /// Forces the rule type when opening from a source that already knows
+    /// which branch applies (e.g. calendar right-click context menu).
+    let prefillRuleType: RuleType?
+    /// Seeds the calendar event-title-contains field when opening from a
+    /// calendar event.
+    let prefillEventTitle: String?
     let autotracker: Autotracker
     let projectCatalog: ProjectCatalog
+    /// Optional SettingsStore used to surface the window-title-tracking
+    /// disclaimer next to the window-title pattern field.
+    let settings: SettingsStore?
     let onSave: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
     @State private var name: String = ""
+    @State private var ruleType: RuleType = .app
     @State private var appBundleId: String = ""
     @State private var appNamePattern: String = ""
     @State private var windowTitlePattern: String = ""
+    @State private var eventTitle: String = ""
     @State private var mode: RuleMode = .suggest
     @State private var selectedEntry: SearchEntry?
     @State private var descriptionText: String = ""
@@ -29,10 +40,43 @@ struct RuleEditorSheet: View {
 
     private var isEditing: Bool { existingRule != nil }
 
+    init(
+        existingRule: TrackingRule?,
+        prefillBundleId: String? = nil,
+        prefillAppName: String? = nil,
+        prefillRuleType: RuleType? = nil,
+        prefillEventTitle: String? = nil,
+        autotracker: Autotracker,
+        projectCatalog: ProjectCatalog,
+        settings: SettingsStore? = nil,
+        onSave: @escaping () -> Void
+    ) {
+        self.existingRule = existingRule
+        self.prefillBundleId = prefillBundleId
+        self.prefillAppName = prefillAppName
+        self.prefillRuleType = prefillRuleType
+        self.prefillEventTitle = prefillEventTitle
+        self.autotracker = autotracker
+        self.projectCatalog = projectCatalog
+        self.settings = settings
+        self.onSave = onSave
+
+        _ruleType = State(
+            initialValue: prefillRuleType ?? existingRule?.ruleType ?? .app
+        )
+        _eventTitle = State(
+            initialValue: prefillEventTitle ?? existingRule?.eventTitlePattern ?? ""
+        )
+        _windowTitlePattern = State(
+            initialValue: existingRule?.windowTitlePattern ?? ""
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
             Divider()
+            ruleTypePicker
             matchCriteriaSection
             actionSection
             targetEntrySection
@@ -61,8 +105,20 @@ struct RuleEditorSheet: View {
             .foregroundStyle(theme.textPrimary)
     }
 
+    // MARK: - Rule Type Picker
+
+    private var ruleTypePicker: some View {
+        Picker(String(localized: "rule.type.label"), selection: $ruleType) {
+            Text(String(localized: "rule.type.app")).tag(RuleType.app)
+            Text(String(localized: "rule.type.calendar")).tag(RuleType.calendar)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+    }
+
     // MARK: - Match Criteria
 
+    @ViewBuilder
     private var matchCriteriaSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Match Criteria")
@@ -73,6 +129,16 @@ struct RuleEditorSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
+            if ruleType == .app {
+                appMatchFields
+            } else {
+                calendarMatchFields
+            }
+        }
+    }
+
+    private var appMatchFields: some View {
+        VStack(alignment: .leading, spacing: 8) {
             // App picker — chooses from currently running user-facing
             // applications. Sets both the bundle id (used for matching)
             // and a display name so the rule list reads nicely.
@@ -129,19 +195,37 @@ struct RuleEditorSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                TextField("Window Title Pattern", text: $windowTitlePattern)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: Theme.FontSize.body))
-                    .disabled(true)
-                    .foregroundStyle(theme.textTertiary)
+                TextField(
+                    String(localized: "rule.field.windowTitlePattern"),
+                    text: $windowTitlePattern
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
 
-                Text("Window title matching is not available in sandboxed mode")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
+                if !(settings?.windowTitleTrackingEnabled ?? false) {
+                    Text(String(localized: "rule.field.windowTitlePattern.disclaimer"))
+                        .font(.system(size: Theme.FontSize.footnote))
+                        .foregroundStyle(.orange)
+                }
                 Text("Examples:  •  \"Pull request\"   •  \"#\\d+\" (regex)")
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundStyle(theme.textTertiary)
             }
+        }
+    }
+
+    private var calendarMatchFields: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            TextField(
+                String(localized: "rule.field.eventTitle"),
+                text: $eventTitle
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(size: Theme.FontSize.body))
+
+            Text(String(localized: "rule.field.eventTitle.hint"))
+                .font(.system(size: Theme.FontSize.footnote))
+                .foregroundStyle(theme.textTertiary)
         }
     }
 
@@ -245,7 +329,14 @@ struct RuleEditorSheet: View {
     // MARK: - Validation & Save
 
     private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty && selectedEntry != nil
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty,
+              selectedEntry != nil else { return false }
+        switch ruleType {
+        case .app:
+            return !appBundleId.isEmpty || !appNamePattern.isEmpty || !windowTitlePattern.isEmpty
+        case .calendar:
+            return !eventTitle.trimmingCharacters(in: .whitespaces).isEmpty
+        }
     }
 
     private func save() {
@@ -273,9 +364,22 @@ struct RuleEditorSheet: View {
         )
 
         rule.name = name.trimmingCharacters(in: .whitespaces)
-        rule.appBundleId = appBundleId.isEmpty ? nil : appBundleId
-        rule.appNamePattern = appNamePattern.isEmpty ? nil : appNamePattern
-        rule.windowTitlePattern = windowTitlePattern.isEmpty ? nil : windowTitlePattern
+        rule.ruleType = ruleType
+        // Zero out the branch the user isn't using so stale values from a
+        // previous edit don't leak into matching.
+        switch ruleType {
+        case .app:
+            rule.appBundleId = appBundleId.isEmpty ? nil : appBundleId
+            rule.appNamePattern = appNamePattern.isEmpty ? nil : appNamePattern
+            rule.windowTitlePattern = windowTitlePattern.isEmpty ? nil : windowTitlePattern
+            rule.eventTitlePattern = nil
+        case .calendar:
+            rule.appBundleId = nil
+            rule.appNamePattern = nil
+            rule.windowTitlePattern = nil
+            let trimmed = eventTitle.trimmingCharacters(in: .whitespaces)
+            rule.eventTitlePattern = trimmed.isEmpty ? nil : trimmed
+        }
         rule.mode = mode
         rule.projectId = entry.projectId
         rule.projectName = entry.projectName
@@ -308,6 +412,8 @@ struct RuleEditorSheet: View {
             appBundleId = rule.appBundleId ?? ""
             appNamePattern = rule.appNamePattern ?? ""
             windowTitlePattern = rule.windowTitlePattern ?? ""
+            eventTitle = rule.eventTitlePattern ?? ""
+            ruleType = rule.ruleType
             mode = rule.mode
             descriptionText = rule.description
             enabled = rule.enabled
@@ -320,6 +426,15 @@ struct RuleEditorSheet: View {
             appNamePattern = prefillAppName ?? ""
             if let appName = prefillAppName, !appName.isEmpty {
                 name = appName
+            }
+            if let prefilledType = prefillRuleType {
+                ruleType = prefilledType
+            }
+            if let prefilledEvent = prefillEventTitle, !prefilledEvent.isEmpty {
+                eventTitle = prefilledEvent
+                if name.trimmingCharacters(in: .whitespaces).isEmpty {
+                    name = prefilledEvent
+                }
             }
         }
     }

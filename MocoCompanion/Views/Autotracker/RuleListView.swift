@@ -5,6 +5,10 @@ struct RuleListView: View {
     let autotracker: Autotracker
     let projectCatalog: ProjectCatalog
     let onDismiss: () -> Void
+    /// Optional — used only to show the window-title disclaimer in
+    /// RuleEditorSheet. Task 18 (Settings tab rework) will provide
+    /// proper injection for the TimelineWindow path.
+    var settings: SettingsStore? = nil
 
     @Environment(\.theme) private var theme
     @State private var rules: [TrackingRule] = []
@@ -33,6 +37,7 @@ struct RuleListView: View {
                 prefillAppName: nil,
                 autotracker: autotracker,
                 projectCatalog: projectCatalog,
+                settings: settings,
                 onSave: { Task { await loadRules() } }
             )
         }
@@ -43,6 +48,7 @@ struct RuleListView: View {
                 prefillAppName: nil,
                 autotracker: autotracker,
                 projectCatalog: projectCatalog,
+                settings: settings,
                 onSave: { Task { await loadRules() } }
             )
         }

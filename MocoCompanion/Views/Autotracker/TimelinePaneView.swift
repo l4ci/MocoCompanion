@@ -121,12 +121,15 @@ struct TimelinePaneView: View {
                 existingRule: nil,
                 prefillBundleId: config.prefillBundleId,
                 prefillAppName: config.prefillAppName,
+                prefillRuleType: config.prefillRuleType,
+                prefillEventTitle: config.prefillEventTitle,
                 autotracker: viewModel.autotracker,
                 projectCatalog: projectCatalog,
-                    onSave: {
-                        Task { await viewModel.loadData() }
-                    }
-                )
+                settings: viewModel.settings,
+                onSave: {
+                    Task { await viewModel.loadData() }
+                }
+            )
         }
         .sheet(item: $editingEntry) { wrapper in
             TimelineEntryEditSheet(

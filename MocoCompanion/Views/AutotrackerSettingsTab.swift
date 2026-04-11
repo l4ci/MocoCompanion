@@ -139,7 +139,8 @@ struct AutotrackerSettingsTab: View {
                 RuleListView(
                     autotracker: autotracker,
                     projectCatalog: projectCatalog,
-                    onDismiss: { showRuleList = false }
+                    onDismiss: { showRuleList = false },
+                    settings: settings
                 )
             }
         }
