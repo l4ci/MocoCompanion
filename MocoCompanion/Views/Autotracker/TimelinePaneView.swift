@@ -473,38 +473,61 @@ struct TimelinePaneView: View {
     // MARK: - App Usage Column
 
     private var appUsageColumn: some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(appUsageBlocks) { block in
-                AppUsageBlockView(
-                    block: block,
-                    isSelected: viewModel.isAppBlockHighlighted(block),
-                    onSelect: { shiftHeld in
-                        viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
-                    },
-                    onCreateRule: { bundleId, appName in
-                        ruleEditorConfig = RuleEditorConfig(prefillBundleId: bundleId, prefillAppName: appName)
-                    },
-                    onCreateEntry: { block in
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
-                        let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
-                        let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
-                        pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
-                    },
-                    onDragStarted: {
-                        viewModel.startDragCreation(blockId: block.id)
-                    },
-                    onDragUpdated: { globalY in
-                        let localY = globalY - entryColumnGlobalOrigin
-                        viewModel.updateDragCreation(targetY: localY)
-                    },
-                    onDragEnded: {
-                        pendingCreation = viewModel.endDragCreation()
-                    }
+        ZStack(alignment: .top) {
+            ZStack(alignment: .topLeading) {
+                ForEach(appUsageBlocks) { block in
+                    AppUsageBlockView(
+                        block: block,
+                        isSelected: viewModel.isAppBlockHighlighted(block),
+                        onSelect: { shiftHeld in
+                            viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
+                        },
+                        onCreateRule: { bundleId, appName in
+                            ruleEditorConfig = RuleEditorConfig(prefillBundleId: bundleId, prefillAppName: appName)
+                        },
+                        onCreateEntry: { block in
+                            let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
+                            let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+                            let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
+                            pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
+                        },
+                        onDragStarted: {
+                            viewModel.startDragCreation(blockId: block.id)
+                        },
+                        onDragUpdated: { globalY in
+                            let localY = globalY - entryColumnGlobalOrigin
+                            viewModel.updateDragCreation(targetY: localY)
+                        },
+                        onDragEnded: {
+                            pendingCreation = viewModel.endDragCreation()
+                        }
+                    )
+                    .offset(y: yOffset(for: block.startTime))
+                }
+            }
+
+            if let state = accessibilityPlaceholderState {
+                AccessibilityColumnPlaceholderView(
+                    state: state,
+                    onOpenSettings: openSystemSettingsForAccessibility,
+                    onRequestAccess: { _ = AccessibilityPermission.requestAccess() }
                 )
-                .offset(y: yOffset(for: block.startTime))
+                .padding(.top, 40)
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
+    }
+
+    private var accessibilityPlaceholderState: AccessibilityColumnPlaceholder? {
+        guard viewModel.settings?.windowTitleTrackingEnabled == true else { return nil }
+        if AccessibilityPermission.isTrusted { return nil }
+        return .needsPermission
+    }
+
+    private func openSystemSettingsForAccessibility() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     // MARK: - Calendar Column
@@ -514,32 +537,45 @@ struct TimelinePaneView: View {
     /// the entry column. All-day events are excluded (they belong in the
     /// aboveline region, not on the timeline).
     private var calendarColumn: some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(viewModel.calendarEventLayouts) { layout in
-                let availableWidth = TimelineLayout.calendarPaneWidth - 8 // 4pt inset per side
-                let columnWidth = layout.columnCount > 0
-                    ? availableWidth / CGFloat(layout.columnCount)
-                    : availableWidth
-                let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
-                CalendarEventBlockView(
-                    event: layout.event,
-                    isSelected: false, // no first-class selection for calendar blocks yet
-                    isLinked: viewModel.isEventLinkedToEntry(layout.event),
-                    onCreateEntry: {
-                        openCreationSheetForEvent(layout.event)
-                    },
-                    onCreateRule: {
-                        openRuleEditorForEvent(layout.event)
-                    },
-                    onOpenInCalendar: {
-                        openInCalendarApp(layout.event)
+        ZStack(alignment: .top) {
+            ZStack(alignment: .topLeading) {
+                ForEach(viewModel.calendarEventLayouts) { layout in
+                    let availableWidth = TimelineLayout.calendarPaneWidth - 8 // 4pt inset per side
+                    let columnWidth = layout.columnCount > 0
+                        ? availableWidth / CGFloat(layout.columnCount)
+                        : availableWidth
+                    let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
+                    CalendarEventBlockView(
+                        event: layout.event,
+                        isSelected: false, // no first-class selection for calendar blocks yet
+                        isLinked: viewModel.isEventLinkedToEntry(layout.event),
+                        onCreateEntry: {
+                            openCreationSheetForEvent(layout.event)
+                        },
+                        onCreateRule: {
+                            openRuleEditorForEvent(layout.event)
+                        },
+                        onOpenInCalendar: {
+                            openInCalendarApp(layout.event)
+                        }
+                    )
+                    .frame(width: max(columnWidth - gap, 14), alignment: .topLeading)
+                    .offset(
+                        x: 4 + columnWidth * CGFloat(layout.columnIndex),
+                        y: yOffset(for: layout.event.startDate)
+                    )
+                }
+            }
+
+            if let state = calendarPlaceholderState {
+                CalendarColumnPlaceholderView(
+                    state: state,
+                    onOpenSettings: openSystemSettingsForCalendar,
+                    onRequestAccess: {
+                        Task { _ = await viewModel.calendarService?.requestAccessIfNeeded() }
                     }
                 )
-                .frame(width: max(columnWidth - gap, 14), alignment: .topLeading)
-                .offset(
-                    x: 4 + columnWidth * CGFloat(layout.columnIndex),
-                    y: yOffset(for: layout.event.startDate)
-                )
+                .padding(.top, 40)
             }
         }
         .frame(
@@ -547,6 +583,21 @@ struct TimelinePaneView: View {
             height: TimelineLayout.totalHeight,
             alignment: .topLeading
         )
+    }
+
+    private var calendarPlaceholderState: CalendarColumnPlaceholder? {
+        guard let svc = viewModel.calendarService else { return nil }
+        if svc.authorizationStatus == .notDetermined { return .needsPermission }
+        if !svc.hasReadAccess { return .denied }
+        if viewModel.settings?.selectedCalendarId == nil { return .noCalendarSelected }
+        if viewModel.calendarEvents.isEmpty { return .noEvents }
+        return nil
+    }
+
+    private func openSystemSettingsForCalendar() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     // MARK: - Calendar Event Actions

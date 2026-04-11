@@ -28,6 +28,7 @@
 		15132D05BE5D88AF63F00A01 /* SuggestionBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8F39DFDDC280D9E571D9C0 /* SuggestionBlockView.swift */; };
 		157100E954BFFD03D7305875 /* AppUsageBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C2C891224898CDA031C963 /* AppUsageBlockView.swift */; };
 		19F83B3F3FEF4A019E422101 /* CalendarEventBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A686D3BEB05425C8CB07EA9 /* CalendarEventBlockView.swift */; };
+		52852E15388C40658DE1DB2E /* TimelineColumnPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B19B6744D9249E88DAC9A86 /* TimelineColumnPlaceholders.swift */; };
 		A14D0C1B72C148A4DE000014 /* AllDayCalendarEventRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24D0C1B72C148A4DE000014 /* AllDayCalendarEventRow.swift */; };
 		166449E65014D689EF8978D0 /* IdleReminderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */; };
 		16B0D3B093CA49FA24F4F466 /* StorageBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977338C7A178D1FDC00982C9 /* StorageBackend.swift */; };
@@ -231,6 +232,7 @@
 		166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecorderTests.swift; sourceTree = "<group>"; };
 		16C2C891224898CDA031C963 /* AppUsageBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageBlockView.swift; sourceTree = "<group>"; };
 		6A686D3BEB05425C8CB07EA9 /* CalendarEventBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventBlockView.swift; sourceTree = "<group>"; };
+		3B19B6744D9249E88DAC9A86 /* TimelineColumnPlaceholders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineColumnPlaceholders.swift; sourceTree = "<group>"; };
 		B24D0C1B72C148A4DE000014 /* AllDayCalendarEventRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllDayCalendarEventRow.swift; sourceTree = "<group>"; };
 		16F5FEA3B2CCB6B815D8C914 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		181B2C9AADBB7C2084B3AF0E /* MocoCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MocoCompanion.entitlements; sourceTree = "<group>"; };
@@ -661,6 +663,7 @@
 				7A8F39DFDDC280D9E571D9C0 /* SuggestionBlockView.swift */,
 				5B1C24EE54DC09B10BC61F26 /* TimeAxisView.swift */,
 				AE258BCF3A18E6FAF7B73F90 /* TimelineEntryCreationSheet.swift */,
+				3B19B6744D9249E88DAC9A86 /* TimelineColumnPlaceholders.swift */,
 				44E815248DC080BC27FDDDEA /* TimelinePaneView.swift */,
 				8957C94E76184C23A10DC7F6 /* TimelineViewModel.swift */,
 				FBE23E7BB04E6B5E42EE1E3E /* TimelineWindow.swift */,
@@ -948,6 +951,7 @@
 				41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */,
 				8031ACA863899456340F6371 /* Theme.swift in Sources */,
 				028D713CCB8E962363B47A6A /* TimeAxisView.swift in Sources */,
+				52852E15388C40658DE1DB2E /* TimelineColumnPlaceholders.swift in Sources */,
 				F66049D82930A745A3DC9D75 /* TimelineEntryCreationSheet.swift in Sources */,
 				9889216F868781BDA8775BC7 /* TimelinePaneView.swift in Sources */,
 				2A948B3B54B72F26F4099CD2 /* TimelineViewModel.swift in Sources */,
