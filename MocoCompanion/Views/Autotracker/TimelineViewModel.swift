@@ -692,16 +692,12 @@ import os
 
     // MARK: - Entry Creation
 
-    /// Create a new ShadowEntry from timeline drag-to-create. Inserts with
-    /// syncStatus .pendingCreate and reloads data so it appears immediately.
-    /// `sourceAppBundleId` records the recorded-activity origin so the
-    /// timeline can show the new entry as linked to that app block.
     /// Computes the `pendingCreation` payload for a dropped all-day
     /// calendar event. Returns the start minutes, a fixed 1-hour
     /// duration, the event title as the sheet's suggested description,
-    /// and the event's calendar identifier so the caller can stash it
-    /// on `pendingCreationCalendarEventId` for `createEntry` to stamp
-    /// `sourceCalendarEventId` on save.
+    /// and the event's calendar identifier so the caller can set it on
+    /// the `PendingCreation.calendarEventId` field — `createEntry` then
+    /// stamps it as `sourceCalendarEventId` on save.
     func allDayEventDropPayload(
         _ event: CalendarEvent,
         atStartTime startTime: String
