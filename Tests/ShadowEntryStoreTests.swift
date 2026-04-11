@@ -225,4 +225,16 @@ struct ShadowEntryStoreTests {
         let fetched = try await store.entry(id: 1)
         #expect(fetched?.conflictFlag == true)
     }
+
+    // MARK: - Local-Only Column Invariant
+
+    @Test("updateFromServerSQL does not reference local-only columns")
+    func updateFromServerSQL_doesNotReferenceLocalOnlyColumns() {
+        for column in ShadowEntryStore.localOnlyColumns {
+            #expect(
+                !ShadowEntryStore.updateFromServerSQL.contains(column),
+                "updateFromServerSQL must not reference local-only column '\(column)'"
+            )
+        }
+    }
 }

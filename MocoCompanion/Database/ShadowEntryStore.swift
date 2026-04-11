@@ -170,6 +170,19 @@ actor ShadowEntryStore {
         }
     }
 
+    // MARK: - Local-Only Column Registry
+
+    /// Columns that are LOCAL-ONLY: never sent to Moco, never overwritten
+    /// on pull. Maintained as a single source of truth so insert/update
+    /// SQL can include them while `updateFromServerSQL` deliberately
+    /// excludes them via `allColumnsExcludingLocalOnly`.
+    static let localOnlyColumns: [String] = [
+        "start_time",
+        "source_app_bundle_id",
+        "source_rule_id",
+        "source_calendar_event_id",
+    ]
+
     // MARK: - SQL Constants
 
     private static let insertSQL = """
@@ -214,7 +227,7 @@ actor ShadowEntryStore {
         WHERE local_id = ?
         """
 
-    private static let updateFromServerSQL = """
+    static let updateFromServerSQL = """
         UPDATE shadow_entries SET
             date = ?, hours = ?, seconds = ?, worked_seconds = ?,
             description = ?, billed = ?, billable = ?, tag = ?, project_id = ?,

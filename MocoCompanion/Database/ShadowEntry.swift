@@ -68,6 +68,19 @@ struct ShadowEntry: Sendable, Equatable {
     /// not sent to Moco on push.
     var sourceCalendarEventId: String?
 
+    // MARK: - Local-Only Field Copying
+
+    /// Copies the values of all local-only origin-tracking fields from
+    /// `other` onto `self`. Used after a `.pendingCreate` push to preserve
+    /// local-only metadata on the server-response row before it replaces
+    /// the local draft.
+    mutating func copyLocalOnlyFields(from other: ShadowEntry) {
+        self.startTime = other.startTime
+        self.sourceAppBundleId = other.sourceAppBundleId
+        self.sourceRuleId = other.sourceRuleId
+        self.sourceCalendarEventId = other.sourceCalendarEventId
+    }
+
     /// Whether the timer is currently running on this entry.
     var isTimerRunning: Bool { timerStartedAt != nil }
 
