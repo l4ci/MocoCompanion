@@ -44,9 +44,14 @@ struct TimelinePaneView: View {
                 Divider()
             }
 
-            // Unassigned entries section
-            if !unpositionedEntries.isEmpty {
-                unassignedSection
+            // Aboveline region — column-aligned HStack that mirrors the
+            // scroll content's column widths. All-day calendar events
+            // sit above the calendar column; unassigned Moco entries
+            // sit above the entry column. Collapses when both lists
+            // are empty.
+            let hasAnyAboveline = !viewModel.allDayEvents.isEmpty || !unpositionedEntries.isEmpty
+            if hasAnyAboveline {
+                abovelineRegion
                 Divider()
             }
 
@@ -167,6 +172,7 @@ struct TimelinePaneView: View {
                     projectCatalog: projectCatalog,
                     descriptionRequired: descriptionRequired,
                     onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
+                        let calendarEventId = pendingCreationCalendarEventId
                         Task {
                             await viewModel.createEntry(
                                 date: dateStr,
@@ -178,7 +184,8 @@ struct TimelinePaneView: View {
                                 taskName: taskName,
                                 customerName: customerName,
                                 description: description,
-                                sourceAppBundleId: creation.sourceBundleId
+                                sourceAppBundleId: creation.sourceBundleId,
+                                sourceCalendarEventId: calendarEventId
                             )
                         }
                         pendingCreation = nil
@@ -237,14 +244,54 @@ struct TimelinePaneView: View {
             }
     }
 
-    // MARK: - Unassigned Section
+    // MARK: - Aboveline Region
 
-    private var unassignedSection: some View {
+    /// Column-aligned HStack that mirrors the scroll content's column
+    /// structure so all-day calendar events sit directly above the
+    /// calendar column and unassigned Moco entries sit directly above
+    /// the entry column.
+    private var abovelineRegion: some View {
+        HStack(alignment: .top, spacing: 0) {
+            // Time axis spacer
+            Color.clear.frame(width: TimelineLayout.timeAxisWidth)
+
+            // App column — reserved for future use; empty for now.
+            if viewModel.settings?.appRecordingEnabled == true {
+                Color.clear.frame(width: TimelineLayout.appUsagePaneWidth)
+                theme.divider.frame(width: 1)
+            }
+
+            // Calendar column — all-day events, draggable.
+            if viewModel.settings?.calendarEnabled == true {
+                allDayCalendarColumn
+                    .frame(width: TimelineLayout.calendarPaneWidth, alignment: .topLeading)
+                theme.divider.frame(width: 1)
+            }
+
+            // Entry column — unassigned Moco entries.
+            unassignedEntriesColumn
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var allDayCalendarColumn: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Unassigned")
-                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
-                .foregroundStyle(theme.textSecondary)
+            ForEach(viewModel.allDayEvents) { event in
+                AllDayCalendarEventRow(event: event)
+                    .draggable("cal:\(event.calendarItemIdentifier)") {
+                        Text(event.title)
+                            .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                            .padding(6)
+                            .background(theme.surface, in: Capsule())
+                    }
+            }
+        }
+        .padding(.horizontal, 4)
+    }
 
+    private var unassignedEntriesColumn: some View {
+        VStack(alignment: .leading, spacing: 4) {
             ForEach(unpositionedEntries, id: \.id) { entry in
                 HStack(spacing: 6) {
                     Text(entry.projectName)
@@ -315,8 +362,7 @@ struct TimelinePaneView: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Batch Approve
@@ -609,21 +655,40 @@ struct TimelinePaneView: View {
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
         .dropDestination(for: String.self) { items, location in
-            // Drop payload is the entry id as a String. Convert the local
-            // y into minutes-since-midnight, snap to grid, and ask the view
-            // model to move the entry there. Works for any ShadowEntry with
-            // a server id (unpositioned entries qualify after their first
-            // sync round-trip).
-            guard let idString = items.first,
-                  let id = Int(idString),
-                  let entry = viewModel.shadowEntries.first(where: { $0.id == id })
-            else { return false }
+            // Drop payload is either:
+            //   - "<entryId>" — an existing ShadowEntry id, moved to the
+            //     snapped target time via the view model.
+            //   - "cal:<calendarItemIdentifier>" — an all-day calendar
+            //     event from the aboveline region, which opens the
+            //     creation sheet pre-filled with the event's title and
+            //     a 1-hour duration at the snapped target time.
+            guard let idString = items.first else { return false }
             let rawMinutes = Double(location.y) / Double(TimelineLayout.pixelsPerMinute)
             let snapped = TimelineGeometry.snapToGrid(
                 minutes: rawMinutes,
                 gridMinutes: TimelineLayout.snapMinutes
             )
             let timeStr = TimelineGeometry.timeString(fromMinutes: snapped)
+
+            if idString.hasPrefix("cal:") {
+                let calId = String(idString.dropFirst(4))
+                guard let event = viewModel.allDayEvents.first(where: { $0.calendarItemIdentifier == calId }) else {
+                    return false
+                }
+                let payload = viewModel.allDayEventDropPayload(event, atStartTime: timeStr)
+                pendingCreation = (
+                    startMinutes: payload.startMinutes,
+                    durationMinutes: payload.durationMinutes,
+                    appName: payload.appName,
+                    sourceBundleId: payload.sourceBundleId
+                )
+                pendingCreationCalendarEventId = payload.calendarEventId
+                return true
+            }
+
+            guard let id = Int(idString),
+                  let entry = viewModel.shadowEntries.first(where: { $0.id == id })
+            else { return false }
             Task { await viewModel.moveEntry(entry, toStartTime: timeStr) }
             return true
         }

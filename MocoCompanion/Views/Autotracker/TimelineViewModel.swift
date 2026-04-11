@@ -712,6 +712,20 @@ import os
     /// syncStatus .pendingCreate and reloads data so it appears immediately.
     /// `sourceAppBundleId` records the recorded-activity origin so the
     /// timeline can show the new entry as linked to that app block.
+    /// Computes the `pendingCreation` payload for a dropped all-day
+    /// calendar event. Returns the start minutes, a fixed 1-hour
+    /// duration, the event title as the sheet's suggested description,
+    /// and the event's calendar identifier so the caller can stash it
+    /// on `pendingCreationCalendarEventId` for `createEntry` to stamp
+    /// `sourceCalendarEventId` on save.
+    func allDayEventDropPayload(
+        _ event: CalendarEvent,
+        atStartTime startTime: String
+    ) -> (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?, calendarEventId: String) {
+        let minutes = TimelineGeometry.minutesSinceMidnight(from: startTime) ?? 0
+        return (minutes, 60, event.title, nil, event.calendarItemIdentifier)
+    }
+
     func createEntry(
         date: String,
         startTime: String,
@@ -722,7 +736,8 @@ import os
         taskName: String,
         customerName: String,
         description: String,
-        sourceAppBundleId: String? = nil
+        sourceAppBundleId: String? = nil,
+        sourceCalendarEventId: String? = nil
     ) async {
         let now = ISO8601DateFormatter().string(from: Date())
 
@@ -763,7 +778,8 @@ import os
             serverUpdatedAt: now,
             conflictFlag: false,
             sourceAppBundleId: sourceAppBundleId,
-            sourceRuleId: nil
+            sourceRuleId: nil,
+            sourceCalendarEventId: sourceCalendarEventId
         )
 
         do {
