@@ -19,6 +19,11 @@ actor RuleStore {
             try database.createTable(sql: createTableSQL)
             database.userVersion = 1
         }
+        if database.userVersion < 2 {
+            do { try database.execute("ALTER TABLE tracking_rules ADD COLUMN rule_type TEXT NOT NULL DEFAULT 'app'") } catch { /* already exists */ }
+            do { try database.execute("ALTER TABLE tracking_rules ADD COLUMN event_title_pattern TEXT") } catch { /* already exists */ }
+            database.userVersion = 2
+        }
     }
 
     private static let createTableSQL = """
@@ -36,7 +41,9 @@ actor RuleStore {
             description TEXT NOT NULL DEFAULT '',
             enabled INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            rule_type TEXT NOT NULL DEFAULT 'app',
+            event_title_pattern TEXT
         )
         """
 
@@ -58,6 +65,8 @@ actor RuleStore {
             rule.enabled,
             rule.createdAt.isEmpty ? now : rule.createdAt,
             rule.updatedAt.isEmpty ? now : rule.updatedAt,
+            rule.ruleType.rawValue,
+            rule.eventTitlePattern,
         ])
         return database.lastInsertRowId
     }
@@ -77,6 +86,8 @@ actor RuleStore {
             rule.taskName,
             rule.description,
             rule.enabled,
+            rule.ruleType.rawValue,
+            rule.eventTitlePattern,
             now,
             id,
         ])
@@ -102,8 +113,9 @@ actor RuleStore {
         INSERT INTO tracking_rules (
             name, app_bundle_id, app_name_pattern, window_title_pattern,
             mode, project_id, project_name, task_id, task_name,
-            description, enabled, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            description, enabled, created_at, updated_at,
+            rule_type, event_title_pattern
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
     private static let updateSQL = """
@@ -111,7 +123,8 @@ actor RuleStore {
             name = ?, app_bundle_id = ?, app_name_pattern = ?,
             window_title_pattern = ?, mode = ?, project_id = ?,
             project_name = ?, task_id = ?, task_name = ?,
-            description = ?, enabled = ?, updated_at = ?
+            description = ?, enabled = ?, rule_type = ?,
+            event_title_pattern = ?, updated_at = ?
         WHERE id = ?
         """
 
@@ -124,7 +137,9 @@ actor RuleStore {
             appBundleId: nullableString(row, "app_bundle_id"),
             appNamePattern: nullableString(row, "app_name_pattern"),
             windowTitlePattern: nullableString(row, "window_title_pattern"),
+            eventTitlePattern: nullableString(row, "event_title_pattern"),
             mode: RuleMode(rawValue: row["mode"] as? String ?? "suggest") ?? .suggest,
+            ruleType: (row["rule_type"] as? String).flatMap(RuleType.init) ?? .app,
             projectId: intFromRow(row, "project_id"),
             projectName: row["project_name"] as? String ?? "",
             taskId: intFromRow(row, "task_id"),
