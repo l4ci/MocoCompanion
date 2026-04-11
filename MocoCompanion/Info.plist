@@ -4,5 +4,9 @@
 <dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Volker Otto. All rights reserved.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>MocoCompanion displays your calendar events next to your time entries so you can quickly create Moco entries from meetings.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>MocoCompanion displays your calendar events next to your time entries so you can quickly create Moco entries from meetings.</string>
 </dict>
 </plist>
