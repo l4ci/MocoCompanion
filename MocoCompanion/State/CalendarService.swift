@@ -27,6 +27,12 @@ final class CalendarService {
     /// re-fetch without this service holding a per-date cache.
     private(set) var changeTick: Int = 0
 
+    /// Debounce for EKEventStoreChanged fan-out — a batch calendar sync
+    /// typically fires the notification a handful of times within a
+    /// few hundred ms. Coalescing to a single tick avoids rebuilding
+    /// the timeline N times in a row.
+    private var changeBumpTask: Task<Void, Never>?
+
     private let eventStore = EKEventStore()
     /// Must be nonisolated(unsafe) so deinit (which is nonisolated) can read it
     /// to remove the observer. Safe because the token is only written on the
@@ -142,9 +148,20 @@ final class CalendarService {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.changeTick += 1
-                Self.logger.debug("Calendar change tick \(self?.changeTick ?? 0)")
+                self?.scheduleChangeTickBump()
             }
+        }
+    }
+
+    /// Trailing-debounce the change-tick bump so bursty notifications
+    /// collapse into one observer wake.
+    private func scheduleChangeTickBump() {
+        changeBumpTask?.cancel()
+        changeBumpTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self else { return }
+            self.changeTick += 1
+            Self.logger.debug("Calendar change tick \(self.changeTick)")
         }
     }
 

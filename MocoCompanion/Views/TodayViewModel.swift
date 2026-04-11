@@ -147,6 +147,38 @@ final class TodayViewModel {
         planningStore.plannedHours(projectId: projectId, taskId: taskId)
     }
 
+    /// Build a `[projectKey: plannedHours]` lookup in one pass over the
+    /// planning entries. Callers that render many rows should use this
+    /// once per render instead of calling `plannedHours(projectId:taskId:)`
+    /// per row — that method does an O(n) filter each time.
+    func buildPlannedHoursMap() -> [String: Double] {
+        var map: [String: Double] = [:]
+        for entry in planningStore.todayPlanningEntries {
+            guard let project = entry.project, let task = entry.task else { continue }
+            let key = "\(project.id)-\(task.id)"
+            map[key, default: 0] += entry.hoursPerDay
+        }
+        return map
+    }
+
+    /// Yesterday total hours — precomputed sum over yesterdayActivities so
+    /// the stats footer doesn't re-reduce a ~50-item array on every render.
+    var yesterdayTotalHours: Double {
+        activityService.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
+    }
+
+    /// Yesterday billable percentage [0, 100].
+    var yesterdayBillablePercentage: Double {
+        let activities = activityService.yesterdayActivities
+        var total = 0.0
+        var billable = 0.0
+        for a in activities {
+            total += a.hours
+            if a.billable { billable += a.hours }
+        }
+        return total > 0 ? (billable / total) * 100 : 0
+    }
+
     // MARK: - Forwarded State (TimerService)
 
     /// Whether the given activity is currently paused.

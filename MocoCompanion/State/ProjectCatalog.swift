@@ -12,11 +12,16 @@ final class ProjectCatalog {
     var projects: [MocoProject] = [] {
         didSet {
             _searchEntries = nil
+            _colorCache = nil
         }
     }
     var isLoading = false
 
     private var _searchEntries: [SearchEntry]?
+    /// Lazy lookup table for project colors. Rebuilt whenever `projects`
+    /// changes. Avoids the O(n) linear scan in `color(for:)` that was
+    /// called per row in list views.
+    private var _colorCache: [Int: Color]?
 
     var searchEntries: [SearchEntry] {
         if let cached = _searchEntries { return cached }
@@ -29,8 +34,18 @@ final class ProjectCatalog {
 
     /// Resolved project color from Moco, or nil if the project is unknown or has no color set.
     func color(for projectId: Int) -> Color? {
-        guard let hex = projects.first(where: { $0.id == projectId })?.color else { return nil }
-        return Color(hex: hex)
+        if let cache = _colorCache {
+            return cache[projectId]
+        }
+        var cache: [Int: Color] = [:]
+        cache.reserveCapacity(projects.count)
+        for project in projects {
+            if let hex = project.color, let color = Color(hex: hex) {
+                cache[project.id] = color
+            }
+        }
+        _colorCache = cache
+        return cache[projectId]
     }
 
     init() {

@@ -72,8 +72,8 @@ struct TodayView: View {
 
                 if !vm.isTomorrow {
                     TodayStatsFooter(
-                        totalHours: vm.isYesterday ? yesterdayTotalHours : vm.todayTotalHours,
-                        billablePercentage: vm.isYesterday ? yesterdayBillablePercentage : vm.todayBillablePercentage,
+                        totalHours: vm.isYesterday ? vm.yesterdayTotalHours : vm.todayTotalHours,
+                        billablePercentage: vm.isYesterday ? vm.yesterdayBillablePercentage : vm.todayBillablePercentage,
                         entryCount: vm.sortedActivities.count
                     )
                 }
@@ -330,6 +330,10 @@ struct TodayView: View {
     private var activitiesList: some View {
         // Read dataVersion so @Observable triggers re-render on data changes
         let _ = vm.dataVersion
+        // Build the planned-hours lookup once per render — previously each
+        // row did an O(n) filter over planningStore entries, yielding
+        // quadratic cost over the whole list. See audit P2-3.
+        let plannedMap: [String: Double] = vm.isYesterday ? [:] : vm.buildPlannedHoursMap()
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
@@ -343,7 +347,7 @@ struct TodayView: View {
                             isPaused: !vm.isYesterday && vm.isPausedActivity(activity),
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
-                            plannedHours: vm.isYesterday ? nil : vm.plannedHours(projectId: activity.projectId, taskId: activity.taskId),
+                            plannedHours: plannedMap["\(activity.projectId)-\(activity.taskId)"],
                             projects: appState.catalog.projects,
                             budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,
@@ -384,18 +388,6 @@ struct TodayView: View {
         }
     }
 
-    // MARK: - Stats
-
-    private var yesterdayTotalHours: Double {
-        vm.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
-    }
-
-    private var yesterdayBillablePercentage: Double {
-        let total = yesterdayTotalHours
-        guard total > 0 else { return 0 }
-        let billable = vm.yesterdayActivities.filter(\.billable).reduce(0.0) { $0 + $1.hours }
-        return (billable / total) * 100.0
-    }
 }
 
 // MARK: - Tomorrow Planning Row

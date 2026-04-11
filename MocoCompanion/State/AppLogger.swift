@@ -105,12 +105,15 @@ actor AppLogger {
 
     // MARK: - Buffered Writing
 
-    /// Buffer for log lines. Flushed every 5 seconds or when 10 lines accumulate.
+    /// Buffer for log lines. Flushed every 30 seconds or when 10 lines accumulate.
+    /// The 30s cadence keeps logs fresh enough for post-mortem debugging while
+    /// not waking the writer thread every 5s in the steady state. The 10-line
+    /// threshold still keeps bursty log events timely.
     private var apiBuffer: [String] = []
     private var appBuffer: [String] = []
     private var flushTask: Task<Void, Never>?
     private static let flushThreshold = 10
-    private static let flushInterval: Duration = .seconds(5)
+    private static let flushInterval: Duration = .seconds(30)
 
     private func write(category: LogCategory, level: LogLevel, message: String, context: String? = nil) {
         let minLevel = category == .api ? apiLogLevel : appLogLevel

@@ -86,7 +86,11 @@ final class IdleReminderMonitor: PollingMonitor {
     func check() async -> [MonitorAlert] {
         var alerts: [MonitorAlert] = []
 
-        // End-of-day summary (check regardless of timer state)
+        // End-of-day summary — evaluated on each poll because the
+        // DedupLedger's `.perDay` strategy ensures it fires once. When the
+        // user is within the configured hoursEnd window, this returns an
+        // alert. When the visibility gate bumps pollInterval to 5 min, the
+        // hour-wide window still contains at least one poll.
         if let eod = checkEndOfDay() {
             await activityService.refreshTodayStats()
             alerts.append(eod)
