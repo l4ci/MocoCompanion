@@ -1071,6 +1071,54 @@
         }
       }
     },
+    "calendar.contextMenu.createEntry" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag aus diesem Termin erstellen…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create entry from this meeting…"
+          }
+        }
+      }
+    },
+    "calendar.contextMenu.createRule" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel für diesen Termin erstellen…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create rule for this meeting…"
+          }
+        }
+      }
+    },
+    "calendar.contextMenu.openInCalendar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Kalender öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Calendar"
+          }
+        }
+      }
+    },
     "Billed — read-only" : {
 
     },
