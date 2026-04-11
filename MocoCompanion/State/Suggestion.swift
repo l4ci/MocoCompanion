@@ -15,8 +15,9 @@ struct Suggestion: Identifiable, Sendable, Equatable {
     let appName: String
     /// Bundle id of the app block that triggered the rule. Propagated
     /// into the created ShadowEntry as origin metadata so the timeline
-    /// can show it as linked to that recorded activity.
-    let appBundleId: String
+    /// can show it as linked to that recorded activity. Nil for calendar-origin
+    /// suggestions where there is no associated app block.
+    let appBundleId: String?
     /// When this suggestion was created from a calendar event, the
     /// event's `calendarItemIdentifier`. Propagated to the resulting
     /// ShadowEntry's `sourceCalendarEventId` when the suggestion is

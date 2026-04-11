@@ -464,7 +464,7 @@ final class Autotracker {
                                 taskName: rule.taskName,
                                 description: resolvedDescription,
                                 appName: event.title,
-                                appBundleId: "",
+                                appBundleId: nil,
                                 sourceCalendarEventId: event.calendarItemIdentifier
                             ))
                         }
