@@ -778,66 +778,17 @@ import os
     /// cluster share the same `columnCount` so their rendered widths line
     /// up.
     var positionedEntryLayouts: [EntryLayout] {
-        struct Timed {
-            let entry: ShadowEntry
-            let start: Int
-            let end: Int
-        }
-
-        let timed: [Timed] = positionedEntries.compactMap { entry in
+        let timed: [(entry: ShadowEntry, start: Int, end: Int)] = positionedEntries.compactMap { entry in
             guard let ts = entry.startTime,
                   let start = TimelineGeometry.minutesSinceMidnight(from: ts)
             else { return nil }
             let end = start + max(entry.seconds / 60, 1)
-            return Timed(entry: entry, start: start, end: end)
-        }.sorted { lhs, rhs in
-            if lhs.start != rhs.start { return lhs.start < rhs.start }
-            return lhs.end > rhs.end
+            return (entry, start, end)
         }
-
-        var result: [EntryLayout] = []
-        var cluster: [Timed] = []
-        var clusterEnd = Int.min
-
-        func flushCluster() {
-            guard !cluster.isEmpty else { return }
-            var columnEnds: [Int] = []
-            var assignments: [Int] = []
-            for item in cluster {
-                var placed = false
-                for (i, end) in columnEnds.enumerated() where item.start >= end {
-                    columnEnds[i] = item.end
-                    assignments.append(i)
-                    placed = true
-                    break
-                }
-                if !placed {
-                    assignments.append(columnEnds.count)
-                    columnEnds.append(item.end)
-                }
-            }
-            let count = max(columnEnds.count, 1)
-            for (i, item) in cluster.enumerated() {
-                result.append(EntryLayout(
-                    entry: item.entry,
-                    columnIndex: assignments[i],
-                    columnCount: count
-                ))
-            }
-            cluster.removeAll(keepingCapacity: true)
-            clusterEnd = Int.min
+        let assignments = ClusterColumns.assign(timed.map { ($0.start, $0.end) })
+        return zip(timed, assignments).map { item, a in
+            EntryLayout(entry: item.entry, columnIndex: a.columnIndex, columnCount: a.columnCount)
         }
-
-        for item in timed {
-            if item.start >= clusterEnd {
-                flushCluster()
-            }
-            cluster.append(item)
-            clusterEnd = max(clusterEnd, item.end)
-        }
-        flushCluster()
-
-        return result
     }
 
     // MARK: - Overlap Detection

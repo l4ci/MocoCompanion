@@ -49,6 +49,7 @@
 		393C9D7D30979342F260B138 /* ShadowEntryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A88696E2E8B7B27A41E1DBE /* ShadowEntryStore.swift */; };
 		3ADBDD0194414A2AA8E49C49 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */; };
 		3C8F1D3792BD648EAD5DEBE1 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154DFB8D18EEB118491F1668 /* Color+Hex.swift */; };
+		252EE72BA36A43CE96B66237 /* ClusterColumns.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0819760C324081880C7C92 /* ClusterColumns.swift */; };
 		3F08CEB1335591B1C80B33AB /* TimelineViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E61B4A9AA576CB5A90E669F /* TimelineViewModelTests.swift */; };
 		40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E423C3757208DB02DCA6E1C5 /* HowToUseSettingsTab.swift */; };
 		41172097CA074806E3B7AAA9 /* TagExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */; };
@@ -223,6 +224,7 @@
 		14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoPlanningModels.swift; sourceTree = "<group>"; };
 		154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		154DFB8D18EEB118491F1668 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		FA0819760C324081880C7C92 /* ClusterColumns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterColumns.swift; sourceTree = "<group>"; };
 		155477772B61048004E7FA09 /* ShadowEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowEntry.swift; sourceTree = "<group>"; };
 		166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecorderTests.swift; sourceTree = "<group>"; };
 		16C2C891224898CDA031C963 /* AppUsageBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageBlockView.swift; sourceTree = "<group>"; };
@@ -402,6 +404,7 @@
 		081425CAF69B7A3EA4369A02 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				FA0819760C324081880C7C92 /* ClusterColumns.swift */,
 				9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */,
 				5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */,
 				5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */,
@@ -834,6 +837,7 @@
 				944023A464965603EFD6E625 /* BudgetService.swift in Sources */,
 				5D46FA960D89E5846D6AC910 /* BudgetTypes.swift in Sources */,
 				3C8F1D3792BD648EAD5DEBE1 /* Color+Hex.swift in Sources */,
+				252EE72BA36A43CE96B66237 /* ClusterColumns.swift in Sources */,
 				8983F0A31CEA8A6A8BE1BCFC /* DateNavigationView.swift in Sources */,
 				F35396DD2EAAAC57711F8821 /* DateUtilities.swift in Sources */,
 				BF8D61D1C973ADFF199B9834 /* DaySelection.swift in Sources */,
