@@ -1,6 +1,41 @@
 import Foundation
 import os
 
+// # Adding a new preference
+//
+// 1. Add the key string to the `private enum Key` block.
+// 2. Add a stored `var` with `didSet { Self.save(Key.xxx, xxx) }`.
+// 3. Initialize it in `init()` via `self.xxx = Self.read(Key.xxx, default: ...)`.
+// 4. Reset it to its default in `resetAllData()`.
+//
+// The pattern is verbose but deliberate: every preference's persistence
+// behaviour is explicit and co-located with its declaration. Batch
+// updates are NOT supported — each `didSet` fires a separate
+// UserDefaults write. If you need post-save validation or cross-field
+// checks, add a dedicated method (e.g. `validateCalendarSelection`) and
+// call it explicitly after setting related properties.
+//
+// ## Optional String preferences (e.g. `selectedCalendarId`)
+//
+// `Self.read(_:default:)` returns a non-optional `T`, so optional
+// String preferences need two small deviations from the standard pattern:
+//
+// - **init**: use `UserDefaults.standard.string(forKey:)` directly
+//   (returns nil when the key is absent).
+// - **didSet**: branch on nil — call `Self.save` when a value is present,
+//   `UserDefaults.standard.removeObject(forKey:)` when nil (storing NSNull
+//   via `Self.save(nil)` would leave a junk entry in UserDefaults).
+//
+// ## Migration defaults
+//
+// When a new preference's sensible default depends on a *legacy* persisted
+// value, read the legacy key first and pass it as the default:
+//
+//   let legacyFlag = Self.read(Key.legacyKey, default: false)
+//   self.newPref = Self.read(Key.newPref, default: legacyFlag)
+//
+// (See `rulesEnabled` in `init()` for the canonical example.)
+
 /// Persists user settings. API key goes to Keychain; other preferences to UserDefaults.
 @Observable
 @MainActor
