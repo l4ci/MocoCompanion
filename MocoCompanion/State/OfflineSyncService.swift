@@ -29,9 +29,26 @@ final class OfflineSyncService {
         logger.info("Syncing \(queue.count) queued entries for userId=\(userId)")
         var syncedCount = 0
 
+        // Coalesce the duplicate check by fetching each distinct date
+        // exactly once. Previously an N-entry queue with all-same-date did
+        // N full activity fetches — quadratic in the worst case.
+        var existingByDate: [String: [MocoActivity]] = [:]
+
         for entry in queue.entries {
             do {
-                let existing = try await client.fetchActivities(from: entry.date, to: entry.date, userId: userId)
+                let existing: [MocoActivity]
+                if let cached = existingByDate[entry.date] {
+                    existing = cached
+                } else {
+                    let fetched = try await client.fetchActivities(
+                        from: entry.date,
+                        to: entry.date,
+                        userId: userId
+                    )
+                    existingByDate[entry.date] = fetched
+                    existing = fetched
+                }
+
                 let isDuplicate = existing.contains { activity in
                     activity.project.id == entry.projectId
                         && activity.task.id == entry.taskId
@@ -48,6 +65,10 @@ final class OfflineSyncService {
                 )
                 queue.remove(id: entry.id)
                 syncedCount += 1
+                // We just created an activity that future entries in this
+                // batch might duplicate — invalidate the date cache so
+                // subsequent entries on the same day refetch.
+                existingByDate.removeValue(forKey: entry.date)
                 logger.info("Synced queued entry for \(entry.projectName)")
             } catch {
                 logger.error("Failed to sync queued entry: \(error.localizedDescription)")

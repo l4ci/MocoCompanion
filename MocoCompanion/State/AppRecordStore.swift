@@ -64,29 +64,56 @@ final class AppRecordStore {
     }
 
     func insert(_ record: AppRecord) {
+        insertMany([record])
+    }
+
+    /// Insert one or more records in a single SQLite transaction. Using a
+    /// transaction for even a single insert avoids the implicit per-statement
+    /// BEGIN/COMMIT cycle (with its fsync on journal_mode=DELETE), which is
+    /// the dominant cost of per-segment writes in Autotracker. Failing
+    /// inserts are logged individually; a fatal bind failure rolls back the
+    /// entire batch so partial state isn't persisted.
+    func insertMany(_ records: [AppRecord]) {
+        guard !records.isEmpty else { return }
+        guard let db else { return }
+
+        if sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) != SQLITE_OK {
+            Self.logger.error("Failed to begin transaction: \(self.dbError)")
+            return
+        }
+
         let sql = "INSERT INTO app_records (timestamp, app_bundle_id, app_name, window_title, duration_seconds) VALUES (?, ?, ?, ?, ?)"
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
-            let err = dbError
-            Self.logger.error("Failed to prepare insert: \(err)")
+            Self.logger.error("Failed to prepare insert: \(self.dbError)")
+            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
             return
         }
         defer { sqlite3_finalize(stmt) }
 
-        let ts = Self.dateFormatter.string(from: record.timestamp)
-        sqlite3_bind_text(stmt, 1, (ts as NSString).utf8String, -1, nil)
-        sqlite3_bind_text(stmt, 2, (record.appBundleId as NSString).utf8String, -1, nil)
-        sqlite3_bind_text(stmt, 3, (record.appName as NSString).utf8String, -1, nil)
-        if let title = record.windowTitle {
-            sqlite3_bind_text(stmt, 4, (title as NSString).utf8String, -1, nil)
-        } else {
-            sqlite3_bind_null(stmt, 4)
-        }
-        sqlite3_bind_double(stmt, 5, record.durationSeconds)
+        for record in records {
+            sqlite3_reset(stmt)
+            sqlite3_clear_bindings(stmt)
 
-        if sqlite3_step(stmt) != SQLITE_DONE {
-            let err = dbError
-            Self.logger.error("Failed to insert record: \(err)")
+            let ts = Self.dateFormatter.string(from: record.timestamp)
+            sqlite3_bind_text(stmt, 1, (ts as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(stmt, 2, (record.appBundleId as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(stmt, 3, (record.appName as NSString).utf8String, -1, nil)
+            if let title = record.windowTitle {
+                sqlite3_bind_text(stmt, 4, (title as NSString).utf8String, -1, nil)
+            } else {
+                sqlite3_bind_null(stmt, 4)
+            }
+            sqlite3_bind_double(stmt, 5, record.durationSeconds)
+
+            if sqlite3_step(stmt) != SQLITE_DONE {
+                Self.logger.error("Failed to insert record: \(self.dbError)")
+            }
+        }
+
+        if sqlite3_exec(db, "COMMIT", nil, nil, nil) != SQLITE_OK {
+            Self.logger.error("Failed to commit batch insert: \(self.dbError)")
+            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
         }
     }
 

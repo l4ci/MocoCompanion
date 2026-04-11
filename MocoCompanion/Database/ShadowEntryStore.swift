@@ -121,7 +121,17 @@ actor ShadowEntryStore {
     }
 
     func dirtyEntries() throws -> [ShadowEntry] {
-        let rows = try database.query("SELECT * FROM shadow_entries WHERE sync_status != ?", params: ["synced"])
+        // Use IN with concrete values instead of `!= 'synced'` so SQLite's
+        // planner can actually use idx_shadow_entries_sync. Inequality
+        // against a single value does not narrow an equality index.
+        let rows = try database.query(
+            "SELECT * FROM shadow_entries WHERE sync_status IN (?, ?, ?)",
+            params: [
+                SyncStatus.dirty.rawValue,
+                SyncStatus.pendingCreate.rawValue,
+                SyncStatus.pendingDelete.rawValue,
+            ]
+        )
         return rows.map(entryFromRow)
     }
 

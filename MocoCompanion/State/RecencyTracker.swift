@@ -15,6 +15,12 @@ final class RecencyTracker {
     /// projectId → last used date (decoded from storage on init)
     private(set) var usageMap: [Int: Date] = [:]
 
+    /// Trailing-debounce persistence so a burst of usage events writes
+    /// UserDefaults once, not N times. Every usage reschedules the flush
+    /// for `persistDebounce` in the future; the final event wins.
+    private var persistTask: Task<Void, Never>?
+    private let persistDebounce: Duration = .seconds(2)
+
     init(backend: StorageBackend = DefaultsBackend()) {
         self.state = PersistedState(key: "projectRecency", default: [:], backend: backend)
         usageMap = Self.decode(state.value)
@@ -25,8 +31,16 @@ final class RecencyTracker {
     /// Record that a project was just used.
     func recordUsage(projectId: Int) {
         usageMap[projectId] = Date()
-        persist()
+        schedulePersist()
         Self.logger.info("Recorded usage for project \(projectId)")
+    }
+
+    /// Force an immediate flush of pending state. Call from
+    /// `applicationWillTerminate` so no recorded usage is lost.
+    func flushPendingWrites() {
+        persistTask?.cancel()
+        persistTask = nil
+        persist()
     }
 
     /// Get a recency score for a project (0.0–1.0).
@@ -51,6 +65,18 @@ final class RecencyTracker {
     }
 
     // MARK: - Private
+
+    /// Schedule `persist()` after `persistDebounce`, cancelling any
+    /// previously-scheduled flush.
+    private func schedulePersist() {
+        persistTask?.cancel()
+        let delay = persistDebounce
+        persistTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
+            self.persist()
+        }
+    }
 
     private func persist() {
         // Prune entries older than decayDays before saving

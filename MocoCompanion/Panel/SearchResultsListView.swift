@@ -15,8 +15,38 @@ struct SearchResultsListView: View {
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Row wrapper with a stable identity. Identity is derived from the
+    /// (section, projectId, taskId) triple so favoriting or reordering
+    /// rows doesn't force SwiftUI to rebuild every row below the change.
+    private struct Row: Identifiable, Hashable {
+        let id: String
+        let index: Int
+        let entry: SearchEntry
+        let section: QuickEntryStateMachine.ResultSection
+        let description: String?
+        let isFirstInSection: Bool
+
+        static func == (lhs: Row, rhs: Row) -> Bool { lhs.id == rhs.id }
+        func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    }
+
+    private var rows: [Row] {
+        items.enumerated().map { (idx, item) in
+            let prevSection = idx == 0 ? nil : items[idx - 1].section
+            return Row(
+                id: "\(item.section)-\(item.entry.projectId)-\(item.entry.taskId)",
+                index: idx,
+                entry: item.entry,
+                section: item.section,
+                description: item.description,
+                isFirstInSection: prevSection != item.section
+            )
+        }
+    }
+
     var body: some View {
         let maxResultsHeight: CGFloat = 365
+        let rows = self.rows
 
         VStack(spacing: 0) {
             theme.divider.frame(height: 1)
@@ -24,12 +54,12 @@ struct SearchResultsListView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 2) {
-                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                            if index == 0 || items[index].section != items[index - 1].section {
-                                sectionHeader(for: item.section)
+                        ForEach(rows) { row in
+                            if row.isFirstInSection {
+                                sectionHeader(for: row.section)
                             }
-                            resultRow(entry: item.entry, index: index, section: item.section, recentDescription: item.description)
-                                .id(index)
+                            resultRow(entry: row.entry, index: row.index, section: row.section, recentDescription: row.description)
+                                .id(row.id)
                         }
                     }
                     .padding(.vertical, 4)
@@ -37,9 +67,10 @@ struct SearchResultsListView: View {
                 }
                 .frame(maxHeight: maxResultsHeight)
                 .onChange(of: selectedIndex) { _, newIndex in
-                    guard newIndex >= 0 else { return }
+                    guard newIndex >= 0, newIndex < rows.count else { return }
+                    let targetId = rows[newIndex].id
                     animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
-                        proxy.scrollTo(newIndex, anchor: .center)
+                        proxy.scrollTo(targetId, anchor: .center)
                     }
                 }
             }

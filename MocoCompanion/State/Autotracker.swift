@@ -40,14 +40,14 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
     /// `Autotracker.init`.
     var captureWindowTitles: () -> Bool = { false }
 
+    /// Sync frontmost info. Returns nil window title — full title capture
+    /// would block the caller on AX reads. The first didActivate event
+    /// after this will fill in the title asynchronously.
     var currentFrontmost: (bundleId: String, appName: String, windowTitle: String?)? {
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier,
               let name = app.localizedName else { return nil }
-        let title: String? = captureWindowTitles()
-            ? AccessibilityPermission.focusedWindowTitle(forProcess: app.processIdentifier)
-            : nil
-        return (bundleId, name, title)
+        return (bundleId, name, nil)
     }
 
     func start() {
@@ -59,12 +59,24 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
             let bundleId = app?.bundleIdentifier
             let name = app?.localizedName
             let pid = app?.processIdentifier ?? 0
-            MainActor.assumeIsolated {
-                guard let self, let bundleId, let name else { return }
-                let title: String? = self.captureWindowTitles()
-                    ? AccessibilityPermission.focusedWindowTitle(forProcess: pid)
-                    : nil
-                self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: title))
+            guard let self, let bundleId, let name else { return }
+            let wantsTitle = MainActor.assumeIsolated { self.captureWindowTitles() }
+
+            if !wantsTitle {
+                MainActor.assumeIsolated {
+                    self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: nil))
+                }
+                return
+            }
+
+            // Time-boxed off-main AX capture. The main actor is released
+            // immediately — the handler fires when the title arrives or
+            // after the 30 ms budget elapses, whichever is first.
+            Task { [weak self] in
+                let title = await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
+                await MainActor.run {
+                    self?.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: title))
+                }
             }
         })
         observers.append(ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
@@ -147,6 +159,13 @@ final class Autotracker {
     private var currentSegment: Segment?
     private let coalescingThreshold: TimeInterval = 10.0
 
+    /// Debounce interval for rapid app activations. Alt-tabbing through 5
+    /// apps in 200 ms should not create 5 segments — the user isn't doing
+    /// real work in any of them. Only the final app (held for >300 ms)
+    /// gets recorded.
+    private let activationDebounce: Duration = .milliseconds(300)
+    private var pendingAppChangeTask: Task<Void, Never>?
+
     private static let systemFilteredBundleIds: Set<String> = [
         "com.apple.loginwindow",
         "com.apple.ScreenSaver",
@@ -210,6 +229,8 @@ final class Autotracker {
     }
 
     func stop() {
+        pendingAppChangeTask?.cancel()
+        pendingAppChangeTask = nil
         flushCurrentSegment()
         workspace.stop()
         isRecording = false
@@ -220,8 +241,10 @@ final class Autotracker {
     private func handleWorkspaceEvent(_ event: WorkspaceEvent) {
         switch event {
         case .appActivated(let bundleId, let appName, let windowTitle):
-            processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            scheduleDebouncedAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         case .sleep:
+            pendingAppChangeTask?.cancel()
+            pendingAppChangeTask = nil
             flushCurrentSegment()
             Self.atLogger.debug("Paused for sleep/session resign")
         case .wake:
@@ -230,6 +253,18 @@ final class Autotracker {
                 processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
             Self.atLogger.debug("Resumed after wake/session active")
+        }
+    }
+
+    /// Collapse rapid app activations into one processAppChange call. Each
+    /// new event cancels the previous pending task and schedules a fresh
+    /// one; only the last event in a burst actually runs.
+    private func scheduleDebouncedAppChange(bundleId: String, appName: String, windowTitle: String?) {
+        pendingAppChangeTask?.cancel()
+        pendingAppChangeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: self?.activationDebounce ?? .milliseconds(300))
+            guard !Task.isCancelled, let self else { return }
+            self.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         }
     }
 

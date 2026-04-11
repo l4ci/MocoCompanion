@@ -129,8 +129,11 @@ private struct PanelContentInner: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(theme.divider, lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.15), radius: 40, y: 12)
-        .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+        // Single softer shadow instead of the stacked radius-40+radius-6
+        // pair — the two-shadow cost (offline GPU render passes) was
+        // measurably visible on integrated graphics and the visual delta
+        // at radius 12 vs 40 is barely perceptible against the panel chrome.
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
         .onKeyPress(phases: .down) { _ in
             NSCursor.setHiddenUntilMouseMoves(true)
             dismissFirstUseHint()
@@ -215,9 +218,27 @@ private struct PanelContentInner: View {
     }
 
     private var todayDateString: String {
+        Self.formattedDate(for: Date(), locale: appState.settings.resolvedLocale)
+    }
+
+    // MARK: - Formatter cache
+
+    /// DateFormatter allocation is ~0.1–0.3 ms per call — noticeable in a
+    /// view body that re-renders multiple times per second. Cache one
+    /// formatter per locale identifier. The cache is keyed by the bare
+    /// locale identifier string which is cheap to compare.
+    @MainActor private static var dateFormatterCache: [String: DateFormatter] = [:]
+
+    @MainActor
+    private static func formattedDate(for date: Date, locale: Locale) -> String {
+        let key = locale.identifier
+        if let cached = dateFormatterCache[key] {
+            return cached.string(from: date)
+        }
         let f = DateFormatter()
-        f.locale = appState.settings.resolvedLocale
+        f.locale = locale
         f.dateFormat = "EEEE, d. MMMM"
-        return f.string(from: Date())
+        dateFormatterCache[key] = f
+        return f.string(from: date)
     }
 }

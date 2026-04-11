@@ -59,6 +59,22 @@ struct MenuBarDisplayState: Equatable {
         computeElapsedString(from: activity)
     }
 
+    /// Build just the project/task label portion of the running title,
+    /// *without* the elapsed time. Exposed so the menu-bar elapsed-refresh
+    /// loop can cache this string on state transitions and avoid the
+    /// emoji-scalar scan on every 1 s tick — the label is constant for the
+    /// duration of a running timer.
+    static func runningLabel(projectName: String, taskName: String?) -> String {
+        formatMenuBarLabel(projectName: projectName, taskName: taskName)
+    }
+
+    /// Compose the full menu-bar title from a cached running label plus a
+    /// freshly-formatted elapsed string. Matches the exact format produced
+    /// by `from(timerState:)`.
+    static func runningTitle(label: String, elapsed: String) -> String {
+        " \(label) \(elapsed)"
+    }
+
     // MARK: - Private
 
     /// Format the menubar label: "Project · Ta…sk" — project emoji-only if available, task truncated in middle.

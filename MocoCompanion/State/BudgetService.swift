@@ -13,8 +13,15 @@ final class BudgetService {
 
     // MARK: - Cache
 
-    /// Cached budget data per project ID.
+    /// Maximum number of projects kept in the budget cache at once. Beyond
+    /// this, least-recently-used entries are evicted. Covers the typical
+    /// consultancy workload (≤32 active projects at once) while preventing
+    /// unbounded heap growth across long sessions.
+    private static let cacheCapacity = 32
+
+    /// Cached budget data per project ID. `accessOrder` tracks LRU recency.
     private var projectCaches: [Int: ProjectBudgetCache] = [:]
+    private var accessOrder: [Int] = []
 
     /// Internal cache entry for a single project's budget data.
     private struct ProjectBudgetCache {
@@ -22,6 +29,33 @@ final class BudgetService {
         let fullProject: MocoFullProject
         let contracts: [MocoProjectContract]
         let fetchedAt: Date
+    }
+
+    // MARK: - Test Inspection
+
+    #if DEBUG
+    /// Test-only count of cached entries. Do not use in production code.
+    var _cachedProjectCount: Int { projectCaches.count }
+    #endif
+
+    // MARK: - Cache Operations
+
+    /// Record a read access to keep the LRU order honest.
+    private func touch(_ projectId: Int) {
+        if let idx = accessOrder.firstIndex(of: projectId) {
+            accessOrder.remove(at: idx)
+        }
+        accessOrder.append(projectId)
+    }
+
+    /// Insert or replace a cache entry and evict if we're over capacity.
+    private func storeCache(_ cache: ProjectBudgetCache, for projectId: Int) {
+        projectCaches[projectId] = cache
+        touch(projectId)
+        while projectCaches.count > Self.cacheCapacity, let oldest = accessOrder.first {
+            accessOrder.removeFirst()
+            projectCaches.removeValue(forKey: oldest)
+        }
     }
 
     // MARK: - Dependencies
@@ -45,6 +79,7 @@ final class BudgetService {
         guard let cache = projectCaches[projectId] else {
             return .empty
         }
+        touch(projectId)
         return computeStatus(cache: cache, taskId: taskId)
     }
 
@@ -130,11 +165,14 @@ final class BudgetService {
                 contracts = await fetchContractsSafely(projectId: projectId, client: client)
             }
 
-            projectCaches[projectId] = ProjectBudgetCache(
-                report: report,
-                fullProject: fullProject,
-                contracts: contracts,
-                fetchedAt: Date()
+            storeCache(
+                ProjectBudgetCache(
+                    report: report,
+                    fullProject: fullProject,
+                    contracts: contracts,
+                    fetchedAt: Date()
+                ),
+                for: projectId
             )
             return false
         } catch let error as MocoError {

@@ -41,8 +41,14 @@ enum AccessibilityPermission {
     /// Accessibility access is granted and the process exposes a
     /// focused window. Nil in all other cases — callers treat nil
     /// as "no title available, don't include in the record".
-    static func focusedWindowTitle(forProcess pid: pid_t) -> String? {
-        guard isTrusted else { return nil }
+    ///
+    /// Declared `nonisolated` so the call can be made from a background
+    /// task: the underlying AX reads can block for 50–200 ms against a
+    /// slow app (Xcode, Chrome), and blocking the main actor on every
+    /// app switch janks the panel UI. Callers wrap this in a time-boxed
+    /// task via `capturefocusedWindowTitle(forProcess:budget:)`.
+    nonisolated static func focusedWindowTitle(forProcess pid: pid_t) -> String? {
+        guard AXIsProcessTrusted() else { return nil }
         let app = AXUIElementCreateApplication(pid)
         var focusedRef: CFTypeRef?
         let focusStatus = AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &focusedRef)
@@ -56,5 +62,27 @@ enum AccessibilityPermission {
         guard titleStatus == .success, let title = titleRef as? String else { return nil }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Fetch the focused window title off the main actor with a hard
+    /// time budget. If the AX call doesn't return within `budget`, this
+    /// returns nil and the AX call continues in the background (harmless).
+    /// Use this everywhere user-visible latency matters — i.e. every
+    /// `NSWorkspace.didActivateApplicationNotification` handler.
+    nonisolated static func capturefocusedWindowTitle(
+        forProcess pid: pid_t,
+        budget: Duration = .milliseconds(30)
+    ) async -> String? {
+        await withTaskGroup(of: String?.self) { group in
+            group.addTask(priority: .userInitiated) {
+                Self.focusedWindowTitle(forProcess: pid)
+            }
+            group.addTask {
+                try? await Task.sleep(for: budget)
+                return nil
+            }
+            defer { group.cancelAll() }
+            return await group.next() ?? nil
+        }
     }
 }

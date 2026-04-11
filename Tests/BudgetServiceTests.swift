@@ -98,6 +98,30 @@ struct BudgetServiceTests {
         #expect(service.status(projectId: 102) == .empty)
     }
 
+    // MARK: - LRU eviction
+
+    @Test("cache bounds to 32 entries, evicting least-recently-used")
+    @MainActor func lruEvictionAtCapacity() async {
+        let api = makePopulatedAPI()
+        let service = makeService(api: api)
+
+        // Fill the cache to exactly capacity (32 entries).
+        let ids = Array(1...32)
+        await service.refreshBudgets(projectIds: ids)
+        #expect(service._cachedProjectCount == 32)
+
+        // Access id=1 to make it most-recently-used.
+        _ = service.status(projectId: 1)
+
+        // Insert a 33rd project — should evict the oldest (id=2),
+        // not id=1 which we just touched.
+        await service.refreshBudgets(projectIds: [33])
+        #expect(service._cachedProjectCount == 32)
+        #expect(service.status(projectId: 1) != .empty, "id=1 survived because it was touched")
+        #expect(service.status(projectId: 2) == .empty, "id=2 evicted as LRU")
+        #expect(service.status(projectId: 33) != .empty, "id=33 is cached")
+    }
+
     // MARK: - Cache reuse (< 60s skip)
 
     @Test("refreshBudgets skips projects with fresh cache (< 60s)")

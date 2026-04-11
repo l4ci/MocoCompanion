@@ -182,6 +182,15 @@ final class StatusItemController {
     /// KVO observation for menubar appearance changes.
     private var appearanceObservation: NSKeyValueObservation?
 
+    /// Cached label portion ("project · task") for the currently running
+    /// timer, so the 1 s elapsed refresh loop doesn't re-run the emoji
+    /// scalar scan and truncation every tick — the label is constant for
+    /// the duration of a run. Cleared on state transitions.
+    private var cachedRunningLabel: String?
+    /// Key that the cachedRunningLabel was computed for. Identifies the
+    /// running timer so we can detect when to invalidate.
+    private var cachedRunningKey: String?
+
     private func startObservingTimerState() {
         // One-shot observation tracking: read the state, and have `onChange`
         // re-subscribe for the *next* mutation. No polling loop.
@@ -229,6 +238,30 @@ final class StatusItemController {
             lastIsDark = isDark
         }
         button.title = state.title
+
+        // Cache the running label so refreshElapsed() can avoid the emoji
+        // scan + truncation on every tick.
+        refreshRunningLabelCache()
+    }
+
+    /// Update `cachedRunningLabel` to match the current timer state. Called
+    /// from `applyDisplayState` after each mutation so the elapsed-refresh
+    /// loop always reads a current label.
+    private func refreshRunningLabelCache() {
+        guard case .running(_, let projectName) = timerService.timerState else {
+            cachedRunningLabel = nil
+            cachedRunningKey = nil
+            return
+        }
+        let taskName = timerService.currentActivity?.taskName
+        let key = "\(projectName)\u{1F}\(taskName ?? "")"
+        if key != cachedRunningKey {
+            cachedRunningLabel = MenuBarDisplayState.runningLabel(
+                projectName: projectName,
+                taskName: taskName
+            )
+            cachedRunningKey = key
+        }
     }
 
     /// Observe system appearance changes and re-render the icon.
@@ -275,11 +308,24 @@ final class StatusItemController {
         guard let button = statusItem?.button else { return }
         guard case .running = timerService.timerState else { return }
 
+        // Fast path: if we have a cached label, skip the full
+        // MenuBarDisplayState.from() rebuild (which re-scans the project
+        // name for emoji). Just recompose with a fresh elapsed string.
+        if let label = cachedRunningLabel {
+            let elapsed = MenuBarDisplayState.elapsedString(from: timerService.currentActivity)
+            button.title = MenuBarDisplayState.runningTitle(label: label, elapsed: elapsed)
+            return
+        }
+
+        // Fallback — state arrived via refreshElapsed before applyDisplayState
+        // could populate the cache. Compute the full state, which will
+        // also populate the cache for subsequent ticks.
         let displayState = MenuBarDisplayState.from(
             timerState: timerService.timerState,
             currentActivity: timerService.currentActivity,
             hasError: timerService.lastError != nil
         )
         button.title = displayState.title
+        refreshRunningLabelCache()
     }
 }
