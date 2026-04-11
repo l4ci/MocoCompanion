@@ -21,6 +21,7 @@ struct DeleteUndoManagerTests {
         let undoManager = DeleteUndoManager(
             clientFactory: { capturedAPI },
             activityService: service,
+            shadowEntryStore: try! ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
             notificationDispatcher: dispatcher
         )
         return (undoManager, service, capturedAPI)
@@ -172,6 +173,7 @@ struct DeleteUndoManagerTests {
         let undoManager = DeleteUndoManager(
             clientFactory: { nil as (any ActivityAPI)? },
             activityService: service,
+            shadowEntryStore: try! ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
             notificationDispatcher: dispatcher
         )
 

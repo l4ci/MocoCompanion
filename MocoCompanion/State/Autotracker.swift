@@ -146,6 +146,10 @@ final class Autotracker {
     private var declinedSuggestionIds: Set<String> = []
     private var loadedDeclinedDate: String?
 
+    /// Called after entries are inserted into the shadow store (create-mode rules
+    /// or approved suggestions). Allows AppState to refresh the Today panel.
+    var onEntryCreated: (() async -> Void)?
+
     // MARK: - Init
 
     init(
@@ -338,6 +342,7 @@ final class Autotracker {
                             startTime: blockStartTime,
                             durationSeconds: blockDuration,
                             existingEntries: existingEntries,
+                            sourceAppBundleId: block.appBundleId,
                             now: clock()
                         )
                         try await shadowEntryStore.insert(entry)
@@ -361,7 +366,8 @@ final class Autotracker {
                         taskId: rule.taskId,
                         taskName: rule.taskName,
                         description: rule.description,
-                        appName: block.appName
+                        appName: block.appName,
+                        appBundleId: block.appBundleId
                     ))
                 }
             }
@@ -369,6 +375,10 @@ final class Autotracker {
 
         suggestions = newSuggestions
         Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
+
+        if entriesCreated > 0 {
+            await onEntryCreated?()
+        }
     }
 
     // MARK: - Suggestion Actions
@@ -409,13 +419,16 @@ final class Autotracker {
             syncStatus: .pendingCreate,
             localUpdatedAt: nowString,
             serverUpdatedAt: nowString,
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: suggestion.appBundleId,
+            sourceRuleId: suggestion.ruleId
         )
 
         do {
             try await shadowEntryStore.insert(entry)
             suggestions.removeAll { $0.id == suggestion.id }
             Self.atLogger.info("Approved suggestion \(suggestion.id)")
+            await onEntryCreated?()
         } catch {
             Self.atLogger.error("Failed to approve suggestion \(suggestion.id): \(error)")
         }
@@ -491,6 +504,7 @@ final class Autotracker {
         startTime: String,
         durationSeconds: Int,
         existingEntries: [ShadowEntry],
+        sourceAppBundleId: String?,
         now: Date
     ) -> ShadowEntry {
         let nowString = ISO8601DateFormatter().string(from: now)
@@ -527,7 +541,9 @@ final class Autotracker {
             syncStatus: .pendingCreate,
             localUpdatedAt: nowString,
             serverUpdatedAt: nowString,
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: sourceAppBundleId,
+            sourceRuleId: rule.id
         )
     }
 
@@ -555,7 +571,7 @@ final class Autotracker {
         return String(format: "%02d:%02d", components.hour ?? 0, components.minute ?? 0)
     }
 
-    nonisolated(unsafe) private static let atDateFormatter: DateFormatter = {
+    private static let atDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")

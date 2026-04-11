@@ -18,7 +18,7 @@ struct DateNavigationView: View {
         HStack(spacing: 12) {
             Button(action: viewModel.selectPreviousDay) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
+                    .font(.system(size: Theme.FontSize.callout, weight: .medium))
             }
             .disabled(!viewModel.canSelectPreviousDay)
             .buttonStyle(.plain)
@@ -27,7 +27,7 @@ struct DateNavigationView: View {
             Spacer()
 
             Text(Self.displayFormatter.string(from: viewModel.selectedDate))
-                .font(.system(size: Theme.FontSize.callout, weight: .semibold))
+                .font(.system(size: Theme.FontSize.title, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .onTapGesture {
                     showingDatePicker.toggle()
@@ -56,12 +56,11 @@ struct DateNavigationView: View {
                 }
 
             if viewModel.isToday {
-                Text("Today")
-                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+                Circle()
+                    .fill(Color.accentColor)
+                    .frame(width: 8, height: 8)
+                    .help("Today")
+                    .accessibilityLabel(String(localized: "date.today"))
             }
 
             Spacer()

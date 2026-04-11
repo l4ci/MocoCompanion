@@ -53,6 +53,16 @@ final class QuickEntryStateMachine {
             _cachedSearchResults = nil
             hoveredIndex = nil
             scheduleSearchDebounce()
+            // Editing the search field while an entry is selected cancels the
+            // selection and returns to the search list.
+            if phase.isDescribing && searchText != oldValue {
+                phase = .searching
+                selectedEntry = nil
+                descriptionText = ""
+                autocompleteSuggestion = nil
+                isManualMode = false
+                manualHours = ""
+            }
         }
     }
     var descriptionText = ""

@@ -324,7 +324,9 @@ struct AutotrackerTests {
             syncStatus: .synced,
             localUpdatedAt: now,
             serverUpdatedAt: now,
-            conflictFlag: false
+            conflictFlag: false,
+            sourceAppBundleId: nil,
+            sourceRuleId: nil
         )
     }
 

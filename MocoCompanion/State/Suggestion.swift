@@ -13,4 +13,8 @@ struct Suggestion: Identifiable, Sendable, Equatable {
     let taskName: String
     let description: String
     let appName: String
+    /// Bundle id of the app block that triggered the rule. Propagated
+    /// into the created ShadowEntry as origin metadata so the timeline
+    /// can show it as linked to that recorded activity.
+    let appBundleId: String
 }

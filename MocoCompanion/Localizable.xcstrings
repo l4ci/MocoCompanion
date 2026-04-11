@@ -959,6 +959,7 @@
       }
     },
     "autotracker.excludedApps.placeholder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1074,6 +1075,7 @@
 
     },
     "Booked Entries" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1551,22 +1553,6 @@
         }
       }
     },
-    "edit.descriptionPlaceholder" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beschreibung (#TICKET-123)…"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Description (#TICKET-123)…"
-          }
-        }
-      }
-    },
     "edit.description.required" : {
       "localizations" : {
         "de" : {
@@ -1579,6 +1565,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Description is required"
+          }
+        }
+      }
+    },
+    "edit.descriptionPlaceholder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibung (#TICKET-123)…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description (#TICKET-123)…"
           }
         }
       }
@@ -3758,9 +3760,6 @@
         }
       }
     },
-    "Optional description" : {
-
-    },
     "Pending deletion" : {
 
     },
@@ -3915,6 +3914,7 @@
       }
     },
     "Recorded Activities" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

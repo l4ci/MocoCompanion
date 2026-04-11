@@ -5,7 +5,13 @@ import os
 /// Abstraction for notification dispatch — allows test doubles.
 @MainActor
 protocol NotificationSending {
-    func send(_ type: NotificationCatalog.NotificationType, message: String)
+    func send(_ type: NotificationCatalog.NotificationType, message: String, userInfo: [String: String])
+}
+
+extension NotificationSending {
+    func send(_ type: NotificationCatalog.NotificationType, message: String) {
+        send(type, message: message, userInfo: [:])
+    }
 }
 
 /// Unified notification dispatch — single entry point for all app notifications.
@@ -27,33 +33,72 @@ final class NotificationDispatcher: NotificationSending {
 
     /// Send a notification via macOS Notification Center.
     /// Checks enabled state before dispatching.
-    func send(_ type: NotificationCatalog.NotificationType, message: String) {
+    func send(_ type: NotificationCatalog.NotificationType, message: String, userInfo: [String: String] = [:]) {
         guard isEnabledCheck(type) else {
             logger.debug("Notification disabled: \(type.rawValue)")
             return
         }
 
-        postSystemNotification(type: type, message: message)
+        postSystemNotification(type: type, message: message, userInfo: userInfo)
     }
+
+    // MARK: - Notification Actions
+
+    /// Action identifier for "Open Autotracker" button on notifications.
+    nonisolated static let openAutotrackerActionId = "openAutotracker"
+    /// Category for notifications that offer an "Open Autotracker" action.
+    nonisolated static let autotrackerCategoryId = "autotrackerCategory"
 
     // MARK: - System Notifications
 
-    /// Request permission to show system notifications. Called once on app launch.
+    /// Request permission and register notification categories. Called once on app launch.
     static func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error {
                 Logger(category: "Notifications").error("Notification authorization failed: \(error.localizedDescription)")
             }
         }
+
+        // Register category with "Open Autotracker" action
+        let openAction = UNNotificationAction(
+            identifier: openAutotrackerActionId,
+            title: "Open Autotracker",
+            options: [.foreground]
+        )
+        let category = UNNotificationCategory(
+            identifier: autotrackerCategoryId,
+            actions: [openAction],
+            intentIdentifiers: []
+        )
+        center.setNotificationCategories([category])
     }
 
     // MARK: - Private
 
-    private func postSystemNotification(type: NotificationCatalog.NotificationType, message: String) {
+    private func postSystemNotification(type: NotificationCatalog.NotificationType, message: String, userInfo: [String: String] = [:]) {
         let content = UNMutableNotificationContent()
         content.title = type.label
         content.body = message
         content.sound = .default
+
+        // Attach "Open Autotracker" action for relevant notification types
+        if type == .endOfDaySummary || type == .yesterdayUnderBooked {
+            content.categoryIdentifier = Self.autotrackerCategoryId
+            // Embed the target date so the action handler can navigate there
+            let fmt = DateFormatter()
+            fmt.dateFormat = "yyyy-MM-dd"
+            let targetDate: Date
+            if type == .yesterdayUnderBooked {
+                targetDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+            } else {
+                targetDate = Date()
+            }
+            content.userInfo["targetDate"] = fmt.string(from: targetDate)
+        }
+        if !userInfo.isEmpty {
+            for (k, v) in userInfo { content.userInfo[k] = v }
+        }
 
         let request = UNNotificationRequest(
             identifier: "\(type.rawValue)-\(UUID().uuidString)",

@@ -169,6 +169,53 @@ struct QuickEntryStateMachineTests {
         #expect(sm.descriptionText == "")
     }
 
+    @Test("editing searchText while describing returns to searching and clears selection")
+    @MainActor func editSearchTextDuringDescribingResets() {
+        let ds = MockQuickEntryDataSource()
+        ds.favorites = [makeFavorite()]
+        let (sm, _, _) = makeSM(dataSource: ds)
+
+        // Enter describing phase via a selection.
+        sm.selectedIndex = 0
+        _ = sm.selectCurrentResult()
+        #expect(sm.phase.isDescribing)
+        #expect(sm.selectedEntry != nil)
+
+        // Simulate user filling in description/manual state.
+        sm.descriptionText = "half-written note"
+        sm.isManualMode = true
+        sm.manualHours = "1.5"
+        sm.autocompleteSuggestion = "suggestion"
+
+        // User edits the search field.
+        sm.searchText = "new query"
+
+        #expect(sm.phase.isSearching)
+        #expect(sm.selectedEntry == nil)
+        #expect(sm.descriptionText == "")
+        #expect(sm.autocompleteSuggestion == nil)
+        #expect(sm.isManualMode == false)
+        #expect(sm.manualHours == "")
+    }
+
+    @Test("clearing searchText via ✕ while describing returns to searching")
+    @MainActor func clearSearchTextDuringDescribingResets() {
+        let ds = MockQuickEntryDataSource()
+        ds.favorites = [makeFavorite()]
+        let (sm, _, _) = makeSM(dataSource: ds)
+
+        sm.searchText = "foo"
+        sm.selectedIndex = 0
+        _ = sm.selectCurrentResult()
+        #expect(sm.phase.isDescribing)
+
+        // Clicking the ✕ button sets searchText = "".
+        sm.searchText = ""
+
+        #expect(sm.phase.isSearching)
+        #expect(sm.selectedEntry == nil)
+    }
+
     // MARK: - Navigation
 
     @Test("moveSelection clamps to bounds")

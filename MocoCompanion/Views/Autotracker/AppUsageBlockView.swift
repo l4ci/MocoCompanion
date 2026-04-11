@@ -55,16 +55,16 @@ struct AppUsageBlockView: View {
                 Image(nsImage: appIcon)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: 14, height: 14)
-                    .padding(.leading, 4)
+                    .frame(width: 16, height: 16)
+                    .padding(.leading, 5)
             }
 
             Text(block.appName)
-                .font(.system(size: Theme.FontSize.caption))
+                .font(.system(size: Theme.FontSize.subhead))
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 5)
 
             Spacer(minLength: 0)
         }
@@ -93,7 +93,10 @@ struct AppUsageBlockView: View {
                     onDragEnded()
                 }
         )
-        .onTapGesture {
+        .onTapGesture(count: 2) {
+            onCreateEntry?(block)
+        }
+        .onTapGesture(count: 1) {
             onSelect(NSEvent.modifierFlags.contains(.shift))
         }
         .contextMenu {

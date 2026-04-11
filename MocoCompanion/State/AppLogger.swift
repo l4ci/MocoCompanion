@@ -135,8 +135,8 @@ actor AppLogger {
         if flushTask == nil {
             flushTask = Task {
                 try? await Task.sleep(for: Self.flushInterval)
-                await self.flushBuffers()
-                await self.clearFlushTask()
+                self.flushBuffers()
+                self.clearFlushTask()
             }
         }
     }

@@ -36,6 +36,7 @@ final class SettingsStore {
         static let panelResetSeconds = "panelResetSeconds"
         static let hasSeenFirstUseHint = "hasSeenFirstUseHint"
         static let appLanguage = "appLanguage"
+        static let descriptionRequired = "descriptionRequired"
     }
 
     // MARK: - Defaults Helper
@@ -165,6 +166,12 @@ final class SettingsStore {
         hasSavedPanelPosition = false
     }
 
+    /// Whether the Moco instance requires a non-empty description on activities.
+    /// Auto-detected from API validation errors; can also be toggled manually.
+    var descriptionRequired: Bool {
+        didSet { Self.save(Key.descriptionRequired, descriptionRequired) }
+    }
+
     // MARK: - Preferences: Work Schedule
 
     var workingHoursStart: Int {
@@ -260,6 +267,7 @@ final class SettingsStore {
         self.panelResetSeconds = Self.read(Key.panelResetSeconds, default: 60)
         self.hasSeenFirstUseHint = Self.read(Key.hasSeenFirstUseHint, default: false)
         self.appLanguage = Self.read(Key.appLanguage, default: "system")
+        self.descriptionRequired = Self.read(Key.descriptionRequired, default: false)
         self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
         self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
         self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: [])
@@ -318,6 +326,7 @@ final class SettingsStore {
         customShortcutModifiers = 0
         apiLogLevel = .info
         appLogLevel = .info
+        descriptionRequired = false
         autotrackerEnabled = false
         autotrackerRetentionDays = 14
         autotrackerExcludedApps = []

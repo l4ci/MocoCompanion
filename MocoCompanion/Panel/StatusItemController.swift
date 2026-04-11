@@ -271,7 +271,7 @@ final class StatusItemController {
 
     private func refreshElapsed() {
         guard let button = statusItem?.button else { return }
-        guard case .running(_, let projectName) = timerService.timerState else { return }
+        guard case .running = timerService.timerState else { return }
 
         let displayState = MenuBarDisplayState.from(
             timerState: timerService.timerState,

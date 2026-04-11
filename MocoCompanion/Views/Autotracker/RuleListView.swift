@@ -104,15 +104,52 @@ struct RuleListView: View {
 
     // MARK: - Rule List
 
+    /// Rules grouped by Moco project name, then sorted by project name
+    /// (case-insensitive) so that everything belonging to the same
+    /// project is visually clustered together.
+    private var groupedRules: [(project: String, rules: [TrackingRule])] {
+        let grouped = Dictionary(grouping: rules) { $0.projectName }
+        return grouped
+            .map { (project: $0.key, rules: $0.value.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }) }
+            .sorted { $0.project.localizedCaseInsensitiveCompare($1.project) == .orderedAscending }
+    }
+
     private var ruleList: some View {
         ScrollView {
-            LazyVStack(spacing: 1) {
-                ForEach(rules) { rule in
-                    ruleRow(rule)
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                ForEach(groupedRules, id: \.project) { group in
+                    Section {
+                        ForEach(group.rules) { rule in
+                            ruleRow(rule)
+                        }
+                    } header: {
+                        projectGroupHeader(group.project, count: group.rules.count)
+                    }
                 }
             }
             .padding(.vertical, 4)
         }
+    }
+
+    private func projectGroupHeader(_ name: String, count: Int) -> some View {
+        HStack(spacing: 6) {
+            Text(name)
+                .font(.system(size: Theme.FontSize.caption, weight: .semibold))
+                .foregroundStyle(theme.textSecondary)
+                .textCase(.uppercase)
+                .tracking(0.4)
+            Text("\(count)")
+                .font(.system(size: Theme.FontSize.caption, weight: .medium, design: .rounded))
+                .foregroundStyle(theme.textTertiary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(Capsule().fill(theme.surface))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
+        .background(theme.panelBackground)
     }
 
     private func ruleRow(_ rule: TrackingRule) -> some View {
