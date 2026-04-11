@@ -24,6 +24,15 @@ import os
     /// Optional reference to the SyncEngine so mutations can push to Moco immediately.
     /// Wired by AppDelegate when the window opens; nil in test harnesses.
     weak var syncEngine: SyncEngine?
+    /// Optional reference to the SettingsStore so `loadData` can honor the
+    /// `calendarEnabled` toggle and `selectedCalendarId` without threading
+    /// them through every call. Wired by AppDelegate; nil in test harnesses.
+    weak var settings: SettingsStore?
+    /// Optional reference to the shared CalendarService. Weak because
+    /// AppState owns both the view model and the service — we don't want
+    /// a retain cycle if the VM ever outlives the window. Nil in test
+    /// harnesses that don't exercise calendar fetches.
+    weak var calendarService: CalendarService?
     /// Called after entries are created/modified locally. Used to refresh the Today panel.
     var onEntryChanged: (() async -> Void)?
     /// Called when the user taps the refresh button. Triggers a full sync cycle.
@@ -60,7 +69,42 @@ import os
     /* internal for test */ var appUsageBlocks: [AppUsageBlock] = []
     private(set) var positionedEntries: [ShadowEntry] = []
     private(set) var unpositionedEntries: [ShadowEntry] = []
+    private(set) var calendarEvents: [CalendarEvent] = []
     private(set) var isLoading: Bool = false
+
+    // MARK: - Calendar Event Layouts
+
+    /// Layout descriptor for a single timed calendar event. Parallels
+    /// `EntryLayout` for the entry column. `columnIndex` is 0-based and
+    /// `columnCount` is the total number of columns used by this event's
+    /// overlap cluster.
+    struct CalendarEventLayout: Identifiable {
+        let event: CalendarEvent
+        let columnIndex: Int
+        let columnCount: Int
+        var id: String { event.id }
+    }
+
+    /// Timed events laid out with cluster/column assignment. All-day
+    /// events are excluded — they're surfaced via `allDayEvents` for
+    /// the aboveline region instead.
+    var calendarEventLayouts: [CalendarEventLayout] {
+        let timed: [(event: CalendarEvent, start: Int, end: Int)] = calendarEvents.compactMap { ev in
+            guard !ev.isAllDay, let start = ev.startMinutes else { return nil }
+            let end = start + max(ev.durationMinutes, 1)
+            return (ev, start, end)
+        }
+        let assignments = ClusterColumns.assign(timed.map { ($0.start, $0.end) })
+        return zip(timed, assignments).map { item, a in
+            CalendarEventLayout(event: item.event, columnIndex: a.columnIndex, columnCount: a.columnCount)
+        }
+    }
+
+    /// All-day events for the current day. Rendered in the aboveline
+    /// region of the calendar column (not positioned on the timeline).
+    var allDayEvents: [CalendarEvent] {
+        calendarEvents.filter { $0.isAllDay }
+    }
 
     // MARK: - Selection State
 
@@ -180,7 +224,21 @@ import os
         appRecords = records
         appUsageBlocks = AppUsageBlock.merge(records)
 
-        Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.appUsageBlocks.count) usage blocks for \(dateString)")
+        // Calendar events — only fetched when the feature is enabled and
+        // a calendar is picked. `requestAccessIfNeeded` is idempotent and
+        // cheap when access is already established.
+        if settings?.calendarEnabled == true, let svc = calendarService {
+            _ = await svc.requestAccessIfNeeded()
+            if svc.hasReadAccess, let calId = settings?.selectedCalendarId {
+                calendarEvents = svc.fetchEvents(for: selectedDate, selectedCalendarId: calId)
+            } else {
+                calendarEvents = []
+            }
+        } else {
+            calendarEvents = []
+        }
+
+        Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.appUsageBlocks.count) usage blocks, \(self.calendarEvents.count) calendar events for \(dateString)")
 
         // Evaluate rules against loaded data
         let isTimerRunning = shadowEntries.contains { $0.timerStartedAt != nil }
@@ -756,6 +814,25 @@ import os
         // still visible on the current day — otherwise the indicator is
         // meaningless for the user.
         return appUsageBlocks.contains { $0.appBundleId == bundleId }
+    }
+
+    // MARK: - Calendar Event Linkage
+
+    /// True when there is a ShadowEntry on the current day whose
+    /// `sourceCalendarEventId` matches this event. Drives the
+    /// cross-highlight between the entry column and the calendar
+    /// column.
+    func isEventLinkedToEntry(_ event: CalendarEvent) -> Bool {
+        shadowEntries.contains { $0.sourceCalendarEventId == event.calendarItemIdentifier }
+    }
+
+    /// Reverse lookup for the entry column — true when an entry has a
+    /// source calendar event that exists in today's fetched events.
+    /// Used by EntryBlockView to render an alternate highlight when the
+    /// event is visible to the right of it.
+    func isEntryLinkedToCalendarEvent(_ entry: ShadowEntry) -> Bool {
+        guard let eid = entry.sourceCalendarEventId else { return false }
+        return calendarEvents.contains { $0.calendarItemIdentifier == eid }
     }
 
     // MARK: - Overlap Layout

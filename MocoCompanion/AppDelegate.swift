@@ -384,6 +384,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         )
         vm.deleteUndoManager = appState.deleteUndoManager
         vm.syncEngine = appState.syncEngine
+        vm.settings = appState.settings
+        vm.calendarService = appState.calendarService
         vm.onEntryChanged = { [weak self] in
             await self?.appState.activityService.refreshTodayStats()
         }
