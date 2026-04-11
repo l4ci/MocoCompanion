@@ -80,6 +80,7 @@
 		672C8702F9B2AFC75594A767 /* MocoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BC1029B70591A5D9B437C4 /* MocoSession.swift */; };
 		688FBEA8EB1412750A6A008C /* TestFactories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF68317E12950934C6A45E4 /* TestFactories.swift */; };
 		68E602C369B72037130B4354 /* AutotrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DA9CCA27BC6EBC1EA79046 /* AutotrackerTests.swift */; };
+		CA1E70A7C1A1B0BE0ADE1001 /* CalendarRuleMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1E70A7C1A1B0BE0ADE2002 /* CalendarRuleMatchingTests.swift */; };
 		6E3875216B6FEE549CDDE8FB /* TimerSideEffectsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E254ADC0FC6032ABF3234E /* TimerSideEffectsTests.swift */; };
 		6E39DF30FC9E0F6AEB54C3BB /* MocoActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A04794051CF38536ACF9DAB /* MocoActivityModels.swift */; };
 		6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0707079AFDBAE016F65B7B5D /* AppDelegate.swift */; };
@@ -355,6 +356,7 @@
 		B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
 		B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
 		B9DA9CCA27BC6EBC1EA79046 /* AutotrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutotrackerTests.swift; sourceTree = "<group>"; };
+		CA1E70A7C1A1B0BE0ADE2002 /* CalendarRuleMatchingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarRuleMatchingTests.swift; sourceTree = "<group>"; };
 		BA0F5D5944B57B9165EBE1BE /* NotificationsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsSettingsTab.swift; sourceTree = "<group>"; };
 		BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUndoManager.swift; sourceTree = "<group>"; };
 		BBE9B210348D16F543330D40 /* Logger+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+App.swift"; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				22DA733D555B249A6353D870 /* AppRecordStoreTests.swift */,
 				B9DA9CCA27BC6EBC1EA79046 /* AutotrackerTests.swift */,
 				FBACC1B3F7487874C3998D82 /* BudgetCalculatorTests.swift */,
+				CA1E70A7C1A1B0BE0ADE2002 /* CalendarRuleMatchingTests.swift */,
 				2BB733DE7E80E45699E3C801 /* BudgetServiceTests.swift */,
 				7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */,
 				01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */,
@@ -988,6 +991,7 @@
 				A3CC383E4848A5A2927E573B /* AppRecorderTests.swift in Sources */,
 				68E602C369B72037130B4354 /* AutotrackerTests.swift in Sources */,
 				7B86FB0010B3E33AF6CCC0D7 /* BudgetCalculatorTests.swift in Sources */,
+				CA1E70A7C1A1B0BE0ADE1001 /* CalendarRuleMatchingTests.swift in Sources */,
 				13E10A450FBB90887A7A5C7F /* BudgetServiceTests.swift in Sources */,
 				1A7A8344ED8EDF161694D53B /* DateUtilitiesTests.swift in Sources */,
 				B7E1B930A9AF082E40496274 /* DedupLedgerTests.swift in Sources */,

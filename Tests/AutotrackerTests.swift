@@ -218,9 +218,84 @@ struct AutotrackerTests {
         #expect(created?.syncStatus == .pendingCreate)
     }
 
+    // MARK: - Calendar Rule Tests
+
+    @Test func calendarRuleCreatesShadowEntryStampedWithCalendarEventId() async throws {
+        let (engine, ruleStore, _, shadowEntryStore) = try makeEngine(calendarEnabled: true)
+
+        let rule = sampleCalendarRule(
+            mode: .create,
+            eventTitlePattern: "standup"
+        )
+        _ = try await ruleStore.insert(rule)
+
+        // Event must be already-started (startDate <= now), accepted,
+        // and not all-day. We anchor the event to `Date() - 1h` so the
+        // `event.startDate <= clock()` gate is satisfied, and we derive
+        // the target `today` from the event itself so the day boundary
+        // is consistent even if the suite runs across midnight.
+        let startDate = Date().addingTimeInterval(-3600)
+        let endDate = startDate.addingTimeInterval(1800)
+        let today = Calendar.current.startOfDay(for: startDate)
+        let dateString = dateString(from: today)
+        let expectedEventId = "calitem-\(UUID().uuidString)"
+        let event = CalendarEvent(
+            id: UUID().uuidString,
+            calendarItemIdentifier: expectedEventId,
+            title: "Engineering Standup",
+            location: nil,
+            startDate: startDate,
+            endDate: endDate,
+            isAllDay: false,
+            isAcceptedByUser: true,
+            calendarColorHex: "#808080"
+        )
+
+        await engine.evaluate(
+            for: today,
+            existingEntries: [],
+            events: [event],
+            timerRunning: false
+        )
+
+        let entries = try await shadowEntryStore.entries(forDate: dateString)
+        #expect(entries.count == 1)
+        #expect(entries.first?.projectId == 100)
+        #expect(entries.first?.taskId == 200)
+        #expect(entries.first?.syncStatus == .pendingCreate)
+        #expect(entries.first?.sourceCalendarEventId == expectedEventId)
+        #expect(entries.first?.description == "Engineering Standup")
+    }
+
     // MARK: - Helpers
 
-    private func makeEngine() throws -> (Autotracker, RuleStore, AppRecordStore, ShadowEntryStore) {
+    private func sampleCalendarRule(
+        mode: RuleMode,
+        eventTitlePattern: String
+    ) -> TrackingRule {
+        TrackingRule(
+            id: nil,
+            name: "Calendar Test Rule",
+            appBundleId: nil,
+            appNamePattern: nil,
+            windowTitlePattern: nil,
+            eventTitlePattern: eventTitlePattern,
+            mode: mode,
+            ruleType: .calendar,
+            projectId: 100,
+            projectName: "Test Project",
+            taskId: 200,
+            taskName: "Meetings",
+            description: "",
+            enabled: true,
+            createdAt: "",
+            updatedAt: ""
+        )
+    }
+
+    private func makeEngine(
+        calendarEnabled: Bool = false
+    ) throws -> (Autotracker, RuleStore, AppRecordStore, ShadowEntryStore) {
         let ruleDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: ruleDb)
 
@@ -233,10 +308,22 @@ struct AutotrackerTests {
         // leak across runs (or across parallel tests in the same suite).
         let defaults = UserDefaults(suiteName: "autotracker-test-\(UUID().uuidString)")!
 
+        // Task 7 added a top-level `settings?.rulesEnabled == true` gate to
+        // `evaluate`. Tests must supply a SettingsStore with that flag set
+        // or the gate short-circuits and no rules fire. We construct a
+        // real SettingsStore (the only constructor it offers) and flip
+        // the relevant flags post-init — it's a @MainActor observable
+        // object with plain `var` properties, so this is safe.
+        let settings = SettingsStore()
+        settings.rulesEnabled = true
+        settings.appRecordingEnabled = true
+        settings.calendarEnabled = calendarEnabled
+
         let engine = Autotracker(
             shadowEntryStore: shadowEntryStore,
             appRecordStore: appRecordStore,
             ruleStore: ruleStore,
+            settings: settings,
             declinedDefaults: defaults
         )
 

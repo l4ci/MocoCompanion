@@ -732,3 +732,25 @@ final class Autotracker {
         atDateFormatter.string(from: date)
     }
 }
+
+#if DEBUG
+extension Autotracker {
+    /// Test-only wrapper around the private `atRuleMatches` overload for
+    /// calendar events. Exposes the matcher so unit tests can exercise it
+    /// without going through the full `evaluate` pipeline. DO NOT use in
+    /// production code.
+    static func _testRuleMatches(_ rule: TrackingRule, event: CalendarEvent) -> Bool {
+        atRuleMatches(rule, event: event)
+    }
+
+    /// Test-only wrapper around the private `atRuleMatches` overload for
+    /// app usage blocks. DO NOT use in production code.
+    static func _testRuleMatches(
+        _ rule: TrackingRule,
+        block: AppUsageBlock,
+        windowTitlesEnabled: Bool
+    ) -> Bool {
+        atRuleMatches(rule, block: block, windowTitlesEnabled: windowTitlesEnabled)
+    }
+}
+#endif
