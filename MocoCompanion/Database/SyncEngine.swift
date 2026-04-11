@@ -138,6 +138,7 @@ actor SyncEngine {
                 serverShadow.startTime = entry.startTime
                 serverShadow.sourceAppBundleId = entry.sourceAppBundleId
                 serverShadow.sourceRuleId = entry.sourceRuleId
+                serverShadow.sourceCalendarEventId = entry.sourceCalendarEventId
                 try await store.insert(serverShadow)
                 pushCount += 1
 

@@ -36,6 +36,14 @@ actor ShadowEntryStore {
             } catch { /* already exists */ }
             database.userVersion = 2
         }
+        if database.userVersion < 3 {
+            // Calendar event origin tracking (local-only metadata). See
+            // ShadowEntry.sourceCalendarEventId for context.
+            do {
+                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_calendar_event_id TEXT")
+            } catch { /* already exists */ }
+            database.userVersion = 3
+        }
     }
 
     private static let createTableSQL = """
@@ -72,7 +80,8 @@ actor ShadowEntryStore {
             server_updated_at TEXT NOT NULL,
             conflict_flag INTEGER NOT NULL DEFAULT 0,
             source_app_bundle_id TEXT,
-            source_rule_id INTEGER
+            source_rule_id INTEGER,
+            source_calendar_event_id TEXT
         )
         """
 
@@ -170,8 +179,9 @@ actor ShadowEntryStore {
             task_id, task_name, task_billable, customer_id, customer_name,
             user_id, user_firstname, user_lastname, hourly_rate, timer_started_at,
             start_time, locked, created_at, updated_at, sync_status, local_updated_at,
-            server_updated_at, conflict_flag, source_app_bundle_id, source_rule_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            server_updated_at, conflict_flag, source_app_bundle_id, source_rule_id,
+            source_calendar_event_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
     private static let updateSQL = """
@@ -184,7 +194,8 @@ actor ShadowEntryStore {
             timer_started_at = ?, start_time = ?, locked = ?, created_at = ?,
             updated_at = ?, sync_status = ?, local_updated_at = ?,
             server_updated_at = ?, conflict_flag = ?,
-            source_app_bundle_id = ?, source_rule_id = ?
+            source_app_bundle_id = ?, source_rule_id = ?,
+            source_calendar_event_id = ?
         WHERE id = ?
         """
 
@@ -198,7 +209,8 @@ actor ShadowEntryStore {
             timer_started_at = ?, start_time = ?, locked = ?, created_at = ?,
             updated_at = ?, sync_status = ?, local_updated_at = ?,
             server_updated_at = ?, conflict_flag = ?,
-            source_app_bundle_id = ?, source_rule_id = ?
+            source_app_bundle_id = ?, source_rule_id = ?,
+            source_calendar_event_id = ?
         WHERE local_id = ?
         """
 
@@ -227,6 +239,7 @@ actor ShadowEntryStore {
             e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
             e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
             e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
+            e.sourceCalendarEventId,
         ]
     }
 
@@ -240,6 +253,7 @@ actor ShadowEntryStore {
             e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
             e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
             e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
+            e.sourceCalendarEventId,
         ]
     }
 
@@ -291,7 +305,8 @@ actor ShadowEntryStore {
             serverUpdatedAt: row["server_updated_at"] as? String ?? "",
             conflictFlag: boolFromRow(row, "conflict_flag"),
             sourceAppBundleId: row["source_app_bundle_id"] as? String,
-            sourceRuleId: (row["source_rule_id"] as? Int64) ?? (row["source_rule_id"] as? Int).map { Int64($0) }
+            sourceRuleId: (row["source_rule_id"] as? Int64) ?? (row["source_rule_id"] as? Int).map { Int64($0) },
+            sourceCalendarEventId: row["source_calendar_event_id"] as? String
         )
     }
 

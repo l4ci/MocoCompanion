@@ -61,6 +61,13 @@ struct ShadowEntry: Sendable, Equatable {
     /// Id of the TrackingRule that created this entry, if any.
     var sourceRuleId: Int64?
 
+    /// When this entry was created from a calendar event (double-click,
+    /// drag-drop of an all-day event, or a calendar-type rule firing),
+    /// this holds the event's `EKEvent.calendarItemIdentifier`. Lets the
+    /// Timeline cross-highlight the originating meeting. Origin-only —
+    /// not sent to Moco on push.
+    var sourceCalendarEventId: String?
+
     /// Whether the timer is currently running on this entry.
     var isTimerRunning: Bool { timerStartedAt != nil }
 
@@ -103,7 +110,8 @@ struct ShadowEntry: Sendable, Equatable {
             serverUpdatedAt: activity.updatedAt,
             conflictFlag: false,
             sourceAppBundleId: nil,
-            sourceRuleId: nil
+            sourceRuleId: nil,
+            sourceCalendarEventId: nil
         )
     }
 
