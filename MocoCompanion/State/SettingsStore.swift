@@ -30,6 +30,10 @@ final class SettingsStore {
         static let autotrackerEnabled = "autotrackerEnabled"
         static let autotrackerRetentionDays = "autotrackerRetentionDays"
         static let autotrackerExcludedApps = "autotrackerExcludedApps"
+        static let calendarEnabled = "calendarEnabled"
+        static let rulesEnabled = "rulesEnabled"
+        static let windowTitleTrackingEnabled = "windowTitleTrackingEnabled"
+        static let selectedCalendarId = "selectedCalendarId"
         static let panelPositionX = "panelPositionX"
         static let panelPositionY = "panelPositionY"
         static let hasSavedPanelPosition = "hasSavedPanelPosition"
@@ -227,6 +231,49 @@ final class SettingsStore {
         autotrackerExcludedApps.removeAll { $0 == bundleId }
     }
 
+    /// Whether the Timeline window shows a calendar column and fetches
+    /// events from the user's selected calendar. Controls EventKit
+    /// permission flow, the column's visibility, and calendar-rule firing.
+    var calendarEnabled: Bool {
+        didSet { Self.save(Key.calendarEnabled, calendarEnabled) }
+    }
+
+    /// Whether any rules fire at all, regardless of source. Gates both
+    /// `app`- and `calendar`-type rules, the "Create rule" context menu
+    /// items, the rule list entry in settings, and the Timeline toolbar's
+    /// "Manage Rules" button.
+    var rulesEnabled: Bool {
+        didSet { Self.save(Key.rulesEnabled, rulesEnabled) }
+    }
+
+    /// Whether Autotracker captures focused-window titles alongside the
+    /// frontmost app bundle. Requires Accessibility permission. Nested
+    /// under `appRecordingEnabled` (no-op when parent is off).
+    var windowTitleTrackingEnabled: Bool {
+        didSet { Self.save(Key.windowTitleTrackingEnabled, windowTitleTrackingEnabled) }
+    }
+
+    /// EKCalendar.calendarIdentifier of the currently chosen calendar.
+    /// Nil when calendar integration is enabled but the user hasn't
+    /// picked one yet (shows "Pick a calendar" placeholder in the column).
+    var selectedCalendarId: String? {
+        didSet {
+            if let id = selectedCalendarId {
+                Self.save(Key.selectedCalendarId, id)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Key.selectedCalendarId)
+            }
+        }
+    }
+
+    /// Canonical name for app-activity recording. Forwards to the
+    /// legacy `autotrackerEnabled` property so existing persisted
+    /// state and call sites keep working during the rename.
+    var appRecordingEnabled: Bool {
+        get { autotrackerEnabled }
+        set { autotrackerEnabled = newValue }
+    }
+
     // MARK: - Preferences: Debug
 
     /// API log level (0=debug, 1=info, 2=warning, 3=error).
@@ -271,6 +318,13 @@ final class SettingsStore {
         self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
         self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
         self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: [])
+        self.calendarEnabled = Self.read(Key.calendarEnabled, default: false)
+        // New users default rules off; existing users who had autotracker on
+        // (= rules were implicitly active) keep them enabled.
+        let existingAutotracker = Self.read(Key.autotrackerEnabled, default: false)
+        self.rulesEnabled = Self.read(Key.rulesEnabled, default: existingAutotracker)
+        self.windowTitleTrackingEnabled = Self.read(Key.windowTitleTrackingEnabled, default: false)
+        self.selectedCalendarId = UserDefaults.standard.string(forKey: Key.selectedCalendarId)
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
@@ -330,6 +384,10 @@ final class SettingsStore {
         autotrackerEnabled = false
         autotrackerRetentionDays = 14
         autotrackerExcludedApps = []
+        calendarEnabled = false
+        rulesEnabled = false
+        windowTitleTrackingEnabled = false
+        selectedCalendarId = nil
 
         Self.logger.info("All app data has been reset")
     }
