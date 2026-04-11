@@ -11,6 +11,9 @@ struct TimelineWindow: View {
     /// Shared undo manager — when non-nil, deletes show a bottom toaster
     /// with an Undo action for 5 seconds before the Moco API call fires.
     var deleteUndoManager: DeleteUndoManager?
+    /// Settings reference for feature flags (e.g. rulesEnabled). Optional
+    /// so test harnesses that don't wire settings still compile.
+    var settings: SettingsStore?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
     @State private var showRuleList = false
@@ -32,12 +35,13 @@ struct TimelineWindow: View {
     }
 
     /// Init with a pre-built ViewModel (allows external date navigation).
-    init(viewModel: TimelineViewModel, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, descriptionRequired: Bool = false, deleteUndoManager: DeleteUndoManager? = nil) {
+    init(viewModel: TimelineViewModel, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, descriptionRequired: Bool = false, deleteUndoManager: DeleteUndoManager? = nil, settings: SettingsStore? = nil) {
         _viewModel = State(initialValue: viewModel)
         self.projectCatalog = projectCatalog
         self.autotracker = autotracker
         self.descriptionRequired = descriptionRequired
         self.deleteUndoManager = deleteUndoManager
+        self.settings = settings
     }
 
     var body: some View {
@@ -110,13 +114,15 @@ struct TimelineWindow: View {
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(viewModel.isRefreshing || viewModel.isSyncing)
             }
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    showRuleList = true
-                } label: {
-                    Image(systemName: "list.bullet")
+            if settings?.rulesEnabled == true {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        showRuleList = true
+                    } label: {
+                        Image(systemName: "list.bullet")
+                    }
+                    .help("Manage Rules")
                 }
-                .help("Manage Rules")
             }
         }
         .sheet(isPresented: $showRuleList) {

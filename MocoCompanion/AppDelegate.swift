@@ -417,13 +417,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             projectCatalog: appState.catalog,
             autotracker: appState.autotracker,
             descriptionRequired: appState.settings.descriptionRequired,
-            deleteUndoManager: appState.deleteUndoManager
+            deleteUndoManager: appState.deleteUndoManager,
+            settings: appState.settings
         )
 
         let hostingView = NSHostingController(rootView: timelineView)
 
         let window = NSWindow(contentViewController: hostingView)
-        window.title = "Autotracker"
+        window.title = String(localized: "timeline.window.title")
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
         window.setContentSize(NSSize(width: 900, height: 700))
         window.center()

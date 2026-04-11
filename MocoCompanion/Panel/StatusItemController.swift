@@ -109,7 +109,7 @@ final class StatusItemController {
         openMocoItem.target = self
         menu.addItem(openMocoItem)
 
-        let autotrackerItem = NSMenuItem(title: String(localized: "menu.autotracker"), action: #selector(menuAutotracker), keyEquivalent: "t")
+        let autotrackerItem = NSMenuItem(title: String(localized: "menu.timeline"), action: #selector(menuAutotracker), keyEquivalent: "t")
         autotrackerItem.target = self
         menu.addItem(autotrackerItem)
 

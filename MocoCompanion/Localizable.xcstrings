@@ -2962,6 +2962,22 @@
         }
       }
     },
+    "menu.timeline" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        }
+      }
+    },
     "menu.newTimer" : {
       "localizations" : {
         "de" : {
@@ -5734,6 +5750,22 @@
       }
     },
     "timeline.tab" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        }
+      }
+    },
+    "timeline.window.title" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
