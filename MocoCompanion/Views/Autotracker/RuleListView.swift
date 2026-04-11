@@ -161,10 +161,15 @@ struct RuleListView: View {
     private func ruleRow(_ rule: TrackingRule) -> some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(rule.name)
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: rule.ruleType == .calendar ? "calendar" : "app.badge")
+                        .font(.system(size: Theme.FontSize.footnote))
+                        .foregroundStyle(theme.textTertiary)
+                    Text(rule.name)
+                        .font(.system(size: Theme.FontSize.body, weight: .medium))
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                }
                 Text("\(rule.projectName) › \(rule.taskName)")
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundStyle(theme.textTertiary)
