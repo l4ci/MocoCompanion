@@ -17,4 +17,9 @@ struct Suggestion: Identifiable, Sendable, Equatable {
     /// into the created ShadowEntry as origin metadata so the timeline
     /// can show it as linked to that recorded activity.
     let appBundleId: String
+    /// When this suggestion was created from a calendar event, the
+    /// event's `calendarItemIdentifier`. Propagated to the resulting
+    /// ShadowEntry's `sourceCalendarEventId` when the suggestion is
+    /// approved.
+    var sourceCalendarEventId: String? = nil
 }

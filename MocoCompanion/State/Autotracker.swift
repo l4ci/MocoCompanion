@@ -291,7 +291,18 @@ final class Autotracker {
 
     // MARK: - Rule Evaluation
 
-    func evaluate(for date: Date, existingEntries: [ShadowEntry], timerRunning: Bool) async {
+    func evaluate(
+        for date: Date,
+        existingEntries: [ShadowEntry],
+        events: [CalendarEvent] = [],
+        timerRunning: Bool
+    ) async {
+        guard settings?.rulesEnabled == true else {
+            Self.atLogger.debug("evaluate skipped — rulesEnabled is false")
+            suggestions = []
+            return
+        }
+
         let dateString = Self.atDateString(from: date)
         loadDeclinedIds(for: dateString)
 
@@ -310,14 +321,18 @@ final class Autotracker {
             return
         }
 
+        let windowTitlesEnabled = settings?.windowTitleTrackingEnabled == true
+
         let records = appRecordStore.records(for: date)
         let blocks = AppUsageBlock.merge(records)
 
         var newSuggestions: [Suggestion] = []
         var entriesCreated = 0
 
+        // MARK: App rule pass
+
         for block in blocks {
-            let matchingRules = rules.filter { Self.atRuleMatches($0, block: block) }
+            let matchingRules = rules.filter { Self.atRuleMatches($0, block: block, windowTitlesEnabled: windowTitlesEnabled) }
 
             for rule in matchingRules {
                 guard let ruleId = rule.id else { continue }
@@ -373,6 +388,91 @@ final class Autotracker {
             }
         }
 
+        // MARK: Calendar rule pass
+        //
+        // Gated on calendarEnabled + non-empty events. Calendar events
+        // only fire rules when the meeting has already started (no
+        // entries for future events), is accepted (declined/tentative
+        // don't auto-create), and is not all-day (all-day events are
+        // shown in the aboveline region, not tracked as entries).
+
+        if settings?.calendarEnabled == true, !events.isEmpty {
+            let calendarRules = rules.filter { $0.ruleType == .calendar }
+            if !calendarRules.isEmpty {
+                let nowDate = clock()
+                for event in events {
+                    guard !event.isAllDay else { continue }
+                    guard event.isAcceptedByUser else { continue }
+                    guard event.startDate <= nowDate else { continue }
+
+                    let matchingRules = calendarRules.filter { Self.atRuleMatches($0, event: event) }
+                    for rule in matchingRules {
+                        guard let ruleId = rule.id else { continue }
+
+                        let startTime = Self.atTimeString(from: event.startDate)
+                        let durationSeconds = max(event.durationMinutes * 60, 60)
+                        let eventDateString = Self.atDateString(from: event.startDate)
+
+                        if Self.atIsDuplicate(rule: rule, startTime: startTime, existingEntries: existingEntries) {
+                            continue
+                        }
+
+                        let resolvedDescription = rule.description.isEmpty ? event.title : rule.description
+
+                        switch rule.mode {
+                        case .create:
+                            if timerRunning {
+                                Self.atLogger.debug("Skipping create-mode calendar rule '\(rule.name)' — timer is running")
+                                continue
+                            }
+                            do {
+                                var entry = Self.atMakeShadowEntry(
+                                    from: rule,
+                                    dateString: eventDateString,
+                                    startTime: startTime,
+                                    durationSeconds: durationSeconds,
+                                    existingEntries: existingEntries,
+                                    sourceAppBundleId: nil,
+                                    sourceCalendarEventId: event.calendarItemIdentifier,
+                                    now: nowDate
+                                )
+                                // If the rule has no description set, fall
+                                // back to the event title so the created
+                                // entry is meaningful at a glance.
+                                if rule.description.isEmpty {
+                                    entry.description = event.title
+                                }
+                                try await shadowEntryStore.insert(entry)
+                                entriesCreated += 1
+                                Self.atLogger.info("Created entry for calendar rule '\(rule.name)' at \(startTime)")
+                            } catch {
+                                Self.atLogger.error("Failed to create entry for calendar rule \(ruleId) at \(startTime): \(error)")
+                            }
+
+                        case .suggest:
+                            let suggestionId = "\(ruleId)-\(startTime)"
+                            if declinedSuggestionIds.contains(suggestionId) { continue }
+                            newSuggestions.append(Suggestion(
+                                id: suggestionId,
+                                ruleId: ruleId,
+                                ruleName: rule.name,
+                                startTime: startTime,
+                                durationSeconds: durationSeconds,
+                                projectId: rule.projectId,
+                                projectName: rule.projectName,
+                                taskId: rule.taskId,
+                                taskName: rule.taskName,
+                                description: resolvedDescription,
+                                appName: event.title,
+                                appBundleId: "",
+                                sourceCalendarEventId: event.calendarItemIdentifier
+                            ))
+                        }
+                    }
+                }
+            }
+        }
+
         suggestions = newSuggestions
         Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
 
@@ -421,7 +521,8 @@ final class Autotracker {
             serverUpdatedAt: nowString,
             conflictFlag: false,
             sourceAppBundleId: suggestion.appBundleId,
-            sourceRuleId: suggestion.ruleId
+            sourceRuleId: suggestion.ruleId,
+            sourceCalendarEventId: suggestion.sourceCalendarEventId
         )
 
         do {
@@ -468,7 +569,8 @@ final class Autotracker {
 
     // MARK: - Rule Matching
 
-    private static func atRuleMatches(_ rule: TrackingRule, block: AppUsageBlock) -> Bool {
+    private static func atRuleMatches(_ rule: TrackingRule, block: AppUsageBlock, windowTitlesEnabled: Bool) -> Bool {
+        guard rule.ruleType == .app else { return false }
         var hasAnyCriterion = false
 
         if let bundleId = rule.appBundleId, !bundleId.isEmpty {
@@ -485,7 +587,27 @@ final class Autotracker {
             }
         }
 
+        if let pattern = rule.windowTitlePattern, !pattern.isEmpty, windowTitlesEnabled {
+            hasAnyCriterion = true
+            // A rule that demands a window title requires the block to
+            // actually have one captured. Feature disabled → rule skipped.
+            guard let title = block.windowTitle, !title.isEmpty else { return false }
+            if !title.localizedCaseInsensitiveContains(pattern) {
+                return false
+            }
+        }
+
         return hasAnyCriterion
+    }
+
+    /// Returns true if `rule` is a calendar-type rule with a non-empty
+    /// `eventTitlePattern` that substring-matches `event.title`
+    /// (case-insensitive). Does NOT check eligibility — `evaluate`
+    /// filters all-day, accepted, and startDate-in-past separately.
+    private static func atRuleMatches(_ rule: TrackingRule, event: CalendarEvent) -> Bool {
+        guard rule.ruleType == .calendar else { return false }
+        guard let pattern = rule.eventTitlePattern, !pattern.isEmpty else { return false }
+        return event.title.localizedCaseInsensitiveContains(pattern)
     }
 
     private static func atIsDuplicate(rule: TrackingRule, startTime: String, existingEntries: [ShadowEntry]) -> Bool {
@@ -505,6 +627,7 @@ final class Autotracker {
         durationSeconds: Int,
         existingEntries: [ShadowEntry],
         sourceAppBundleId: String?,
+        sourceCalendarEventId: String? = nil,
         now: Date
     ) -> ShadowEntry {
         let nowString = ISO8601DateFormatter().string(from: now)
@@ -543,7 +666,8 @@ final class Autotracker {
             serverUpdatedAt: nowString,
             conflictFlag: false,
             sourceAppBundleId: sourceAppBundleId,
-            sourceRuleId: rule.id
+            sourceRuleId: rule.id,
+            sourceCalendarEventId: sourceCalendarEventId
         )
     }
 
