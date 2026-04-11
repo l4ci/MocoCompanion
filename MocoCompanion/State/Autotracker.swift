@@ -354,10 +354,60 @@ final class Autotracker {
 
         var newSuggestions: [Suggestion] = []
         var entriesCreated = 0
+        let nowDate = clock()
 
-        // MARK: App rule pass
+        await atEvaluateAppRules(
+            rules: rules,
+            appUsageBlocks: blocks,
+            existingEntries: existingEntries,
+            windowTitlesEnabled: windowTitlesEnabled,
+            now: nowDate,
+            date: date,
+            dateString: dateString,
+            timerRunning: timerRunning,
+            entriesCreated: &entriesCreated,
+            newSuggestions: &newSuggestions
+        )
 
-        for block in blocks {
+        if settings?.calendarEnabled == true, !events.isEmpty {
+            await atEvaluateCalendarRules(
+                rules: rules,
+                events: events,
+                existingEntries: existingEntries,
+                now: nowDate,
+                timerRunning: timerRunning,
+                entriesCreated: &entriesCreated,
+                newSuggestions: &newSuggestions
+            )
+        }
+
+        suggestions = newSuggestions
+        Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
+
+        if entriesCreated > 0 {
+            await onEntryCreated?()
+        }
+    }
+
+    // MARK: - Rule Evaluation Helpers
+
+    /// Runs the app-block pass of the rule engine. Iterates over
+    /// `appUsageBlocks`, filters `.app`-type rules, dedupes via
+    /// `atIsDuplicate`, and mutates the accumulators for entries
+    /// created or suggestions added. Called from `evaluate()`.
+    private func atEvaluateAppRules(
+        rules: [TrackingRule],
+        appUsageBlocks: [AppUsageBlock],
+        existingEntries: [ShadowEntry],
+        windowTitlesEnabled: Bool,
+        now: Date,
+        date: Date,
+        dateString: String,
+        timerRunning: Bool,
+        entriesCreated: inout Int,
+        newSuggestions: inout [Suggestion]
+    ) async {
+        for block in appUsageBlocks {
             let matchingRules = rules.filter { Self.atRuleMatches($0, block: block, windowTitlesEnabled: windowTitlesEnabled) }
 
             for rule in matchingRules {
@@ -384,7 +434,7 @@ final class Autotracker {
                             durationSeconds: blockDuration,
                             existingEntries: existingEntries,
                             sourceAppBundleId: block.appBundleId,
-                            now: clock()
+                            now: now
                         )
                         try await shadowEntryStore.insert(entry)
                         entriesCreated += 1
@@ -413,97 +463,94 @@ final class Autotracker {
                 }
             }
         }
+    }
 
-        // MARK: Calendar rule pass
-        //
-        // Gated on calendarEnabled + non-empty events. Calendar events
-        // only fire rules when the meeting has already started (no
-        // entries for future events), is accepted (declined/tentative
-        // don't auto-create), and is not all-day (all-day events are
-        // shown in the aboveline region, not tracked as entries).
+    /// Runs the calendar-event pass of the rule engine. Filters
+    /// `.calendar`-type rules, gates each event on isAllDay / acceptance
+    /// / startDate-in-past, dedupes via `atIsDuplicate`, and mutates the
+    /// accumulators. Called from `evaluate()` only when calendarEnabled
+    /// and events is non-empty.
+    private func atEvaluateCalendarRules(
+        rules: [TrackingRule],
+        events: [CalendarEvent],
+        existingEntries: [ShadowEntry],
+        now: Date,
+        timerRunning: Bool,
+        entriesCreated: inout Int,
+        newSuggestions: inout [Suggestion]
+    ) async {
+        let calendarRules = rules.filter { $0.ruleType == .calendar }
+        guard !calendarRules.isEmpty else { return }
 
-        if settings?.calendarEnabled == true, !events.isEmpty {
-            let calendarRules = rules.filter { $0.ruleType == .calendar }
-            if !calendarRules.isEmpty {
-                let nowDate = clock()
-                for event in events {
-                    guard !event.isAllDay else { continue }
-                    guard event.isAcceptedByUser else { continue }
-                    guard event.startDate <= nowDate else { continue }
+        for event in events {
+            guard !event.isAllDay else { continue }
+            guard event.isAcceptedByUser else { continue }
+            guard event.startDate <= now else { continue }
 
-                    let matchingRules = calendarRules.filter { Self.atRuleMatches($0, event: event) }
-                    for rule in matchingRules {
-                        guard let ruleId = rule.id else { continue }
+            let matchingRules = calendarRules.filter { Self.atRuleMatches($0, event: event) }
+            for rule in matchingRules {
+                guard let ruleId = rule.id else { continue }
 
-                        let startTime = Self.atTimeString(from: event.startDate)
-                        let durationSeconds = max(event.durationMinutes * 60, 60)
-                        let eventDateString = Self.atDateString(from: event.startDate)
+                let startTime = Self.atTimeString(from: event.startDate)
+                let durationSeconds = max(event.durationMinutes * 60, 60)
+                let eventDateString = Self.atDateString(from: event.startDate)
 
-                        if Self.atIsDuplicate(rule: rule, startTime: startTime, existingEntries: existingEntries) {
-                            continue
-                        }
+                if Self.atIsDuplicate(rule: rule, startTime: startTime, existingEntries: existingEntries) {
+                    continue
+                }
 
-                        let resolvedDescription = rule.description.isEmpty ? event.title : rule.description
+                let resolvedDescription = rule.description.isEmpty ? event.title : rule.description
 
-                        switch rule.mode {
-                        case .create:
-                            if timerRunning {
-                                Self.atLogger.debug("Skipping create-mode calendar rule '\(rule.name)' — timer is running")
-                                continue
-                            }
-                            do {
-                                var entry = Self.atMakeShadowEntry(
-                                    from: rule,
-                                    dateString: eventDateString,
-                                    startTime: startTime,
-                                    durationSeconds: durationSeconds,
-                                    existingEntries: existingEntries,
-                                    sourceAppBundleId: nil,
-                                    sourceCalendarEventId: event.calendarItemIdentifier,
-                                    now: nowDate
-                                )
-                                // If the rule has no description set, fall
-                                // back to the event title so the created
-                                // entry is meaningful at a glance.
-                                if rule.description.isEmpty {
-                                    entry.description = event.title
-                                }
-                                try await shadowEntryStore.insert(entry)
-                                entriesCreated += 1
-                                Self.atLogger.info("Created entry for calendar rule '\(rule.name)' at \(startTime)")
-                            } catch {
-                                Self.atLogger.error("Failed to create entry for calendar rule \(ruleId) at \(startTime): \(error)")
-                            }
-
-                        case .suggest:
-                            let suggestionId = "\(ruleId)-\(startTime)"
-                            if declinedSuggestionIds.contains(suggestionId) { continue }
-                            newSuggestions.append(Suggestion(
-                                id: suggestionId,
-                                ruleId: ruleId,
-                                ruleName: rule.name,
-                                startTime: startTime,
-                                durationSeconds: durationSeconds,
-                                projectId: rule.projectId,
-                                projectName: rule.projectName,
-                                taskId: rule.taskId,
-                                taskName: rule.taskName,
-                                description: resolvedDescription,
-                                appName: event.title,
-                                appBundleId: nil,
-                                sourceCalendarEventId: event.calendarItemIdentifier
-                            ))
-                        }
+                switch rule.mode {
+                case .create:
+                    if timerRunning {
+                        Self.atLogger.debug("Skipping create-mode calendar rule '\(rule.name)' — timer is running")
+                        continue
                     }
+                    do {
+                        var entry = Self.atMakeShadowEntry(
+                            from: rule,
+                            dateString: eventDateString,
+                            startTime: startTime,
+                            durationSeconds: durationSeconds,
+                            existingEntries: existingEntries,
+                            sourceAppBundleId: nil,
+                            sourceCalendarEventId: event.calendarItemIdentifier,
+                            now: now
+                        )
+                        // If the rule has no description set, fall
+                        // back to the event title so the created
+                        // entry is meaningful at a glance.
+                        if rule.description.isEmpty {
+                            entry.description = event.title
+                        }
+                        try await shadowEntryStore.insert(entry)
+                        entriesCreated += 1
+                        Self.atLogger.info("Created entry for calendar rule '\(rule.name)' at \(startTime)")
+                    } catch {
+                        Self.atLogger.error("Failed to create entry for calendar rule \(ruleId) at \(startTime): \(error)")
+                    }
+
+                case .suggest:
+                    let suggestionId = "\(ruleId)-\(startTime)"
+                    if declinedSuggestionIds.contains(suggestionId) { continue }
+                    newSuggestions.append(Suggestion(
+                        id: suggestionId,
+                        ruleId: ruleId,
+                        ruleName: rule.name,
+                        startTime: startTime,
+                        durationSeconds: durationSeconds,
+                        projectId: rule.projectId,
+                        projectName: rule.projectName,
+                        taskId: rule.taskId,
+                        taskName: rule.taskName,
+                        description: resolvedDescription,
+                        appName: event.title,
+                        appBundleId: nil,
+                        sourceCalendarEventId: event.calendarItemIdentifier
+                    ))
                 }
             }
-        }
-
-        suggestions = newSuggestions
-        Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
-
-        if entriesCreated > 0 {
-            await onEntryCreated?()
         }
     }
 
