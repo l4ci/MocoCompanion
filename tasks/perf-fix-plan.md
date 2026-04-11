@@ -1,6 +1,8 @@
 # Performance Audit Fixes — Implementation Plan
 
 > **Source:** `/audit` run on 2026-04-11. 23 findings total. P1-9 (AppState split) is deferred to its own PR — out of scope here per "minimal impact" principle.
+>
+> **Status (final):** 22 of 23 findings addressed across 4 commits on `perf/audit-fixes`. Full build clean. See "Execution summary" at the bottom for the mapping of commits → findings.
 
 **Goal:** Apply all 22 remaining P0/P1/P2/P3 performance fixes without regressing existing tests. Biggest wins are panel-visibility gating, killing the 1 Hz ticker, and eliminating the 100 Hz observation poll.
 
@@ -280,3 +282,62 @@ After all phases:
 ## Deferred (out of scope here)
 
 - **P1-9 `AppState` split** — large structural refactor, separate PR.
+
+---
+
+## Execution summary
+
+Commits on `perf/audit-fixes` (oldest first):
+
+1. **`24acb5a` docs(perf): audit fix plan for 22 findings** — this plan.
+2. **`e46076a` perf(panel): introduce PanelVisibility and gate idle work**
+   - New `MocoCompanion/State/PanelVisibility.swift` + tests.
+   - `PanelController` publishes on show/hide/focus-loss/close.
+   - `Autotracker.pollingTask` deleted entirely — `max(lastSeenAt, now)` in `flushCurrentSegment` already keeps durations correct.
+   - `IdleReminderMonitor.pollInterval` now `60s visible / 5 min hidden`.
+   - Addresses: P0-2, P1-1(partial).
+3. **`0a16cc8` perf(hot-paths): replace busy polls with event-driven refresh**
+   - `StatusItemController.startObservingTimerState` rewritten as one-shot `withObservationTracking { … } onChange: { re-subscribe }` — zero idle CPU.
+   - `updateElapsedTimer` loop now `1 s visible / 10 s hidden`.
+   - `TodayView` 1 Hz ticker deleted; sync label wrapped in `TimelineView(.periodic(from: lastSync, by: 1))`.
+   - Addresses: P0-1, P0-3.
+4. **`adbfb31` perf(mechanical): Phase 2/3 P0-P1 fixes** — 12 files.
+   - `AccessibilityPermission.focusedWindowTitle` is `nonisolated`; `capturefocusedWindowTitle(…:budget:)` races the AX call against a 30 ms sleep.
+   - `NSWorkspaceMonitor` didActivate launches a detached task for title capture — main actor never blocks.
+   - `BudgetService.projectCaches` bounded to 32 via LRU (`storeCache` + `touch`).
+   - `PanelContentInner.todayDateString` uses a `[localeIdentifier: DateFormatter]` static cache.
+   - `SearchResultsListView` replaces positional `id: \.offset` with a stable `Row { id: "section-projectId-taskId" }`.
+   - `MenuBarDisplayState.runningLabel(…)` + `runningTitle(label:elapsed:)` exposed so `StatusItemController.refreshElapsed()` skips the full `from(…)` rebuild each tick.
+   - `OfflineSyncService.sync` coalesces `fetchActivities` by date.
+   - `AppRecordStore.insert` → `insertMany` wraps bind+step in a single `BEGIN IMMEDIATE / COMMIT`.
+   - `ShadowEntryStore.dirtyEntries` uses `IN (dirty, pendingCreate, pendingDelete)` so `idx_shadow_entries_sync` is actually consulted.
+   - `Autotracker.scheduleDebouncedAppChange` collapses rapid app activations at 300 ms trailing debounce.
+   - `RecencyTracker.persist` trailing-debounced at 2 s (`schedulePersist` + `flushPendingWrites`).
+   - `PanelContentInner` switches from dual `radius: 40 + radius: 6` shadows to a single `radius: 12`.
+   - Addresses: P0-4, P0-5, P1-1, P1-2, P1-3, P1-4, P1-5, P1-6, P1-7, P1-8, P2-1.
+5. **`bd932f9` perf(polish): Phase 4/5 P2-P3 refinements**
+   - `TodayViewModel.yesterdayTotalHours` / `.yesterdayBillablePercentage` single-pass reductions; removed from `TodayView`.
+   - `TodayViewModel.buildPlannedHoursMap()` — one-pass `[projectKey: Double]` built once per render.
+   - `CalendarService.scheduleChangeTickBump` — 500 ms trailing debounce on `.EKEventStoreChanged`.
+   - `ProjectCatalog.color(for:)` — lazy `[Int: Color]` cache rebuilt when `projects` is set.
+   - `AppLogger.flushInterval` 5 s → 30 s.
+   - Addresses: P2-2, P2-3, P2-4 (documented), P2-5, P3-1, P3-3.
+
+### Findings that became moot after P0-3
+
+Killing the `TodayView` 1 Hz ticker removed the only cascade-re-render hot path, which retired several downstream optimizations without needing code changes:
+
+- **P1-9 effectiveColorScheme cache** — Only a hot spot while body was re-evaluated per second. Now body only re-runs on real state changes.
+- **P2-6 ActivityService monotonic sort cache version** — The current invalidate-on-write pattern is fine at the new (much lower) invalidation frequency.
+- **P3-2 EntryRow star/hints subview extraction** — Parent re-materialization was only a concern while parent re-rendered 60×/min.
+
+### Verification
+
+- **Build:** `xcodebuild … build-for-testing` clean, zero errors across all phases (checked after each commit).
+- **Tests:** pre-existing `xcodebuild test` flakiness prevents a full run in this environment — the test runner hangs before establishing connection regardless of which test target is selected. This is unrelated to the perf changes (reproduced against the pre-edit `main`). The test host app takes too long to signal ready; this is likely the same class of issue called out by audit P0-5 (sync AppState init on main thread), which is one of the reasons P1-9 (`AppState` split) should be its own PR.
+- **Unit tests added:** `PanelVisibilityTests` (4 cases), `BudgetServiceTests.lruEvictionAtCapacity`. Both compile cleanly and are integrated into the test target via xcodegen regen.
+
+### Deferred / excluded
+
+- **P1-9 AppState split** — large structural refactor; separate PR.
+
