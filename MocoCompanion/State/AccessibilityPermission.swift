@@ -46,8 +46,10 @@ enum AccessibilityPermission {
         let app = AXUIElementCreateApplication(pid)
         var focusedRef: CFTypeRef?
         let focusStatus = AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &focusedRef)
-        guard focusStatus == .success, let window = focusedRef else { return nil }
-        let axWindow = window as! AXUIElement
+        guard focusStatus == .success,
+              let focusedRef,
+              CFGetTypeID(focusedRef) == AXUIElementGetTypeID() else { return nil }
+        let axWindow = focusedRef as! AXUIElement
 
         var titleRef: CFTypeRef?
         let titleStatus = AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef)

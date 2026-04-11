@@ -34,11 +34,19 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
     var handler: ((WorkspaceEvent) -> Void)?
     private var observers: [NSObjectProtocol] = []
 
+    /// Closure reporting whether window-title capture is currently enabled
+    /// via `SettingsStore.windowTitleTrackingEnabled`. Default returns false
+    /// so titles are NOT captured unless explicitly wired up. Set from
+    /// `Autotracker.init`.
+    var captureWindowTitles: () -> Bool = { false }
+
     var currentFrontmost: (bundleId: String, appName: String, windowTitle: String?)? {
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier,
               let name = app.localizedName else { return nil }
-        let title = AccessibilityPermission.focusedWindowTitle(forProcess: app.processIdentifier)
+        let title: String? = captureWindowTitles()
+            ? AccessibilityPermission.focusedWindowTitle(forProcess: app.processIdentifier)
+            : nil
         return (bundleId, name, title)
     }
 
@@ -53,7 +61,9 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
             let pid = app?.processIdentifier ?? 0
             MainActor.assumeIsolated {
                 guard let self, let bundleId, let name else { return }
-                let title = AccessibilityPermission.focusedWindowTitle(forProcess: pid)
+                let title: String? = self.captureWindowTitles()
+                    ? AccessibilityPermission.focusedWindowTitle(forProcess: pid)
+                    : nil
                 self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: title))
             }
         })
@@ -171,10 +181,17 @@ final class Autotracker {
         self.appRecordStore = appRecordStore
         self.ruleStore = ruleStore
         self.settings = settings
-        self.workspace = workspace ?? NSWorkspaceMonitor()
+        let resolvedWorkspace = workspace ?? NSWorkspaceMonitor()
+        self.workspace = resolvedWorkspace
         self.clock = clock
         self.declinedDefaults = declinedDefaults
         self.recordCount = appRecordStore.recordCount()
+
+        if let ns = resolvedWorkspace as? NSWorkspaceMonitor {
+            ns.captureWindowTitles = { [weak settings] in
+                settings?.windowTitleTrackingEnabled == true
+            }
+        }
 
         self.workspace.handler = { [weak self] event in
             self?.handleWorkspaceEvent(event)
