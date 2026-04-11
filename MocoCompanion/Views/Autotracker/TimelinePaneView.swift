@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Dual-pane timeline layout: time axis + app usage blocks on left, Moco entry blocks on right.
@@ -13,6 +14,11 @@ struct TimelinePaneView: View {
     var descriptionRequired: Bool = false
     @Environment(\.theme) private var theme
     @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)?
+    /// Set alongside `pendingCreation` when the creation sheet is
+    /// triggered by a calendar event (double-click or context menu). Task
+    /// 16's sheet rework will read this to stamp the new entry's
+    /// `sourceCalendarEventId` so the cross-highlight kicks in immediately.
+    @State private var pendingCreationCalendarEventId: String?
     @State private var ruleEditorConfig: RuleEditorConfig?
     @State private var editingEntry: EditingEntryWrapper?
     @State private var entryPendingDelete: ShadowEntry?
@@ -176,9 +182,11 @@ struct TimelinePaneView: View {
                             )
                         }
                         pendingCreation = nil
+                        pendingCreationCalendarEventId = nil
                     },
                     onCancel: {
                         pendingCreation = nil
+                        pendingCreationCalendarEventId = nil
                     }
                 )
             }
@@ -188,7 +196,12 @@ struct TimelinePaneView: View {
     private var showCreationSheet: Binding<Bool> {
         Binding(
             get: { pendingCreation != nil },
-            set: { if !$0 { pendingCreation = nil } }
+            set: {
+                if !$0 {
+                    pendingCreation = nil
+                    pendingCreationCalendarEventId = nil
+                }
+            }
         )
     }
 
@@ -341,18 +354,29 @@ struct TimelinePaneView: View {
                         workdayEndHour: viewModel.workdayEndHour
                     )
 
-                    // Panes
+                    // Panes. Columns render conditionally based on the
+                    // user's settings toggles. The time axis is always
+                    // first; the entry column always fills the
+                    // remainder; optional app-usage and calendar columns
+                    // slot between them, each followed by a divider.
                     HStack(alignment: .top, spacing: 0) {
                         // Time axis
                         TimeAxisView()
 
-                        // App usage column
-                        appUsageColumn
-                            .frame(width: TimelineLayout.appUsagePaneWidth)
+                        // App usage column (optional)
+                        if viewModel.settings?.appRecordingEnabled == true {
+                            appUsageColumn
+                                .frame(width: TimelineLayout.appUsagePaneWidth)
+                            theme.divider
+                                .frame(width: 1, height: TimelineLayout.totalHeight)
+                        }
 
-                        // Column divider
-                        theme.divider
-                            .frame(width: 1, height: TimelineLayout.totalHeight)
+                        // Calendar column (optional)
+                        if viewModel.settings?.calendarEnabled == true {
+                            calendarColumn
+                            theme.divider
+                                .frame(width: 1, height: TimelineLayout.totalHeight)
+                        }
 
                         // Entry column
                         entryColumn
@@ -435,6 +459,84 @@ struct TimelinePaneView: View {
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
+    }
+
+    // MARK: - Calendar Column
+
+    /// Renders timed calendar events from the view model's
+    /// `calendarEventLayouts` using the same cluster/column layout as
+    /// the entry column. All-day events are excluded (they belong in the
+    /// aboveline region, not on the timeline).
+    private var calendarColumn: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(viewModel.calendarEventLayouts) { layout in
+                let availableWidth = TimelineLayout.calendarPaneWidth - 8 // 4pt inset per side
+                let columnWidth = layout.columnCount > 0
+                    ? availableWidth / CGFloat(layout.columnCount)
+                    : availableWidth
+                let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
+                CalendarEventBlockView(
+                    event: layout.event,
+                    isSelected: false, // no first-class selection for calendar blocks yet
+                    isLinked: viewModel.isEventLinkedToEntry(layout.event),
+                    onCreateEntry: {
+                        openCreationSheetForEvent(layout.event)
+                    },
+                    onCreateRule: {
+                        openRuleEditorForEvent(layout.event)
+                    },
+                    onOpenInCalendar: {
+                        openInCalendarApp(layout.event)
+                    }
+                )
+                .frame(width: max(columnWidth - gap, 14), alignment: .topLeading)
+                .offset(
+                    x: 4 + columnWidth * CGFloat(layout.columnIndex),
+                    y: yOffset(for: layout.event.startDate)
+                )
+            }
+        }
+        .frame(
+            width: TimelineLayout.calendarPaneWidth,
+            height: TimelineLayout.totalHeight,
+            alignment: .topLeading
+        )
+    }
+
+    // MARK: - Calendar Event Actions
+
+    /// Double-click / context-menu "Create entry from event" →
+    /// pre-fills the creation sheet with the event's start/duration and
+    /// title, and stashes the calendar event id so the sheet rework in
+    /// Task 16 can stamp `sourceCalendarEventId` on the new row.
+    private func openCreationSheetForEvent(_ event: CalendarEvent) {
+        guard let startMinutes = event.startMinutes else { return }
+        pendingCreation = (
+            startMinutes: startMinutes,
+            durationMinutes: max(event.durationMinutes, TimelineLayout.snapMinutes),
+            appName: event.title,
+            sourceBundleId: nil
+        )
+        pendingCreationCalendarEventId = event.calendarItemIdentifier
+    }
+
+    /// Context-menu "Create rule from event" → opens the rule editor
+    /// pre-filled as a calendar rule with the event's title as the
+    /// match pattern. The prefill fields are wired here; Task 16 will
+    /// make the sheet honor them in its populate step.
+    private func openRuleEditorForEvent(_ event: CalendarEvent) {
+        ruleEditorConfig = RuleEditorConfig(
+            prefillRuleType: .calendar,
+            prefillEventTitle: event.title
+        )
+    }
+
+    /// Context-menu "Open in Calendar" → hands off to Calendar.app
+    /// using the `ical://ekevent/<id>` URL scheme.
+    private func openInCalendarApp(_ event: CalendarEvent) {
+        if let url = URL(string: "ical://ekevent/\(event.calendarItemIdentifier)") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     // MARK: - Entry Column
@@ -677,6 +779,14 @@ struct RuleEditorConfig: Identifiable {
     let id = UUID()
     var prefillBundleId: String?
     var prefillAppName: String?
+    /// Forces the rule editor into a specific rule type (app vs
+    /// calendar) when opening from a source that already knows which
+    /// one applies — e.g. the calendar-column context menu. Task 16
+    /// will make the sheet honor this value.
+    var prefillRuleType: RuleType?
+    /// Event title to seed the calendar rule's match pattern when the
+    /// editor is opened from a calendar event.
+    var prefillEventTitle: String?
 }
 
 /// Tracks the entry column's global Y origin for drag coordinate conversion.
