@@ -482,6 +482,7 @@ struct TimelinePaneView: View {
                     AppUsageBlockView(
                         block: block,
                         isSelected: viewModel.isAppBlockHighlighted(block),
+                        rulesEnabled: viewModel.settings?.rulesEnabled ?? false,
                         onSelect: { shiftHeld in
                             viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
                         },
@@ -552,6 +553,7 @@ struct TimelinePaneView: View {
                         event: layout.event,
                         isSelected: false, // no first-class selection for calendar blocks yet
                         isLinked: viewModel.isEventLinkedToEntry(layout.event),
+                        rulesEnabled: viewModel.settings?.rulesEnabled ?? false,
                         onCreateEntry: {
                             openCreationSheetForEvent(layout.event)
                         },

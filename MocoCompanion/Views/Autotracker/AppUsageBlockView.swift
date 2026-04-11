@@ -6,6 +6,7 @@ import SwiftUI
 struct AppUsageBlockView: View {
     let block: AppUsageBlock
     let isSelected: Bool
+    var rulesEnabled: Bool = true
     var onSelect: (_ shiftHeld: Bool) -> Void = { _ in }
     var onCreateRule: ((_ bundleId: String, _ appName: String) -> Void)?
     var onCreateEntry: ((AppUsageBlock) -> Void)?
@@ -103,8 +104,10 @@ struct AppUsageBlockView: View {
             Button("Create entry from this block…") {
                 onCreateEntry?(block)
             }
-            Button("Create rule for \"\(block.appName)\"…") {
-                onCreateRule?(block.appBundleId, block.appName)
+            if rulesEnabled {
+                Button("Create rule for \"\(block.appName)\"…") {
+                    onCreateRule?(block.appBundleId, block.appName)
+                }
             }
         }
     }

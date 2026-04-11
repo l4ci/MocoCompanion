@@ -9,6 +9,7 @@ struct CalendarEventBlockView: View {
     let event: CalendarEvent
     let isSelected: Bool
     let isLinked: Bool
+    var rulesEnabled: Bool = true
     var onSelect: () -> Void = {}
     var onCreateEntry: () -> Void = {}
     var onCreateRule: () -> Void = {}
@@ -63,7 +64,9 @@ struct CalendarEventBlockView: View {
         .onTapGesture(count: 1) { onSelect() }
         .contextMenu {
             Button(String(localized: "calendar.contextMenu.createEntry")) { onCreateEntry() }
-            Button(String(localized: "calendar.contextMenu.createRule")) { onCreateRule() }
+            if rulesEnabled {
+                Button(String(localized: "calendar.contextMenu.createRule")) { onCreateRule() }
+            }
             Divider()
             Button(String(localized: "calendar.contextMenu.openInCalendar")) { onOpenInCalendar() }
         }
