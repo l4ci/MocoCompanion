@@ -202,11 +202,9 @@ struct TimelinePaneView: View {
                             )
                         }
                         pendingCreation = nil
-                        pendingCreationCalendarEventId = nil
                     },
                     onCancel: {
                         pendingCreation = nil
-                        pendingCreationCalendarEventId = nil
                     }
                 )
             }
@@ -219,7 +217,6 @@ struct TimelinePaneView: View {
             set: {
                 if !$0 {
                     pendingCreation = nil
-                    pendingCreationCalendarEventId = nil
                 }
             }
         )
@@ -248,7 +245,7 @@ struct TimelinePaneView: View {
                 let startMinutes = drag.startMinutes
                 let durationMinutes = drag.durationMinutes
                 viewModel.cancelDragCreation()
-                pendingCreation = (
+                pendingCreation = PendingCreation(
                     startMinutes: startMinutes,
                     durationMinutes: durationMinutes,
                     appName: "",
@@ -503,7 +500,7 @@ struct TimelinePaneView: View {
                             let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
                             let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
                             let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
-                            pendingCreation = (startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
+                            pendingCreation = PendingCreation(startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
                         },
                         onDragStarted: {
                             viewModel.startDragCreation(blockId: block.id)
@@ -513,7 +510,11 @@ struct TimelinePaneView: View {
                             viewModel.updateDragCreation(targetY: localY)
                         },
                         onDragEnded: {
-                            pendingCreation = viewModel.endDragCreation()
+                            if let t = viewModel.endDragCreation() {
+                                pendingCreation = PendingCreation(startMinutes: t.startMinutes, durationMinutes: t.durationMinutes, appName: t.appName, sourceBundleId: t.sourceBundleId)
+                            } else {
+                                pendingCreation = nil
+                            }
                         }
                     )
                     .offset(y: yOffset(for: block.startTime))
@@ -623,13 +624,13 @@ struct TimelinePaneView: View {
     /// Task 16 can stamp `sourceCalendarEventId` on the new row.
     private func openCreationSheetForEvent(_ event: CalendarEvent) {
         guard let startMinutes = event.startMinutes else { return }
-        pendingCreation = (
+        pendingCreation = PendingCreation(
             startMinutes: startMinutes,
             durationMinutes: max(event.durationMinutes, TimelineLayout.snapMinutes),
             appName: event.title,
-            sourceBundleId: nil
+            sourceBundleId: nil,
+            calendarEventId: event.calendarItemIdentifier
         )
-        pendingCreationCalendarEventId = event.calendarItemIdentifier
     }
 
     /// Context-menu "Create rule from event" → opens the rule editor
@@ -742,13 +743,13 @@ struct TimelinePaneView: View {
                     return false
                 }
                 let payload = viewModel.allDayEventDropPayload(event, atStartTime: timeStr)
-                pendingCreation = (
+                pendingCreation = PendingCreation(
                     startMinutes: payload.startMinutes,
                     durationMinutes: payload.durationMinutes,
                     appName: payload.appName,
-                    sourceBundleId: payload.sourceBundleId
+                    sourceBundleId: payload.sourceBundleId,
+                    calendarEventId: payload.calendarEventId
                 )
-                pendingCreationCalendarEventId = payload.calendarEventId
                 return true
             }
 
