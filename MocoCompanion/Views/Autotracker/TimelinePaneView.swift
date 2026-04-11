@@ -13,12 +13,22 @@ struct TimelinePaneView: View {
     let projectCatalog: ProjectCatalog
     var descriptionRequired: Bool = false
     @Environment(\.theme) private var theme
-    @State private var pendingCreation: (startMinutes: Int, durationMinutes: Int, appName: String, sourceBundleId: String?)?
-    /// Set alongside `pendingCreation` when the creation sheet is
-    /// triggered by a calendar event (double-click or context menu). Task
-    /// 16's sheet rework will read this to stamp the new entry's
-    /// `sourceCalendarEventId` so the cross-highlight kicks in immediately.
-    @State private var pendingCreationCalendarEventId: String?
+    /// Encapsulates the pending state for the creation sheet: either a
+    /// fresh drag-to-create gesture or a drop from a calendar event row.
+    /// Always nil when no creation flow is active; setting / clearing
+    /// happens atomically so the sheet can't see a half-populated state.
+    private struct PendingCreation: Equatable {
+        var startMinutes: Int
+        var durationMinutes: Int
+        var appName: String
+        var sourceBundleId: String?
+        /// When the creation was triggered by dragging/clicking a calendar
+        /// event, this carries the event's `calendarItemIdentifier` so the
+        /// resulting ShadowEntry can be stamped with `sourceCalendarEventId`.
+        var calendarEventId: String?
+    }
+
+    @State private var pendingCreation: PendingCreation? = nil
     @State private var ruleEditorConfig: RuleEditorConfig?
     @State private var editingEntry: EditingEntryWrapper?
     @State private var entryPendingDelete: ShadowEntry?
@@ -175,7 +185,7 @@ struct TimelinePaneView: View {
                     projectCatalog: projectCatalog,
                     descriptionRequired: descriptionRequired,
                     onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
-                        let calendarEventId = pendingCreationCalendarEventId
+                        let calendarEventId = pendingCreation?.calendarEventId
                         Task {
                             await viewModel.createEntry(
                                 date: dateStr,
@@ -810,7 +820,7 @@ struct TimelinePaneView: View {
     /// state. The ghost disappears (and the original reappears) only
     /// after the VM mutation completes and the original's entry data
     /// matches the target — so the swap is pixel-identical.
-    private func gesturePreviewBlock(for preview: TimelineViewModel.GesturePreviewState) -> some View {
+    private func gesturePreviewBlock(for preview: TimelineGesturePreview.ActiveState) -> some View {
         let yPos = CGFloat(preview.startMinutes) * TimelineLayout.pixelsPerMinute
         let height = max(CGFloat(preview.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
         let availableWidth = max(entryColumnWidth - 8, 0)

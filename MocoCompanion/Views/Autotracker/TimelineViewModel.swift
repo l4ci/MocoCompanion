@@ -139,29 +139,16 @@ import os
     // MARK: - Gesture Preview (move + resize)
 
     /// Live preview for an in-flight drag-move or edge-resize gesture.
-    /// While non-nil, the EntryBlockView whose key matches
+    /// While active, the EntryBlockView whose key matches the preview's
     /// `entryKey` hides itself and the timeline draws a ghost block at
-    /// these coordinates instead. Modeled after `dragCreationState` for
-    /// empty-area drag-to-create, which never flickered because the
-    /// preview and the final entry are rendered by different views.
-    struct GesturePreviewState: Equatable {
-        let entryKey: String
-        var startMinutes: Int
-        var durationMinutes: Int
-        let columnIndex: Int
-        let columnCount: Int
+    /// the preview coordinates instead.
+    var gesturePreview: TimelineGesturePreview = .init()
 
-        /// Human-friendly duration label for the ghost, e.g. "1h 30min".
-        var durationLabel: String {
-            let h = durationMinutes / 60
-            let m = durationMinutes % 60
-            if h > 0 && m > 0 { return "\(h)h \(m)min" }
-            if h > 0 { return "\(h)h" }
-            return "\(m)min"
-        }
+    /// Convenience accessor kept for views that read individual preview
+    /// fields directly — returns the active state or `nil` when idle.
+    var gesturePreviewState: TimelineGesturePreview.ActiveState? {
+        gesturePreview.activeState
     }
-
-    var gesturePreviewState: GesturePreviewState?
 
     /// Begin a gesture preview for the given entry. Captures the entry's
     /// current column slot so the ghost lines up with its real position
@@ -169,7 +156,7 @@ import os
     func beginGesturePreview(for entry: ShadowEntry, startMinutes: Int, durationMinutes: Int) {
         let key = Self.entryKey(for: entry)
         let layout = positionedEntryLayouts.first { $0.id == key }
-        gesturePreviewState = GesturePreviewState(
+        gesturePreview.begin(
             entryKey: key,
             startMinutes: startMinutes,
             durationMinutes: durationMinutes,
@@ -179,14 +166,11 @@ import os
     }
 
     func updateGesturePreview(startMinutes: Int, durationMinutes: Int) {
-        guard var state = gesturePreviewState else { return }
-        state.startMinutes = startMinutes
-        state.durationMinutes = durationMinutes
-        gesturePreviewState = state
+        gesturePreview.update(startMinutes: startMinutes, durationMinutes: durationMinutes)
     }
 
     func clearGesturePreview() {
-        gesturePreviewState = nil
+        gesturePreview.clear()
     }
 
     // MARK: - Init
