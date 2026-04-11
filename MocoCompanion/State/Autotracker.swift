@@ -8,7 +8,7 @@ import os
 /// or the machine enters/leaves a sleeping state. Production adapter converts
 /// NSWorkspace notifications into these events; tests drive them directly.
 enum WorkspaceEvent: Sendable {
-    case appActivated(bundleId: String, appName: String)
+    case appActivated(bundleId: String, appName: String, windowTitle: String?)
     case sleep
     case wake
 }
@@ -23,7 +23,9 @@ protocol WorkspaceMonitor: AnyObject {
     func start()
     func stop()
     /// The currently-frontmost app, or nil if none / not supported.
-    var currentFrontmost: (bundleId: String, appName: String)? { get }
+    /// `windowTitle` is populated when Accessibility is trusted and the
+    /// frontmost process exposes a focused window; nil otherwise.
+    var currentFrontmost: (bundleId: String, appName: String, windowTitle: String?)? { get }
 }
 
 /// Production `WorkspaceMonitor` that observes NSWorkspace notifications.
@@ -32,11 +34,12 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
     var handler: ((WorkspaceEvent) -> Void)?
     private var observers: [NSObjectProtocol] = []
 
-    var currentFrontmost: (bundleId: String, appName: String)? {
+    var currentFrontmost: (bundleId: String, appName: String, windowTitle: String?)? {
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundleId = app.bundleIdentifier,
               let name = app.localizedName else { return nil }
-        return (bundleId, name)
+        let title = AccessibilityPermission.focusedWindowTitle(forProcess: app.processIdentifier)
+        return (bundleId, name, title)
     }
 
     func start() {
@@ -47,9 +50,11 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             let bundleId = app?.bundleIdentifier
             let name = app?.localizedName
+            let pid = app?.processIdentifier ?? 0
             MainActor.assumeIsolated {
                 guard let self, let bundleId, let name else { return }
-                self.handler?(.appActivated(bundleId: bundleId, appName: name))
+                let title = AccessibilityPermission.focusedWindowTitle(forProcess: pid)
+                self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: title))
             }
         })
         observers.append(ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
@@ -124,6 +129,7 @@ final class Autotracker {
     private struct Segment {
         var bundleId: String
         var appName: String
+        var windowTitle: String?
         var startedAt: Date
         var lastSeenAt: Date
     }
@@ -182,7 +188,7 @@ final class Autotracker {
         isRecording = true
         workspace.start()
         if let frontmost = workspace.currentFrontmost {
-            processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName)
+            processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
         }
         startPolling()
         Self.atLogger.info("Recording started")
@@ -199,8 +205,8 @@ final class Autotracker {
 
     private func handleWorkspaceEvent(_ event: WorkspaceEvent) {
         switch event {
-        case .appActivated(let bundleId, let appName):
-            processAppChange(bundleId: bundleId, appName: appName)
+        case .appActivated(let bundleId, let appName, let windowTitle):
+            processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         case .sleep:
             flushCurrentSegment()
             stopPolling()
@@ -209,7 +215,7 @@ final class Autotracker {
             guard isRecording else { return }
             startPolling()
             if let frontmost = workspace.currentFrontmost {
-                processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName)
+                processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
             Self.atLogger.debug("Resumed after wake/session active")
         }
@@ -217,17 +223,20 @@ final class Autotracker {
 
     // MARK: - Coalescing (internal for testing)
 
-    func processAppChange(bundleId: String, appName: String) {
+    func processAppChange(bundleId: String, appName: String, windowTitle: String? = nil) {
         guard !filteredBundleIds.contains(bundleId) else { return }
         let now = clock()
 
         if currentSegment == nil {
-            currentSegment = Segment(bundleId: bundleId, appName: appName, startedAt: now, lastSeenAt: now)
-        } else if currentSegment!.bundleId == bundleId {
+            currentSegment = Segment(bundleId: bundleId, appName: appName, windowTitle: windowTitle, startedAt: now, lastSeenAt: now)
+        } else if currentSegment!.bundleId == bundleId && currentSegment!.windowTitle == windowTitle {
+            // Same app AND same window title — extend existing segment.
+            // nil == nil counts as equal, so when title capture is
+            // disabled coalescing falls back to bundleId-only.
             currentSegment!.lastSeenAt = now
         } else {
             flushCurrentSegment()
-            currentSegment = Segment(bundleId: bundleId, appName: appName, startedAt: now, lastSeenAt: now)
+            currentSegment = Segment(bundleId: bundleId, appName: appName, windowTitle: windowTitle, startedAt: now, lastSeenAt: now)
         }
 
         currentAppName = appName
@@ -243,7 +252,7 @@ final class Autotracker {
                 timestamp: segment.startedAt,
                 appBundleId: segment.bundleId,
                 appName: segment.appName,
-                windowTitle: nil,
+                windowTitle: segment.windowTitle,
                 durationSeconds: duration
             )
             appRecordStore.insert(record)
