@@ -1,6 +1,32 @@
 import AppKit
 import SwiftUI
 
+// MARK: - Match Criteria Types
+
+private struct AppMatchCriteria {
+    var appBundleId: String = ""
+    var appNamePattern: String = ""
+    var windowTitlePattern: String = ""
+}
+
+private struct CalendarMatchCriteria {
+    var eventTitle: String = ""
+}
+
+private enum RuleMatchCriteria {
+    case app(AppMatchCriteria)
+    case calendar(CalendarMatchCriteria)
+
+    var ruleType: RuleType {
+        switch self {
+        case .app: return .app
+        case .calendar: return .calendar
+        }
+    }
+}
+
+// MARK: - RuleEditorSheet
+
 /// Sheet for creating or editing a TrackingRule. Follows the same pattern
 /// as TimelineEntryCreationSheet — Form-based with project/task search picker.
 struct RuleEditorSheet: View {
@@ -25,11 +51,7 @@ struct RuleEditorSheet: View {
     @Environment(\.theme) private var theme
 
     @State private var name: String = ""
-    @State private var ruleType: RuleType = .app
-    @State private var appBundleId: String = ""
-    @State private var appNamePattern: String = ""
-    @State private var windowTitlePattern: String = ""
-    @State private var eventTitle: String = ""
+    @State private var matchCriteria: RuleMatchCriteria
     @State private var mode: RuleMode = .suggest
     @State private var selectedEntry: SearchEntry?
     @State private var descriptionText: String = ""
@@ -61,15 +83,21 @@ struct RuleEditorSheet: View {
         self.settings = settings
         self.onSave = onSave
 
-        _ruleType = State(
-            initialValue: prefillRuleType ?? existingRule?.ruleType ?? .app
-        )
-        _eventTitle = State(
-            initialValue: prefillEventTitle ?? existingRule?.eventTitlePattern ?? ""
-        )
-        _windowTitlePattern = State(
-            initialValue: existingRule?.windowTitlePattern ?? ""
-        )
+        let resolvedType = prefillRuleType ?? existingRule?.ruleType ?? .app
+        let initialCriteria: RuleMatchCriteria
+        switch resolvedType {
+        case .app:
+            initialCriteria = .app(AppMatchCriteria(
+                appBundleId: prefillBundleId ?? existingRule?.appBundleId ?? "",
+                appNamePattern: prefillAppName ?? existingRule?.appNamePattern ?? "",
+                windowTitlePattern: existingRule?.windowTitlePattern ?? ""
+            ))
+        case .calendar:
+            initialCriteria = .calendar(CalendarMatchCriteria(
+                eventTitle: prefillEventTitle ?? existingRule?.eventTitlePattern ?? ""
+            ))
+        }
+        _matchCriteria = State(initialValue: initialCriteria)
     }
 
     var body: some View {
@@ -108,12 +136,30 @@ struct RuleEditorSheet: View {
     // MARK: - Rule Type Picker
 
     private var ruleTypePicker: some View {
-        Picker(String(localized: "rule.type.label"), selection: $ruleType) {
+        Picker(String(localized: "rule.type.label"), selection: ruleTypeBinding) {
             Text(String(localized: "rule.type.app")).tag(RuleType.app)
             Text(String(localized: "rule.type.calendar")).tag(RuleType.calendar)
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+    }
+
+    /// Binding that maps between the picker's RuleType selection and the
+    /// matchCriteria enum. Switching types replaces the whole enum case,
+    /// discarding the previous branch's state.
+    private var ruleTypeBinding: Binding<RuleType> {
+        Binding(
+            get: { matchCriteria.ruleType },
+            set: { newType in
+                guard newType != matchCriteria.ruleType else { return }
+                switch newType {
+                case .app:
+                    matchCriteria = .app(AppMatchCriteria())
+                case .calendar:
+                    matchCriteria = .calendar(CalendarMatchCriteria())
+                }
+            }
+        )
     }
 
     // MARK: - Match Criteria
@@ -129,9 +175,10 @@ struct RuleEditorSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            if ruleType == .app {
+            switch matchCriteria {
+            case .app:
                 appMatchFields
-            } else {
+            case .calendar:
                 calendarMatchFields
             }
         }
@@ -149,8 +196,10 @@ struct RuleEditorSheet: View {
                     } else {
                         ForEach(runningApps) { app in
                             Button {
-                                appBundleId = app.id
-                                appNamePattern = app.name
+                                setAppCriteria { criteria in
+                                    criteria.appBundleId = app.id
+                                    criteria.appNamePattern = app.name
+                                }
                                 if name.trimmingCharacters(in: .whitespaces).isEmpty {
                                     name = app.name
                                 }
@@ -168,7 +217,7 @@ struct RuleEditorSheet: View {
                         Image(systemName: "app.dashed")
                             .foregroundStyle(theme.textTertiary)
                         Text(appPickerLabel)
-                            .foregroundStyle(appBundleId.isEmpty ? theme.textTertiary : theme.textPrimary)
+                            .foregroundStyle(currentAppBundleId.isEmpty ? theme.textTertiary : theme.textPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.up.chevron.down")
@@ -186,8 +235,8 @@ struct RuleEditorSheet: View {
                 .menuStyle(.borderlessButton)
                 .fixedSize(horizontal: false, vertical: true)
 
-                if !appBundleId.isEmpty {
-                    Text(appBundleId)
+                if !currentAppBundleId.isEmpty {
+                    Text(currentAppBundleId)
                         .font(.system(size: Theme.FontSize.caption, design: .monospaced))
                         .foregroundStyle(theme.textTertiary)
                         .padding(.leading, 2)
@@ -197,7 +246,7 @@ struct RuleEditorSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 TextField(
                     String(localized: "rule.field.windowTitlePattern"),
-                    text: $windowTitlePattern
+                    text: windowTitlePatternBinding
                 )
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
@@ -218,7 +267,7 @@ struct RuleEditorSheet: View {
         VStack(alignment: .leading, spacing: 2) {
             TextField(
                 String(localized: "rule.field.eventTitle"),
-                text: $eventTitle
+                text: eventTitleBinding
             )
             .textFieldStyle(.roundedBorder)
             .font(.system(size: Theme.FontSize.body))
@@ -229,15 +278,54 @@ struct RuleEditorSheet: View {
         }
     }
 
+    // MARK: - Criteria Accessors
+
+    /// The active app bundle ID, or empty string when in calendar mode.
+    private var currentAppBundleId: String {
+        guard case .app(let c) = matchCriteria else { return "" }
+        return c.appBundleId
+    }
+
     /// Label shown in the app picker button.
     private var appPickerLabel: String {
-        if appBundleId.isEmpty {
-            return "Choose running app…"
-        }
-        if !appNamePattern.isEmpty {
-            return appNamePattern
-        }
-        return appBundleId
+        guard case .app(let c) = matchCriteria else { return "Choose running app…" }
+        if c.appBundleId.isEmpty { return "Choose running app…" }
+        if !c.appNamePattern.isEmpty { return c.appNamePattern }
+        return c.appBundleId
+    }
+
+    private var windowTitlePatternBinding: Binding<String> {
+        Binding(
+            get: {
+                guard case .app(let c) = matchCriteria else { return "" }
+                return c.windowTitlePattern
+            },
+            set: { newValue in
+                setAppCriteria { $0.windowTitlePattern = newValue }
+            }
+        )
+    }
+
+    private var eventTitleBinding: Binding<String> {
+        Binding(
+            get: {
+                guard case .calendar(let c) = matchCriteria else { return "" }
+                return c.eventTitle
+            },
+            set: { newValue in
+                if case .calendar(var c) = matchCriteria {
+                    c.eventTitle = newValue
+                    matchCriteria = .calendar(c)
+                }
+            }
+        )
+    }
+
+    /// Mutates the app criteria in-place; no-op when in calendar mode.
+    private func setAppCriteria(_ mutate: (inout AppMatchCriteria) -> Void) {
+        guard case .app(var c) = matchCriteria else { return }
+        mutate(&c)
+        matchCriteria = .app(c)
     }
 
     // MARK: - Action
@@ -331,11 +419,11 @@ struct RuleEditorSheet: View {
     private var isValid: Bool {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty,
               selectedEntry != nil else { return false }
-        switch ruleType {
-        case .app:
-            return !appBundleId.isEmpty || !appNamePattern.isEmpty || !windowTitlePattern.isEmpty
-        case .calendar:
-            return !eventTitle.trimmingCharacters(in: .whitespaces).isEmpty
+        switch matchCriteria {
+        case .app(let app):
+            return !app.appBundleId.isEmpty || !app.appNamePattern.isEmpty || !app.windowTitlePattern.isEmpty
+        case .calendar(let calendar):
+            return !calendar.eventTitle.trimmingCharacters(in: .whitespaces).isEmpty
         }
     }
 
@@ -364,22 +452,26 @@ struct RuleEditorSheet: View {
         )
 
         rule.name = name.trimmingCharacters(in: .whitespaces)
-        rule.ruleType = ruleType
-        // Zero out the branch the user isn't using so stale values from a
-        // previous edit don't leak into matching.
-        switch ruleType {
-        case .app:
-            rule.appBundleId = appBundleId.isEmpty ? nil : appBundleId
-            rule.appNamePattern = appNamePattern.isEmpty ? nil : appNamePattern
-            rule.windowTitlePattern = windowTitlePattern.isEmpty ? nil : windowTitlePattern
+
+        // Populate only the active branch's fields; nil out the other branch
+        // because TrackingRule is a flat struct and we must not leave stale
+        // values from a previous save in the inactive fields.
+        switch matchCriteria {
+        case .app(let app):
+            rule.ruleType = .app
+            rule.appBundleId = app.appBundleId.isEmpty ? nil : app.appBundleId
+            rule.appNamePattern = app.appNamePattern.isEmpty ? nil : app.appNamePattern
+            rule.windowTitlePattern = app.windowTitlePattern.isEmpty ? nil : app.windowTitlePattern
             rule.eventTitlePattern = nil
-        case .calendar:
+        case .calendar(let calendar):
+            rule.ruleType = .calendar
             rule.appBundleId = nil
             rule.appNamePattern = nil
             rule.windowTitlePattern = nil
-            let trimmed = eventTitle.trimmingCharacters(in: .whitespaces)
+            let trimmed = calendar.eventTitle.trimmingCharacters(in: .whitespaces)
             rule.eventTitlePattern = trimmed.isEmpty ? nil : trimmed
         }
+
         rule.mode = mode
         rule.projectId = entry.projectId
         rule.projectName = entry.projectName
@@ -409,32 +501,21 @@ struct RuleEditorSheet: View {
     private func populateFields() {
         if let rule = existingRule {
             name = rule.name
-            appBundleId = rule.appBundleId ?? ""
-            appNamePattern = rule.appNamePattern ?? ""
-            windowTitlePattern = rule.windowTitlePattern ?? ""
-            eventTitle = rule.eventTitlePattern ?? ""
-            ruleType = rule.ruleType
             mode = rule.mode
             descriptionText = rule.description
             enabled = rule.enabled
-            // Pre-select the project/task from the catalog
             selectedEntry = projectCatalog.searchEntries.first {
                 $0.projectId == rule.projectId && $0.taskId == rule.taskId
             }
+            // matchCriteria is already seeded from existingRule in init;
+            // populateFields handles the non-criteria fields only.
         } else {
-            appBundleId = prefillBundleId ?? ""
-            appNamePattern = prefillAppName ?? ""
             if let appName = prefillAppName, !appName.isEmpty {
                 name = appName
             }
-            if let prefilledType = prefillRuleType {
-                ruleType = prefilledType
-            }
-            if let prefilledEvent = prefillEventTitle, !prefilledEvent.isEmpty {
-                eventTitle = prefilledEvent
-                if name.trimmingCharacters(in: .whitespaces).isEmpty {
-                    name = prefilledEvent
-                }
+            if let prefilledEvent = prefillEventTitle, !prefilledEvent.isEmpty,
+               name.trimmingCharacters(in: .whitespaces).isEmpty {
+                name = prefilledEvent
             }
         }
     }
