@@ -105,6 +105,32 @@ struct AppUsageBlock: Identifiable, Sendable {
     /// Other apps briefly used within this block's time window, each with total
     /// duration ≥ `contributionMinDisplaySeconds`, sorted by duration descending.
     let contributingApps: [ContributingApp]
+    /// The title of the focused window from the most recent contributing record
+    /// that had a non-nil title. Nil when window-title tracking was off for the
+    /// entire duration of the block.
+    let windowTitle: String?
+
+    init(
+        id: String,
+        appBundleId: String,
+        appName: String,
+        startTime: Date,
+        endTime: Date,
+        durationSeconds: TimeInterval,
+        recordCount: Int,
+        contributingApps: [ContributingApp],
+        windowTitle: String? = nil
+    ) {
+        self.id = id
+        self.appBundleId = appBundleId
+        self.appName = appName
+        self.startTime = startTime
+        self.endTime = endTime
+        self.durationSeconds = durationSeconds
+        self.recordCount = recordCount
+        self.contributingApps = contributingApps
+        self.windowTitle = windowTitle
+    }
 
     // MARK: - View-ready labels
 
@@ -160,6 +186,8 @@ struct AppUsageBlock: Identifiable, Sendable {
         var workDominantDuration: TimeInterval = 0
         var workContributions: [String: (appName: String, total: TimeInterval)] = [:]
         var workRecordCount: Int = 0
+        // Most recent non-nil window title seen across all records in this block.
+        var workWindowTitle: String? = nil
 
         func flush() {
             guard let bundleId = workBundleId else { return }
@@ -178,13 +206,15 @@ struct AppUsageBlock: Identifiable, Sendable {
                     endTime: workEnd,
                     durationSeconds: totalDuration,
                     recordCount: workRecordCount,
-                    contributingApps: contributing
+                    contributingApps: contributing,
+                    windowTitle: workWindowTitle
                 ))
             }
             workBundleId = nil
             workDominantDuration = 0
             workContributions = [:]
             workRecordCount = 0
+            workWindowTitle = nil
         }
 
         func startWith(_ record: AppRecord) {
@@ -195,6 +225,7 @@ struct AppUsageBlock: Identifiable, Sendable {
             workDominantDuration = record.durationSeconds
             workContributions = [:]
             workRecordCount = 1
+            workWindowTitle = record.windowTitle
         }
 
         for record in sorted {
@@ -219,6 +250,7 @@ struct AppUsageBlock: Identifiable, Sendable {
                 workEnd = max(workEnd, recordEnd)
                 workDominantDuration += record.durationSeconds
                 workRecordCount += 1
+                if let title = record.windowTitle { workWindowTitle = title }
             } else if record.durationSeconds <= interruptionGraceSeconds {
                 // Brief use of another app — absorb as a contribution.
                 workEnd = max(workEnd, recordEnd)
@@ -228,6 +260,7 @@ struct AppUsageBlock: Identifiable, Sendable {
                     total: (existing?.total ?? 0) + record.durationSeconds
                 )
                 workRecordCount += 1
+                if let title = record.windowTitle { workWindowTitle = title }
             } else {
                 // Long interruption — flush and start fresh with this record
                 // as the new dominant.
