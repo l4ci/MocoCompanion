@@ -13,8 +13,6 @@ struct TodayView: View {
     @State private var descriptionDraft = ""
     @State private var hoursDraft = ""
     @State private var refreshId = UUID()
-    /// Ticks every second to update the relative "Xm ago" label.
-    @State private var syncLabelTick = Date()
 
     @FocusState private var listFocused: Bool
     @Environment(\.theme) private var theme
@@ -111,13 +109,6 @@ struct TodayView: View {
                 vm.trackSelectedId()
             }
         }
-        .task {
-            // Tick once per second to keep the relative time label fresh
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                syncLabelTick = Date()
-            }
-        }
         .onAppear {
             refreshId = UUID()
             setFocusAfterDelay($listFocused, to: true)
@@ -212,12 +203,14 @@ struct TodayView: View {
 
     private var syncIndicator: some View {
         HStack(spacing: 4) {
-            // Use syncLabelTick to force re-evaluation every second
-            let _ = syncLabelTick
             if let lastSync = vm.lastSyncedAt {
-                Text(relativeTimeString(since: lastSync))
-                    .font(.system(size: 10 + fontBoost))
-                    .foregroundStyle(theme.textTertiary)
+                // Isolate the per-second tick to this one label. SwiftUI
+                // re-renders only the TimelineView closure, not any parent.
+                TimelineView(.periodic(from: lastSync, by: 1)) { context in
+                    Text(relativeTimeString(from: lastSync, to: context.date))
+                        .font(.system(size: 10 + fontBoost))
+                        .foregroundStyle(theme.textTertiary)
+                }
             }
 
             Button {
@@ -236,8 +229,10 @@ struct TodayView: View {
     }
 
     /// Format a Date into a compact relative string: "now", "30s", "2m", "1h".
-    private func relativeTimeString(since date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
+    /// Accepts an explicit `now` so callers inside a `TimelineView` can pass
+    /// the frame's context date instead of allocating `Date()` every call.
+    private func relativeTimeString(from date: Date, to now: Date = Date()) -> String {
+        let seconds = Int(now.timeIntervalSince(date))
         if seconds < 5 { return String(localized: "sync.now") }
         if seconds < 60 { return "\(seconds)s" }
         let minutes = seconds / 60

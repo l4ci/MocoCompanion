@@ -18,7 +18,6 @@ final class StatusItemController {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
     private var statusMenu: NSMenu?
-    private var observationTask: Task<Void, Never>?
     private var elapsedTimerTask: Task<Void, Never>?
 
     init(timerService: TimerService, appState: AppState, onShowPanel: @escaping () -> Void, onNewTimer: @escaping () -> Void, onShowSettings: @escaping () -> Void, onShowAutotracker: @escaping () -> Void) {
@@ -72,7 +71,6 @@ final class StatusItemController {
     }
 
     func teardown() {
-        observationTask?.cancel()
         elapsedTimerTask?.cancel()
         appearanceObservation?.invalidate()
         appearanceObservation = nil
@@ -185,33 +183,31 @@ final class StatusItemController {
     private var appearanceObservation: NSKeyValueObservation?
 
     private func startObservingTimerState() {
-        observationTask = Task { [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled {
-                // Read state inside withObservationTracking — captures dependencies.
-                // When any tracked property changes, the continuation resumes.
-                let displayState: MenuBarDisplayState = await withCheckedContinuation { continuation in
-                    let state = withObservationTracking {
-                        MenuBarDisplayState.from(
-                            timerState: self.timerService.timerState,
-                            currentActivity: self.timerService.currentActivity,
-                            hasError: self.timerService.lastError != nil
-                        )
-                    } onChange: {
-                        // This fires on the NEXT change — resume to apply it.
-                        // We return the current state and re-enter the loop.
-                    }
-                    continuation.resume(returning: state)
-                }
+        // One-shot observation tracking: read the state, and have `onChange`
+        // re-subscribe for the *next* mutation. No polling loop.
+        observeDisplayStateOnce()
+    }
 
-                guard !Task.isCancelled else { break }
-                self.applyDisplayState(displayState)
-                self.updateElapsedTimer(for: self.timerService.timerState)
-
-                // Yield briefly to avoid tight-looping if onChange fires synchronously.
-                try? await Task.sleep(for: .milliseconds(10))
+    /// Read the current display state inside `withObservationTracking`,
+    /// apply it to the NSStatusItem, and install a one-shot `onChange`
+    /// callback that re-enters this method when any dependency mutates.
+    /// This is the canonical Observation re-subscribe pattern.
+    private func observeDisplayStateOnce() {
+        let state = withObservationTracking {
+            MenuBarDisplayState.from(
+                timerState: timerService.timerState,
+                currentActivity: timerService.currentActivity,
+                hasError: timerService.lastError != nil
+            )
+        } onChange: { [weak self] in
+            // onChange fires from an arbitrary thread; re-enter on main.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.observeDisplayStateOnce()
             }
         }
+        applyDisplayState(state)
+        updateElapsedTimer(for: timerService.timerState)
     }
 
     /// Apply a pure display state to the NSStatusItem. Caches the icon to avoid re-allocation.
@@ -258,7 +254,13 @@ final class StatusItemController {
             guard elapsedTimerTask == nil else { return }
             elapsedTimerTask = Task { [weak self] in
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(1))
+                    // When the panel is hidden, the user isn't staring at a
+                    // fresh HH:MM — 10s precision is plenty for the menu bar
+                    // label. When visible, refresh every second.
+                    let interval: Duration = PanelVisibility.shared.isVisible
+                        ? .seconds(1)
+                        : .seconds(10)
+                    try? await Task.sleep(for: interval)
                     guard !Task.isCancelled else { break }
                     self?.refreshElapsed()
                 }
