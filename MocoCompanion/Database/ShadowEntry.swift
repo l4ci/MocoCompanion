@@ -128,16 +128,15 @@ struct ShadowEntry: Sendable, Equatable {
         )
     }
 
-    /// Extract "HH:mm" time portion from an ISO8601 datetime string.
+    /// Extract "HH:mm" time portion from an ISO8601 datetime string, converted to the
+    /// user's local timezone. Returns nil if the input is nil, unparseable, or the
+    /// calendar components cannot be extracted.
     private static func extractTime(from iso8601: String?) -> String? {
-        guard let iso = iso8601 else { return nil }
-        // ISO8601 format: "2025-06-01T14:30:00Z" or "2025-06-01T14:30:00+02:00"
-        // We need the "HH:mm" portion after 'T'
-        guard let tIndex = iso.firstIndex(of: "T") else { return nil }
-        let timeStart = iso.index(after: tIndex)
-        guard iso.distance(from: timeStart, to: iso.endIndex) >= 5 else { return nil }
-        let timeEnd = iso.index(timeStart, offsetBy: 5)
-        return String(iso[timeStart..<timeEnd])
+        guard let iso = iso8601,
+              let date = DateUtilities.parseISO8601(iso) else { return nil }
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        guard let hour = components.hour, let minute = components.minute else { return nil }
+        return String(format: "%02d:%02d", hour, minute)
     }
 
 }

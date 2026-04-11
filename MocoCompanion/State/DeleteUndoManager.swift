@@ -89,7 +89,12 @@ final class DeleteUndoManager {
             do {
                 try await clientFactory()?.deleteActivity(activityId: activityId)
                 try? await shadowEntryStore.delete(id: activityId)
+            } catch MocoError.notFound {
+                // Server doesn't have it anyway — safe to clear the local tombstone
+                logger.info("Activity \(activityId) already gone from server")
+                try? await shadowEntryStore.delete(id: activityId)
             } catch {
+                // Leave the shadow row as .pendingDelete so the next sync can retry.
                 handleError(error, label: "deleteActivity")
             }
             return
@@ -178,15 +183,15 @@ final class DeleteUndoManager {
         do {
             try await client.deleteActivity(activityId: activityId)
             logger.info("Deleted activity \(activityId) from server")
+            try? await shadowEntryStore.delete(id: activityId)
+        } catch MocoError.notFound {
+            // Server doesn't have it anyway — safe to clear the local tombstone
+            logger.info("Activity \(activityId) already gone from server")
+            try? await shadowEntryStore.delete(id: activityId)
         } catch {
+            // Leave the shadow row as .pendingDelete so the next sync can retry.
             handleError(error, label: "deleteActivity")
         }
-        // Hard-remove the shadow row regardless of API outcome — a 404
-        // means the server already lost the row, so the local tombstone
-        // is also safe to clear. If the delete truly failed the next
-        // full sync will re-pull the row from Moco.
-        try? await shadowEntryStore.delete(id: activityId)
-        // Clear pending if this was the one
         if pendingDelete?.activity.id == activityId {
             pendingDelete = nil
         }

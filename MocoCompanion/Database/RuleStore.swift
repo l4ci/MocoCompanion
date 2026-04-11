@@ -7,7 +7,7 @@ actor RuleStore {
 
     private static let logger = Logger(category: "RuleStore")
 
-    nonisolated(unsafe) private let database: SQLiteDatabase
+    private let database: SQLiteDatabase
 
     init(database: SQLiteDatabase) throws {
         self.database = database

@@ -17,8 +17,8 @@ struct GeneralSettingsTab: View {
                 ))
 
                 Picker(String(localized: "settings.defaultTab"), selection: $settings.defaultTab) {
-                    Text(String(localized: "settings.defaultTab.search")).tag("search")
-                    Text(String(localized: "settings.defaultTab.today")).tag("today")
+                    Text(String(localized: "settings.defaultTab.search")).tag(DefaultTab.search)
+                    Text(String(localized: "settings.defaultTab.today")).tag(DefaultTab.today)
                 }
 
                 Button(String(localized: "settings.resetPosition")) {

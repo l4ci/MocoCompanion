@@ -54,7 +54,7 @@ final class TimerSideEffects {
     /// Timer was paused (API stop, but state stays tracked).
     func onTimerPaused(projectName: String) {
         playSound(.stop)
-        notificationDispatcher.timerPaused(projectName: projectName)
+        notificationDispatcher.timerStopped(projectName: projectName)
     }
 
     /// Timer was resumed.

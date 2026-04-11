@@ -288,7 +288,7 @@ struct QuickEntryStateMachineTests {
     @Test("Submit API failure returns .apiError")
     @MainActor func submitApiFailure() async {
         let cmds = MockQuickEntryCommands()
-        cmds.startTimerResult = .failure(.apiFailure)
+        cmds.startTimerResult = .failure(.apiFailure(.serverError(statusCode: 500, message: "boom")))
         let (sm, _, _) = makeSM(commands: cmds)
 
         sm.selectEntry(makeEntry())

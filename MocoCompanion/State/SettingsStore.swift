@@ -36,6 +36,12 @@ import os
 //
 // (See `rulesEnabled` in `init()` for the canonical example.)
 
+/// The panel tab shown when the panel opens.
+enum DefaultTab: String, CaseIterable, Sendable {
+    case search
+    case today
+}
+
 /// Persists user settings. API key goes to Keychain; other preferences to UserDefaults.
 @Observable
 @MainActor
@@ -143,9 +149,9 @@ final class SettingsStore {
         didSet { Self.save(Key.autoCompleteEnabled, autoCompleteEnabled) }
     }
 
-    /// Default tab when opening the panel: "search" or "today".
-    var defaultTab: String {
-        didSet { Self.save(Key.defaultTab, defaultTab) }
+    /// Default tab when opening the panel.
+    var defaultTab: DefaultTab {
+        didSet { Self.save(Key.defaultTab, defaultTab.rawValue) }
     }
 
     /// Extra font-size boost for entry rows (0–3 points on top of the base size).
@@ -341,7 +347,7 @@ final class SettingsStore {
         self.appearance = Self.read(Key.appearance, default: "auto")
         self.favoritesEnabled = Self.read(Key.favoritesEnabled, default: true)
         self.autoCompleteEnabled = Self.read(Key.autoCompleteEnabled, default: true)
-        self.defaultTab = Self.read(Key.defaultTab, default: "today")
+        self.defaultTab = DefaultTab(rawValue: Self.read(Key.defaultTab, default: "today")) ?? .today
         self.entryFontSizeBoost = Self.read(Key.entryFontSizeBoost, default: 0)
         self.panelPositionX = Self.read(Key.panelPositionX, default: 0.0)
         self.panelPositionY = Self.read(Key.panelPositionY, default: 0.0)
@@ -402,7 +408,7 @@ final class SettingsStore {
         appearance = "auto"
         favoritesEnabled = true
         autoCompleteEnabled = true
-        defaultTab = "today"
+        defaultTab = .today
         entryFontSizeBoost = 0
         hasSavedPanelPosition = false
         panelResetSeconds = 60

@@ -18,7 +18,7 @@ struct PanelContentView: View {
         self.appState = appState
         self.favoritesManager = favoritesManager
         self.onShowAutotracker = onShowAutotracker
-        self._activeTab = State(initialValue: appState.settings.defaultTab == "today" ? .today : .search)
+        self._activeTab = State(initialValue: appState.settings.defaultTab == .today ? .today : .search)
     }
 
     enum PanelTab: CaseIterable {

@@ -28,7 +28,7 @@ final class LiveQuickEntryCommands: QuickEntryCommands {
         )
         switch result {
         case .success: return .success(entry.projectName)
-        case .failure: return .failure(.apiFailure)
+        case .failure(let error): return .failure(.apiFailure(error))
         }
     }
 
@@ -43,7 +43,7 @@ final class LiveQuickEntryCommands: QuickEntryCommands {
         case .success:
             let formatted = String(format: "%.1fh", hours)
             return .success("\(entry.projectName) (\(formatted))")
-        case .failure: return .failure(.apiFailure)
+        case .failure(let error): return .failure(.apiFailure(error))
         }
     }
 

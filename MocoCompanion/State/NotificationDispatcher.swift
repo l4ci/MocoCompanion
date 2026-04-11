@@ -129,10 +129,6 @@ extension NotificationDispatcher {
         send(.timerStopped, message: msg)
     }
 
-    func timerPaused(projectName: String) {
-        send(.timerStopped, message: String(localized: "notification.timerStopped") + " " + projectName)
-    }
-
     func timerResumed(projectName: String) {
         send(.timerResumed, message: String(localized: "notification.timerResumed") + " " + projectName)
     }

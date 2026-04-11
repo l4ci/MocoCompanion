@@ -67,13 +67,17 @@ final class PanelController {
 
     private var panel: FloatingPanel?
     private(set) var isVisible = false
-    var appState: AppState?
+    let appState: AppState
 
     /// Timer that resets panel state after hiding (default: 60s from settings).
     private var resetTask: Task<Void, Never>?
 
     private var panelWidth: CGFloat {
-        appState?.settings.panelWidth ?? 520
+        appState.settings.panelWidth
+    }
+
+    init(appState: AppState) {
+        self.appState = appState
     }
 
     /// Callback invoked when the panel should reset to its default tab.
@@ -154,7 +158,7 @@ final class PanelController {
     /// Schedule a state reset after the configured timeout.
     private func scheduleStateReset() {
         resetTask?.cancel()
-        let seconds = appState?.settings.panelResetSeconds ?? 60
+        let seconds = appState.settings.panelResetSeconds
         guard seconds > 0 else { return }
 
         resetTask = Task { [weak self] in
@@ -166,7 +170,7 @@ final class PanelController {
 
     /// Reset the panel to default state (recreate the hosting view).
     private func resetPanelState() {
-        guard let panel, let appState else { return }
+        guard let panel else { return }
         installHostingView(makePanelContentView(), in: panel)
         Self.logger.info("Panel state reset after timeout")
     }
@@ -174,11 +178,6 @@ final class PanelController {
     // MARK: - Private
 
     private func getOrCreatePanel() -> FloatingPanel? {
-        guard let appState else {
-            Self.logger.error("PanelController.appState must be set before showing the panel")
-            return nil
-        }
-
         if let existing = panel {
             return existing
         }
@@ -216,7 +215,7 @@ final class PanelController {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, let panel = self.panel else { return }
-                self.appState?.settings.savePanelPosition(panel.frame.origin)
+                self.appState.settings.savePanelPosition(panel.frame.origin)
             }
         }
 
@@ -224,15 +223,13 @@ final class PanelController {
         return newPanel
     }
 
-    private func installHostingView(_ view: PanelContentView?, in panel: FloatingPanel) {
-        guard let view else { return }
+    private func installHostingView(_ view: PanelContentView, in panel: FloatingPanel) {
         let hostingView = WindowTrackingHostingView(rootView: view)
         hostingView.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hostingView
     }
 
-    private func makePanelContentView() -> PanelContentView? {
-        guard let appState else { return nil }
+    private func makePanelContentView() -> PanelContentView {
         return PanelContentView(
             appState: appState,
             favoritesManager: appState.favoritesManager,
@@ -245,7 +242,7 @@ final class PanelController {
     /// `.preferredColorScheme(.dark)` ineffective for the window chrome and
     /// underlying AppKit rendering context.
     private func updatePanelAppearance(_ panel: FloatingPanel) {
-        guard let setting = appState?.settings.appearance else { return }
+        let setting = appState.settings.appearance
         switch setting {
         case "dark":
             panel.appearance = NSAppearance(named: .darkAqua)
@@ -260,7 +257,8 @@ final class PanelController {
         guard let screen = NSScreen.main else { return }
         let screenFrame = screen.visibleFrame
 
-        if let settings = appState?.settings, settings.hasSavedPanelPosition {
+        let settings = appState.settings
+        if settings.hasSavedPanelPosition {
             // Use saved position, but clamp to visible screen
             let x = max(screenFrame.minX, min(screenFrame.maxX - panelWidth, settings.panelPositionX))
             let y = max(screenFrame.minY, min(screenFrame.maxY - 52, settings.panelPositionY))

@@ -292,7 +292,10 @@ final class QuickEntryStateMachine {
             isSubmitting = false
 
             switch result {
-            case .failure:
+            case .failure(let commandError):
+                if case .apiFailure(let mocoError) = commandError {
+                    phase = .error(message: mocoError.errorDescription ?? "Unknown error")
+                }
                 return .apiError
             case .success(let displayName):
                 phase = .success(projectName: displayName)
@@ -304,7 +307,10 @@ final class QuickEntryStateMachine {
             isSubmitting = false
 
             switch result {
-            case .failure:
+            case .failure(let commandError):
+                if case .apiFailure(let mocoError) = commandError {
+                    phase = .error(message: mocoError.errorDescription ?? "Unknown error")
+                }
                 return .apiError
             case .success(let displayName):
                 phase = .success(projectName: displayName)

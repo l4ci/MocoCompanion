@@ -9,8 +9,8 @@ import os
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private static let logger = Logger(category: "AppDelegate")
 
-    let panelController = PanelController()
     let appState = AppState()
+    lazy var panelController: PanelController = PanelController(appState: appState)
 
     private var statusItemController: StatusItemController?
     private var hotKey: HotKey?
@@ -50,7 +50,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             await AppLogger.shared.app("Application launched", level: .info, context: "Lifecycle")
         }
 
-        panelController.appState = appState
         panelController.onShowAutotracker = { [weak self] in self?.showAutotrackerWindow() }
         updateHotKey()
         NotificationDispatcher.requestAuthorization()

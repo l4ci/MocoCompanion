@@ -21,7 +21,7 @@ protocol QuickEntryCommands {
 }
 
 enum QuickEntryCommandError: Error {
-    case apiFailure
+    case apiFailure(MocoError)
 }
 
 /// All read-only data sources the quick-entry flow needs.
