@@ -94,171 +94,84 @@ final class AppState {
         )
         self.notificationDispatcher = dispatcher
 
-        // Shared mutable boxes replace the weakSelf pattern.
-        // Services capture these boxes (stable lifetime); AppState pushes updates.
-        let userIdBox = ValueBox<Int?>(nil)
-        let searchEntriesBox = ValueBox<[SearchEntry]>([])
+        // --- Phase 1: Storage ---
+        let storage = Self.buildStorage(settings: settings)
+        self.shadowEntryStore = storage.shadowEntryStore
+        self.syncState = storage.syncState
+        self.syncEngine = storage.syncEngine
+        self._searchEntriesBox = storage.searchEntriesBox
+        self._rateGate = storage.rateGate
 
-        // Shared rate gate — all API calls flow through this to stay within Moco's limits
-        let rateGate = APIRateGate()
-
-        let clientFactory: () -> (any MocoClientProtocol)? = { [weak settings] in
-            guard let settings, settings.isConfigured else { return nil }
-            return MocoClient(subdomain: settings.subdomain, apiKey: settings.apiKey, rateGate: rateGate)
-        }
-
-        let userIdProvider: () -> Int? = { userIdBox.value }
-
-        // Shadow DB + sync engine
-        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("MocoCompanion")
-        try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
-        let db = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
-        let shadowStore = try! ShadowEntryStore(database: db)
-        let sState = SyncState()
-        // SyncEngine is a non-MainActor actor. These closures access @MainActor state
-        // but SyncEngine calls them synchronously from its actor context.
-        // nonisolated(unsafe) suppresses the sending diagnostic — safe because
-        // the closures only read Sendable values (String, Int, Bool) from settings/userIdBox.
-        nonisolated(unsafe) let existingClientFactory = clientFactory
-        nonisolated(unsafe) let existingUserIdProvider = userIdProvider
-        let sEngine = SyncEngine(
-            store: shadowStore,
-            clientFactory: { existingClientFactory() as (any ActivityAPI & TimerAPI)? },
-            userIdProvider: existingUserIdProvider,
-            syncState: sState
+        // --- Phase 2: Domain catalog ---
+        let domain = Self.buildDomain(
+            clientFactory: storage.clientFactory,
+            userIdProvider: storage.userIdProvider,
+            userIdBox: storage.userIdBox
         )
-        self.shadowEntryStore = shadowStore
-        self.syncState = sState
-        self.syncEngine = sEngine
+        self.catalog = domain.projectCatalog
+        self.session = domain.session
+        self.budgetService = domain.budgetService
 
-        // Initialize catalog and session early — Swift requires all `let` properties
-        // to be set before `self` can be captured in closures.
-        let projectCatalog = ProjectCatalog()
-        self.catalog = projectCatalog
-        let sessionMgr = SessionManager(userIdBox: userIdBox)
-        self.session = sessionMgr
-
-        let budgetSvc = BudgetService(
-            clientFactory: clientFactory,
-            userIdProvider: userIdProvider
-        )
-        self.budgetService = budgetSvc
-
-        let sideEffects = TimerSideEffects(
+        // --- Phase 3: Time tracking ---
+        let tracking = Self.buildTracking(
+            clientFactory: storage.clientFactory,
+            userIdProvider: storage.userIdProvider,
             recencyTracker: recencyTracker,
             recentEntriesTracker: recentEntriesTracker,
             descriptionStore: descriptionStore,
             settings: settings,
-            notificationDispatcher: dispatcher,
-            searchEntriesProvider: { searchEntriesBox.value },
-            budgetRefresh: { [weak budgetSvc] projectId in
-                await budgetSvc?.refreshProject(projectId)
-            },
-            budgetStatusProvider: { [weak budgetSvc] projectId, taskId in
-                budgetSvc?.status(projectId: projectId, taskId: taskId) ?? .empty
-            }
+            dispatcher: dispatcher,
+            searchEntriesBox: storage.searchEntriesBox,
+            budgetService: domain.budgetService,
+            shadowEntryStore: storage.shadowEntryStore,
+            syncEngine: storage.syncEngine
         )
+        self.activityService = tracking.activityService
+        self.timerService = tracking.timerService
+        self.planningStore = tracking.planningStore
+        self.deleteUndoManager = tracking.deleteUndoManager
 
-        // Create ActivityService first (TimerService needs it for sync target)
-        let activitySvc = ActivityService(
-            clientFactory: clientFactory,
-            notificationDispatcher: dispatcher,
-            userIdProvider: userIdProvider
+        // --- Phase 4: Monitoring ---
+        let monitoring = Self.buildMonitoring(
+            clientFactory: storage.clientFactory,
+            userIdProvider: storage.userIdProvider,
+            settings: settings,
+            dispatcher: dispatcher,
+            shadowEntryStore: storage.shadowEntryStore,
+            timerService: tracking.timerService,
+            activityService: tracking.activityService,
+            budgetService: domain.budgetService
         )
-        self.activityService = activitySvc
-        activitySvc.syncEngine = sEngine
+        self.monitorEngine = monitoring.monitorEngine
+        self.networkMonitor = monitoring.networkMonitor
+        self.entryQueue = monitoring.entryQueue
+        self.offlineSyncService = monitoring.offlineSyncService
+        self.autotracker = monitoring.autotracker
+        self.yesterdayService = monitoring.yesterdayService
+        self.calendarService = monitoring.calendarService
 
-        // Create TimerService with activity sync target (replaces TimerActivityCoordinator)
-        let timerSvc = TimerService(
-            clientFactory: clientFactory,
-            userIdProvider: userIdProvider,
-            activitySync: activitySvc
-        )
-        self.timerService = timerSvc
-
-        // Wire timer events → side effects
-        timerSvc.onEvent = { [weak sideEffects] event in sideEffects?.handle(event) }
-
-        // Create PlanningStore — owns planning entries, absences, unplanned tasks
-        let planningSvc = PlanningStore(
-            clientFactory: clientFactory,
-            userIdProvider: userIdProvider,
-            todayActivitiesProvider: { [weak activitySvc] in activitySvc?.todayActivities ?? [] }
-        )
-        self.planningStore = planningSvc
-
-        // Create DeleteUndoManager — owns delete lifecycle with undo support
-        let deleteUndo = DeleteUndoManager(
-            clientFactory: clientFactory,
-            activityService: activitySvc,
-            shadowEntryStore: shadowStore,
-            notificationDispatcher: dispatcher
-        )
-        self.deleteUndoManager = deleteUndo
-
-        // Monitor engine — centralized polling, dedup, and dispatch for background monitors
-        let engine = MonitorEngine(dispatcher: dispatcher)
-        self.monitorEngine = engine
-        self.networkMonitor = NetworkMonitor()
-        self.entryQueue = EntryQueue()
-        self.offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
-
-        let recordStore = AppRecordStore()
-        let rulesDb = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
-        let rStore = try! RuleStore(database: rulesDb)
-        self.autotracker = Autotracker(
-            shadowEntryStore: shadowStore,
-            appRecordStore: recordStore,
-            ruleStore: rStore,
-            settings: settings
-        )
+        // --- Wire-ups that cross phase boundaries or capture self ---
 
         // When autotracker creates entries, refresh the Today panel so they appear
-        self.autotracker.onEntryCreated = { [weak activitySvc] in
+        self.autotracker.onEntryCreated = { [weak activitySvc = tracking.activityService] in
             await activitySvc?.refreshTodayStats()
         }
 
         // Keep the search entries box in sync when catalog projects change
-        searchEntriesBox.value = projectCatalog.searchEntries
-
-        engine.register(BudgetDepletionMonitor(
-            timerService: timerSvc,
-            budgetService: budgetSvc
-        ))
-
-        engine.register(IdleReminderMonitor(
-            timerService: timerSvc,
-            activityService: activitySvc,
-            settings: settings
-        ))
+        storage.searchEntriesBox.value = domain.projectCatalog.searchEntries
 
         // Wire delete → timer: stop timer before deleting a timed activity
-        deleteUndo.timerStopProvider = timerSvc
+        tracking.deleteUndoManager.timerStopProvider = tracking.timerService
 
         // Wire usage recording for manual entries (recency, recent entries, descriptions)
-        activitySvc.usageRecorder = sideEffects
-
-        self._searchEntriesBox = searchEntriesBox
-        self._rateGate = rateGate
-
-        // Yesterday service — owns warning state and threshold logic
-        let yesterdaySvc = YesterdayService(
-            settings: settings,
-            clientFactory: clientFactory,
-            userIdProvider: userIdProvider
-        )
-        self.yesterdayService = yesterdaySvc
-        engine.register(yesterdaySvc, immediateFirstCheck: true)
-
-        self.calendarService = CalendarService()
+        tracking.activityService.usageRecorder = tracking.sideEffects
 
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
         // immediately recompute the warning without waiting for the 10-minute poll.
-        activitySvc.yesterdayService = yesterdaySvc
+        tracking.activityService.yesterdayService = monitoring.yesterdayService
 
         // Wire network reconnect: sync queued entries + refresh data
-        networkMonitor.onReconnect = { [weak self] in
+        monitoring.networkMonitor.onReconnect = { [weak self] in
             guard let self else { return }
             await self.fetchSession()
             await self.fetchProjects()
@@ -271,7 +184,7 @@ final class AppState {
         // (see SyncEngine.sync catch block), which is NOT the main actor.
         // Hop to main before touching @MainActor settings — using
         // `assumeIsolated` here would trap.
-        sEngine.onDescriptionRequired = { [weak self] in
+        storage.syncEngine.onDescriptionRequired = { [weak self] in
             Task { @MainActor in
                 guard let self, !self.settings.descriptionRequired else { return }
                 self.settings.descriptionRequired = true
@@ -284,6 +197,232 @@ final class AppState {
     private let _searchEntriesBox: ValueBox<[SearchEntry]>
     /// Shared rate gate for all API calls.
     private let _rateGate: APIRateGate
+
+    // MARK: - Phase Helpers
+
+    private struct StoragePhase {
+        let shadowEntryStore: ShadowEntryStore
+        let syncState: SyncState
+        let syncEngine: SyncEngine
+        let searchEntriesBox: ValueBox<[SearchEntry]>
+        let rateGate: APIRateGate
+        let clientFactory: () -> (any MocoClientProtocol)?
+        let userIdProvider: () -> Int?
+        let userIdBox: ValueBox<Int?>
+    }
+
+    private static func buildStorage(settings: SettingsStore) -> StoragePhase {
+        let userIdBox = ValueBox<Int?>(nil)
+        let searchEntriesBox = ValueBox<[SearchEntry]>([])
+        let rateGate = APIRateGate()
+
+        let clientFactory: () -> (any MocoClientProtocol)? = { [weak settings] in
+            guard let settings, settings.isConfigured else { return nil }
+            return MocoClient(subdomain: settings.subdomain, apiKey: settings.apiKey, rateGate: rateGate)
+        }
+        let userIdProvider: () -> Int? = { userIdBox.value }
+
+        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("MocoCompanion")
+        try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+        let db = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
+        let shadowStore = try! ShadowEntryStore(database: db)
+        let sState = SyncState()
+
+        // SyncEngine is a non-MainActor actor. These closures access @MainActor state
+        // but SyncEngine calls them synchronously from its actor context.
+        // nonisolated(unsafe) suppresses the sending diagnostic — safe because
+        // the closures only read Sendable values (String, Int, Bool) from settings/userIdBox.
+        nonisolated(unsafe) let existingClientFactory = clientFactory
+        nonisolated(unsafe) let existingUserIdProvider = userIdProvider
+        let sEngine = SyncEngine(
+            store: shadowStore,
+            clientFactory: { existingClientFactory() as (any ActivityAPI & TimerAPI)? },
+            userIdProvider: existingUserIdProvider,
+            syncState: sState
+        )
+
+        return StoragePhase(
+            shadowEntryStore: shadowStore,
+            syncState: sState,
+            syncEngine: sEngine,
+            searchEntriesBox: searchEntriesBox,
+            rateGate: rateGate,
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider,
+            userIdBox: userIdBox
+        )
+    }
+
+    private struct DomainPhase {
+        let projectCatalog: ProjectCatalog
+        let session: SessionManager
+        let budgetService: BudgetService
+    }
+
+    private static func buildDomain(
+        clientFactory: @escaping () -> (any MocoClientProtocol)?,
+        userIdProvider: @escaping () -> Int?,
+        userIdBox: ValueBox<Int?>
+    ) -> DomainPhase {
+        // Initialize catalog and session early — Swift requires all `let` properties
+        // to be set before `self` can be captured in closures.
+        let projectCatalog = ProjectCatalog()
+        let sessionMgr = SessionManager(userIdBox: userIdBox)
+        let budgetSvc = BudgetService(
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider
+        )
+        return DomainPhase(projectCatalog: projectCatalog, session: sessionMgr, budgetService: budgetSvc)
+    }
+
+    private struct TrackingPhase {
+        let sideEffects: TimerSideEffects
+        let activityService: ActivityService
+        let timerService: TimerService
+        let planningStore: PlanningStore
+        let deleteUndoManager: DeleteUndoManager
+    }
+
+    private static func buildTracking(
+        clientFactory: @escaping () -> (any MocoClientProtocol)?,
+        userIdProvider: @escaping () -> Int?,
+        recencyTracker: RecencyTracker,
+        recentEntriesTracker: RecentEntriesTracker,
+        descriptionStore: DescriptionStore,
+        settings: SettingsStore,
+        dispatcher: NotificationDispatcher,
+        searchEntriesBox: ValueBox<[SearchEntry]>,
+        budgetService: BudgetService,
+        shadowEntryStore: ShadowEntryStore,
+        syncEngine: SyncEngine
+    ) -> TrackingPhase {
+        let sideEffects = TimerSideEffects(
+            recencyTracker: recencyTracker,
+            recentEntriesTracker: recentEntriesTracker,
+            descriptionStore: descriptionStore,
+            settings: settings,
+            notificationDispatcher: dispatcher,
+            searchEntriesProvider: { searchEntriesBox.value },
+            budgetRefresh: { [weak budgetService] projectId in
+                await budgetService?.refreshProject(projectId)
+            },
+            budgetStatusProvider: { [weak budgetService] projectId, taskId in
+                budgetService?.status(projectId: projectId, taskId: taskId) ?? .empty
+            }
+        )
+
+        // Create ActivityService first (TimerService needs it for sync target)
+        let activitySvc = ActivityService(
+            clientFactory: clientFactory,
+            notificationDispatcher: dispatcher,
+            userIdProvider: userIdProvider
+        )
+        activitySvc.syncEngine = syncEngine
+
+        // Create TimerService with activity sync target (replaces TimerActivityCoordinator)
+        let timerSvc = TimerService(
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider,
+            activitySync: activitySvc
+        )
+
+        // Wire timer events → side effects
+        timerSvc.onEvent = { [weak sideEffects] event in sideEffects?.handle(event) }
+
+        // Create PlanningStore — owns planning entries, absences, unplanned tasks
+        let planningSvc = PlanningStore(
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider,
+            todayActivitiesProvider: { [weak activitySvc] in activitySvc?.todayActivities ?? [] }
+        )
+
+        // Create DeleteUndoManager — owns delete lifecycle with undo support
+        let deleteUndo = DeleteUndoManager(
+            clientFactory: clientFactory,
+            activityService: activitySvc,
+            shadowEntryStore: shadowEntryStore,
+            notificationDispatcher: dispatcher
+        )
+
+        return TrackingPhase(
+            sideEffects: sideEffects,
+            activityService: activitySvc,
+            timerService: timerSvc,
+            planningStore: planningSvc,
+            deleteUndoManager: deleteUndo
+        )
+    }
+
+    private struct MonitoringPhase {
+        let monitorEngine: MonitorEngine
+        let networkMonitor: NetworkMonitor
+        let entryQueue: EntryQueue
+        let offlineSyncService: OfflineSyncService
+        let autotracker: Autotracker
+        let yesterdayService: YesterdayService
+        let calendarService: CalendarService
+    }
+
+    private static func buildMonitoring(
+        clientFactory: @escaping () -> (any MocoClientProtocol)?,
+        userIdProvider: @escaping () -> Int?,
+        settings: SettingsStore,
+        dispatcher: NotificationDispatcher,
+        shadowEntryStore: ShadowEntryStore,
+        timerService: TimerService,
+        activityService: ActivityService,
+        budgetService: BudgetService
+    ) -> MonitoringPhase {
+        // Monitor engine — centralized polling, dedup, and dispatch for background monitors
+        let engine = MonitorEngine(dispatcher: dispatcher)
+        let networkMonitor = NetworkMonitor()
+        let entryQueue = EntryQueue()
+        let offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
+
+        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("MocoCompanion")
+        let recordStore = AppRecordStore()
+        let rulesDb = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
+        let rStore = try! RuleStore(database: rulesDb)
+        let autotracker = Autotracker(
+            shadowEntryStore: shadowEntryStore,
+            appRecordStore: recordStore,
+            ruleStore: rStore,
+            settings: settings
+        )
+
+        engine.register(BudgetDepletionMonitor(
+            timerService: timerService,
+            budgetService: budgetService
+        ))
+
+        engine.register(IdleReminderMonitor(
+            timerService: timerService,
+            activityService: activityService,
+            settings: settings
+        ))
+
+        // Yesterday service — owns warning state and threshold logic
+        let yesterdaySvc = YesterdayService(
+            settings: settings,
+            clientFactory: clientFactory,
+            userIdProvider: userIdProvider
+        )
+        engine.register(yesterdaySvc, immediateFirstCheck: true)
+
+        let calendarService = CalendarService()
+
+        return MonitoringPhase(
+            monitorEngine: engine,
+            networkMonitor: networkMonitor,
+            entryQueue: entryQueue,
+            offlineSyncService: offlineSyncService,
+            autotracker: autotracker,
+            yesterdayService: yesterdaySvc,
+            calendarService: calendarService
+        )
+    }
 
     // MARK: - Delegated Methods
 
