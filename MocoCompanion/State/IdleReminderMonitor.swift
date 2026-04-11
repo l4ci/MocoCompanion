@@ -8,7 +8,16 @@ import os
 @MainActor
 final class IdleReminderMonitor: PollingMonitor {
     let monitorName = "IdleReminder"
-    let pollInterval: Duration = .seconds(60)
+
+    /// Dynamic poll cadence. When the panel is visible, we tick every 60s so
+    /// the idle threshold resolves quickly. When the panel is hidden, bump
+    /// to 5 min — the worst case is that an idle reminder surfaces up to 5 min
+    /// late, which is fine given the 5-min idle threshold itself. The EOD
+    /// check still catches the `hour == hoursEnd` window because any hour is
+    /// at least 60 min wide.
+    var pollInterval: Duration {
+        PanelVisibility.shared.isVisible ? .seconds(60) : .seconds(300)
+    }
 
     private let timerService: TimerService
     private let activityService: ActivityService

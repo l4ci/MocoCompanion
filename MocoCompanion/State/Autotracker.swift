@@ -146,7 +146,6 @@ final class Autotracker {
 
     private var currentSegment: Segment?
     private let coalescingThreshold: TimeInterval = 10.0
-    private var pollingTask: Task<Void, Never>?
 
     private static let systemFilteredBundleIds: Set<String> = [
         "com.apple.loginwindow",
@@ -207,13 +206,11 @@ final class Autotracker {
         if let frontmost = workspace.currentFrontmost {
             processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
         }
-        startPolling()
         Self.atLogger.info("Recording started")
     }
 
     func stop() {
         flushCurrentSegment()
-        stopPolling()
         workspace.stop()
         isRecording = false
         currentAppName = nil
@@ -226,11 +223,9 @@ final class Autotracker {
             processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         case .sleep:
             flushCurrentSegment()
-            stopPolling()
             Self.atLogger.debug("Paused for sleep/session resign")
         case .wake:
             guard isRecording else { return }
-            startPolling()
             if let frontmost = workspace.currentFrontmost {
                 processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
@@ -276,22 +271,6 @@ final class Autotracker {
         }
         recordCount = appRecordStore.recordCount()
         currentSegment = nil
-    }
-
-    private func startPolling() {
-        stopPolling()
-        pollingTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                guard !Task.isCancelled else { break }
-                self?.currentSegment?.lastSeenAt = self?.clock() ?? Date()
-            }
-        }
-    }
-
-    private func stopPolling() {
-        pollingTask?.cancel()
-        pollingTask = nil
     }
 
     // MARK: - App record queries (for TimelineViewModel)

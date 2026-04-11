@@ -143,12 +143,14 @@ final class PanelController {
         NSApp.activate(ignoringOtherApps: true)
 
         isVisible = true
+        PanelVisibility.shared.set(true)
         Self.logger.debug("Panel shown")
     }
 
     func hide() {
         panel?.orderOut(nil)
         isVisible = false
+        PanelVisibility.shared.set(false)
         scheduleStateReset()
         Self.logger.debug("Panel hidden")
     }
@@ -191,6 +193,7 @@ final class PanelController {
         newPanel.onFocusLost = { [weak self] in
             MainActor.assumeIsolated {
                 self?.isVisible = false
+                PanelVisibility.shared.set(false)
                 self?.scheduleStateReset()
             }
         }
@@ -203,6 +206,7 @@ final class PanelController {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.isVisible = false
+                PanelVisibility.shared.set(false)
                 self?.scheduleStateReset()
             }
         }
