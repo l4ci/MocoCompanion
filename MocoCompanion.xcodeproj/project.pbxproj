@@ -152,6 +152,8 @@
 		C45A386412B8D01E4DB25BBB /* ProjectSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04785C855EE4166447EC3C31 /* ProjectSearchField.swift */; };
 		C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AA040396C6E5C43AF2FDB4 /* AppState.swift */; };
 		C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155477772B61048004E7FA09 /* ShadowEntry.swift */; };
+		A33AE250E79A40CC8044629B /* CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852A190FB7EC42AF83AF2E14 /* CalendarService.swift */; };
+		CBAFADF1192A44ECA7F93427 /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7DAA7A38034075BC56996F /* CalendarEvent.swift */; };
 		C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */; };
 		C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */; };
 		CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */; };
@@ -311,6 +313,8 @@
 		8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingHelperTests.swift; sourceTree = "<group>"; };
 		8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsTab.swift; sourceTree = "<group>"; };
 		8D6C9C277EE0CA07087404AE /* EntryBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryBlockView.swift; sourceTree = "<group>"; };
+		852A190FB7EC42AF83AF2E14 /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarService.swift; sourceTree = "<group>"; };
+		0C7DAA7A38034075BC56996F /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
 		8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayService.swift; sourceTree = "<group>"; };
 		8F417899FA33E643E479F268 /* KeyCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCombo.swift; sourceTree = "<group>"; };
 		8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesSettingsTab.swift; sourceTree = "<group>"; };
@@ -490,6 +494,8 @@
 				D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */,
 				52BDDE0ACEE37AEBF21F6F66 /* TimerStopProvider.swift */,
 				4600FE513522EF5A2727F020 /* UpdateChecker.swift */,
+				852A190FB7EC42AF83AF2E14 /* CalendarService.swift */,
+				0C7DAA7A38034075BC56996F /* CalendarEvent.swift */,
 				8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */,
 			);
 			path = State;
@@ -947,6 +953,8 @@
 				8346AB40F0FA5721FEBA4D2C /* ValueBox.swift in Sources */,
 				003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */,
 				129BCB84138D649D7723A2FC /* YesterdayBannerView.swift in Sources */,
+				A33AE250E79A40CC8044629B /* CalendarService.swift in Sources */,
+				CBAFADF1192A44ECA7F93427 /* CalendarEvent.swift in Sources */,
 				C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -34,6 +34,7 @@ final class AppState {
     let autotracker: Autotracker
 
     let yesterdayService: YesterdayService
+    let calendarService: CalendarService
 
     /// Project IDs that are relevant for budget monitoring: today's tracked activities,
     /// today's planned entries, favorites, and recent entries. Much smaller than all
@@ -249,6 +250,8 @@ final class AppState {
         )
         self.yesterdayService = yesterdaySvc
         engine.register(yesterdaySvc, immediateFirstCheck: true)
+
+        self.calendarService = CalendarService()
 
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
         // immediately recompute the warning without waiting for the 10-minute poll.
