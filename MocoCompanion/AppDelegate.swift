@@ -121,6 +121,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             if case .running = await self.timerService.timerState {
                 await self.appState.budgetService.refreshBudgets(projectIds: self.appState.relevantBudgetProjectIds)
             }
+
+            // Calendar fetch + unified rule evaluation for today + yesterday.
+            // Gated so the whole block is a no-op when neither source is active.
+            // Runs outside the Timeline window so a 9:00 meeting gets its entry
+            // by 9:10 at the latest, even with the panel closed.
+            let calendarEnabled = await self.appState.settings.calendarEnabled
+            let appRecordingEnabled = await self.appState.settings.appRecordingEnabled
+            if calendarEnabled || appRecordingEnabled {
+                if calendarEnabled {
+                    _ = await self.appState.calendarService.requestAccessIfNeeded()
+                    if await self.appState.calendarService.hasReadAccess {
+                        await self.appState.calendarService.startObservingChanges()
+                    }
+                }
+
+                let calendarId = await self.appState.settings.selectedCalendarId
+                let todayDate = Calendar.current.startOfDay(for: Date())
+                let todayStr = DateUtilities.dateString(todayDate)
+
+                // Today
+                let todayEvents = await self.appState.calendarService.fetchEvents(for: todayDate, selectedCalendarId: calendarId)
+                let todayExisting = (try? await self.appState.shadowEntryStore.entries(forDate: todayStr)) ?? []
+                await self.appState.autotracker.evaluate(
+                    for: todayDate,
+                    existingEntries: todayExisting,
+                    events: todayEvents,
+                    timerRunning: false
+                )
+
+                // Yesterday (backfill — handles late-evening rule firings from meetings
+                // that straddle midnight, and catches up after a laptop was asleep overnight).
+                if let yesterdayDate = Calendar.current.date(byAdding: .day, value: -1, to: todayDate) {
+                    let yesterdayStr = DateUtilities.dateString(yesterdayDate)
+                    let yEvents = await self.appState.calendarService.fetchEvents(for: yesterdayDate, selectedCalendarId: calendarId)
+                    let yExisting = (try? await self.appState.shadowEntryStore.entries(forDate: yesterdayStr)) ?? []
+                    await self.appState.autotracker.evaluate(
+                        for: yesterdayDate,
+                        existingEntries: yExisting,
+                        events: yEvents,
+                        timerRunning: false
+                    )
+                }
+
+                // Push anything the rules created.
+                do {
+                    try await self.appState.syncEngine.pushDirty()
+                } catch {
+                    logger.error("Background pushDirty failed: \(error.localizedDescription)")
+                }
+            }
+
             logger.info("Background project poll completed")
         }
 
