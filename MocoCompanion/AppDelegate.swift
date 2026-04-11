@@ -142,26 +142,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
                 // Today
                 let todayEvents = await self.appState.calendarService.fetchEvents(for: todayDate, selectedCalendarId: calendarId)
-                let todayExisting = (try? await self.appState.shadowEntryStore.entries(forDate: todayStr)) ?? []
-                await self.appState.autotracker.evaluate(
-                    for: todayDate,
-                    existingEntries: todayExisting,
-                    events: todayEvents,
-                    timerRunning: false
-                )
+                do {
+                    let todayExisting = try await self.appState.shadowEntryStore.entries(forDate: todayStr)
+                    await self.appState.autotracker.evaluate(
+                        for: todayDate,
+                        existingEntries: todayExisting,
+                        events: todayEvents,
+                        timerRunning: false
+                    )
+                } catch {
+                    logger.error("Background rule pass skipped today (\(todayStr)): entries fetch failed: \(error.localizedDescription)")
+                }
 
                 // Yesterday (backfill — handles late-evening rule firings from meetings
                 // that straddle midnight, and catches up after a laptop was asleep overnight).
                 if let yesterdayDate = Calendar.current.date(byAdding: .day, value: -1, to: todayDate) {
                     let yesterdayStr = DateUtilities.dateString(yesterdayDate)
                     let yEvents = await self.appState.calendarService.fetchEvents(for: yesterdayDate, selectedCalendarId: calendarId)
-                    let yExisting = (try? await self.appState.shadowEntryStore.entries(forDate: yesterdayStr)) ?? []
-                    await self.appState.autotracker.evaluate(
-                        for: yesterdayDate,
-                        existingEntries: yExisting,
-                        events: yEvents,
-                        timerRunning: false
-                    )
+                    do {
+                        let yExisting = try await self.appState.shadowEntryStore.entries(forDate: yesterdayStr)
+                        await self.appState.autotracker.evaluate(
+                            for: yesterdayDate,
+                            existingEntries: yExisting,
+                            events: yEvents,
+                            timerRunning: false
+                        )
+                    } catch {
+                        logger.error("Background rule pass skipped yesterday (\(yesterdayStr)): entries fetch failed: \(error.localizedDescription)")
+                    }
                 }
 
                 // Push anything the rules created.
