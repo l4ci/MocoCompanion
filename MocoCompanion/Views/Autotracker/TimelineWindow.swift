@@ -144,8 +144,9 @@ struct TimelineWindow: View {
         }
         .task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                syncLabelTick = Date.now
+                do { try await Task.sleep(for: .seconds(1)) }
+                catch { break }
+                syncLabelTick = .now
             }
         }
         .onChange(of: viewModel.selectedDate) {
