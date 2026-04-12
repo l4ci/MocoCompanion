@@ -78,6 +78,7 @@ final class TodayViewModel {
             await planningStore.refreshAllPlanning()
         case .yesterday:
             await activityService.refreshYesterdayActivities()
+            recomputeYesterdayStats()
         case .tomorrow:
             await planningStore.refreshAllPlanning()
         }
@@ -91,6 +92,7 @@ final class TodayViewModel {
 
     func refreshYesterdayActivities() async {
         await activityService.refreshYesterdayActivities()
+        recomputeYesterdayStats()
     }
 
     func refreshAllPlanning() async {
@@ -161,22 +163,22 @@ final class TodayViewModel {
         return map
     }
 
-    /// Yesterday total hours — precomputed sum over yesterdayActivities so
-    /// the stats footer doesn't re-reduce a ~50-item array on every render.
-    var yesterdayTotalHours: Double {
-        activityService.yesterdayActivities.reduce(0.0) { $0 + $1.hours }
-    }
+    /// Yesterday total hours — cached; recomputed only when yesterdayActivities are refreshed.
+    private(set) var yesterdayTotalHours: Double = 0
 
-    /// Yesterday billable percentage [0, 100].
-    var yesterdayBillablePercentage: Double {
+    /// Yesterday billable percentage [0, 100] — cached; recomputed only when yesterdayActivities are refreshed.
+    private(set) var yesterdayBillablePercentage: Double = 0
+
+    private func recomputeYesterdayStats() {
         let activities = activityService.yesterdayActivities
+        yesterdayTotalHours = activities.reduce(0.0) { $0 + $1.hours }
         var total = 0.0
         var billable = 0.0
         for a in activities {
             total += a.hours
             if a.billable { billable += a.hours }
         }
-        return total > 0 ? (billable / total) * 100 : 0
+        yesterdayBillablePercentage = total > 0 ? (billable / total) * 100 : 0
     }
 
     // MARK: - Forwarded State (TimerService)

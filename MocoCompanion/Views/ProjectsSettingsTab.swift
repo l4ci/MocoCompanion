@@ -34,8 +34,9 @@ struct ProjectsSettingsTab: View {
                             Text(project.customer.name)
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
-                            if !project.tasks.filter(\.active).isEmpty {
-                                Text(project.tasks.filter(\.active).map(\.name).joined(separator: ", "))
+                            let activeTasks = project.tasks.filter(\.active)
+                            if !activeTasks.isEmpty {
+                                Text(activeTasks.map(\.name).joined(separator: ", "))
                                     .font(.system(size: 11))
                                     .foregroundStyle(.tertiary)
                                     .lineLimit(1)

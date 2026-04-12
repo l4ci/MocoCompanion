@@ -7,6 +7,7 @@ import os
 @MainActor
 final class DeleteUndoManager {
     private let logger = Logger(category: "DeleteUndoManager")
+    private static let isoFormatter = ISO8601DateFormatter()
 
     // MARK: - Types
 
@@ -125,7 +126,7 @@ final class DeleteUndoManager {
             }
             var updated = existing
             updated.syncStatus = .pendingDelete
-            updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date.now)
+            updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
             try await shadowEntryStore.update(updated)
             return existing
         } catch {
