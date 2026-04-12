@@ -39,10 +39,10 @@ struct MocoActivity: Codable, Identifiable, Sendable, Equatable {
         hours = try container.decode(Double.self, forKey: .hours)
         seconds = try container.decode(Int.self, forKey: .seconds)
         workedSeconds = try container.decode(Int.self, forKey: .workedSeconds)
-        description = try container.decode(String.self, forKey: .description)
+        description = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
         billed = try container.decode(Bool.self, forKey: .billed)
         billable = try container.decode(Bool.self, forKey: .billable)
-        tag = try container.decode(String.self, forKey: .tag)
+        tag = try container.decodeIfPresent(String.self, forKey: .tag) ?? ""
         project = try container.decode(ActivityProject.self, forKey: .project)
         task = try container.decode(ActivityTask.self, forKey: .task)
         customer = try container.decode(MocoCustomer.self, forKey: .customer)
