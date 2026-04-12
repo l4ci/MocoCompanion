@@ -366,22 +366,10 @@ struct TimelinePaneView: View {
     // MARK: - Batch Approve
 
     private var batchApproveBar: some View {
-        HStack {
-            Spacer()
-            Button {
-                Task { await viewModel.approveAllSuggestions() }
-            } label: {
-                Text("Approve all (\(viewModel.suggestions.count))")
-                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
-                    .foregroundStyle(Color.accentColor)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        BatchApproveBar(
+            count: viewModel.suggestions.count,
+            onApproveAll: { await viewModel.approveAllSuggestions() }
+        )
     }
 
     // MARK: - Scrollable Timeline
@@ -697,7 +685,7 @@ struct TimelinePaneView: View {
 
             // Ghost block during creation drag
             if let drag = viewModel.dragCreationState {
-                ghostBlock(for: drag)
+                GhostBlockView(drag: drag)
             }
 
             // Ghost block for in-flight drag-move / resize on an
@@ -705,7 +693,7 @@ struct TimelinePaneView: View {
             // (dragCreationState) — draws a preview at the gesture
             // target without disturbing the real entry's layout state.
             if let preview = viewModel.gesturePreviewState {
-                gesturePreviewBlock(for: preview)
+                GesturePreviewBlockView(preview: preview, columnWidth: entryColumnWidth)
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
@@ -768,102 +756,6 @@ struct TimelinePaneView: View {
         }
     }
 
-    // MARK: - Ghost Block
-
-    private func ghostBlock(for drag: TimelineViewModel.DragCreationState) -> some View {
-        let yPos = CGFloat(drag.startMinutes) * TimelineLayout.pixelsPerMinute
-        let height = max(CGFloat(drag.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
-        let tint: Color = drag.isOverlapping ? .orange : .accentColor
-        let startLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes)
-        let endLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes + drag.durationMinutes)
-
-        return VStack(alignment: .leading, spacing: 2) {
-            Text("\(startLabel) – \(endLabel)")
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
-                .foregroundStyle(tint)
-            Text(drag.appName)
-                .font(.system(size: Theme.FontSize.caption))
-                .foregroundStyle(tint.opacity(0.8))
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: height)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
-                .strokeBorder(tint.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-        )
-        .offset(y: yPos)
-        .padding(.horizontal, 4)
-        .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.08), value: drag.startMinutes)
-    }
-
-    // MARK: - Gesture Preview Block
-
-    /// Live preview for an in-flight drag-move / edge-resize. Drawn on
-    /// top of the hidden original so the user sees the target
-    /// position/size without touching the original view's layout
-    /// state. The ghost disappears (and the original reappears) only
-    /// after the VM mutation completes and the original's entry data
-    /// matches the target — so the swap is pixel-identical.
-    private func gesturePreviewBlock(for preview: TimelineGesturePreview.ActiveState) -> some View {
-        let yPos = CGFloat(preview.startMinutes) * TimelineLayout.pixelsPerMinute
-        let height = max(CGFloat(preview.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
-        let availableWidth = max(entryColumnWidth - 8, 0)
-        let columnWidth = preview.columnCount > 0
-            ? availableWidth / CGFloat(preview.columnCount)
-            : availableWidth
-        let gap: CGFloat = preview.columnCount > 1 ? 2 : 0
-        let startLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes)
-        let endLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes + preview.durationMinutes)
-        let tint: Color = .accentColor
-
-        return VStack(alignment: .leading, spacing: 2) {
-            Text("\(startLabel) – \(endLabel)")
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
-                .foregroundStyle(tint)
-                .lineLimit(1)
-            Text(preview.durationLabel)
-                .font(.system(size: Theme.FontSize.caption))
-                .foregroundStyle(tint.opacity(0.8))
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .frame(width: max(columnWidth - gap, 14), height: height, alignment: .topLeading)
-        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
-                .strokeBorder(tint.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-        )
-        .offset(
-            x: 4 + columnWidth * CGFloat(preview.columnIndex),
-            y: yPos
-        )
-        .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.08), value: preview.startMinutes)
-        .animation(.easeOut(duration: 0.08), value: preview.durationMinutes)
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Spacer()
-            Image(systemName: "clock")
-                .font(.system(size: Theme.FontSize.largeTitle))
-                .foregroundStyle(theme.textTertiary)
-            Text("No activity for this day")
-                .font(.system(size: Theme.FontSize.body))
-                .foregroundStyle(theme.textSecondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: - Positioning Helpers
 
     private func yOffset(for date: Date) -> CGFloat {
@@ -889,6 +781,124 @@ struct TimelinePaneView: View {
             return String(format: "%dh %02dm", hours, minutes)
         }
         return String(format: "%dm", minutes)
+    }
+}
+
+// MARK: - Ghost Block
+
+private struct GhostBlockView: View {
+    let drag: TimelineViewModel.DragCreationState
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let yPos = CGFloat(drag.startMinutes) * TimelineLayout.pixelsPerMinute
+        let height = max(CGFloat(drag.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
+        let tint: Color = drag.isOverlapping ? .orange : .accentColor
+        let startLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes)
+        let endLabel = TimelineGeometry.timeString(fromMinutes: drag.startMinutes + drag.durationMinutes)
+
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(startLabel) – \(endLabel)")
+                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .foregroundStyle(tint)
+            Text(drag.appName)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(tint.opacity(0.8))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: height)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+                .strokeBorder(tint.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+        )
+        .offset(y: yPos)
+        .padding(.horizontal, 4)
+        .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.08), value: drag.startMinutes)
+    }
+}
+
+// MARK: - Gesture Preview Block
+
+/// Live preview for an in-flight drag-move / edge-resize. Drawn on
+/// top of the hidden original so the user sees the target
+/// position/size without touching the original view's layout
+/// state. The ghost disappears (and the original reappears) only
+/// after the VM mutation completes and the original's entry data
+/// matches the target — so the swap is pixel-identical.
+private struct GesturePreviewBlockView: View {
+    let preview: TimelineGesturePreview.ActiveState
+    let columnWidth: CGFloat
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let yPos = CGFloat(preview.startMinutes) * TimelineLayout.pixelsPerMinute
+        let height = max(CGFloat(preview.durationMinutes) * TimelineLayout.pixelsPerMinute, 12)
+        let availableWidth = max(columnWidth - 8, 0)
+        let colW = preview.columnCount > 0
+            ? availableWidth / CGFloat(preview.columnCount)
+            : availableWidth
+        let gap: CGFloat = preview.columnCount > 1 ? 2 : 0
+        let startLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes)
+        let endLabel = TimelineGeometry.timeString(fromMinutes: preview.startMinutes + preview.durationMinutes)
+        let tint: Color = .accentColor
+
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(startLabel) – \(endLabel)")
+                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+            Text(preview.durationLabel)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(tint.opacity(0.8))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .frame(width: max(colW - gap, 14), height: height, alignment: .topLeading)
+        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+                .strokeBorder(tint.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+        )
+        .offset(
+            x: 4 + colW * CGFloat(preview.columnIndex),
+            y: yPos
+        )
+        .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.08), value: preview.startMinutes)
+        .animation(.easeOut(duration: 0.08), value: preview.durationMinutes)
+    }
+}
+
+// MARK: - Batch Approve Bar
+
+private struct BatchApproveBar: View {
+    let count: Int
+    let onApproveAll: () async -> Void
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button {
+                Task { await onApproveAll() }
+            } label: {
+                Text("Approve all (\(count))")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 }
 
