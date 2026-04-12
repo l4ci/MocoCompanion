@@ -11,7 +11,7 @@ struct AllDayCalendarEventRow: View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 1)
                 .fill(event.color)
-                .frame(width: 3)
+                .frame(width: 3, height: 14)
             Text(event.title)
                 .font(.system(size: Theme.FontSize.caption, weight: .medium))
                 .foregroundStyle(theme.textPrimary)
@@ -21,6 +21,7 @@ struct AllDayCalendarEventRow: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
             theme.surface,
             in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)

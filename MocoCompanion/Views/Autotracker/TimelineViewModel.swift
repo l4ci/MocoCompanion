@@ -116,6 +116,12 @@ import os
     /// any app usage blocks that overlap its time range (and vice versa).
     var selectedEntryKey: String? = nil
 
+    /// The currently selected calendar event, keyed by
+    /// `calendarItemIdentifier`. Nil when no event is selected. Selecting
+    /// a calendar event clears app-block and entry selection so the
+    /// highlight single-sources match app-block selection semantics.
+    var selectedCalendarEventId: String? = nil
+
     // MARK: - Drag Creation State
 
     /// State describing an in-progress creation drag from app usage to entry column.
@@ -465,10 +471,12 @@ import os
                 selectedAppBlockIds = [id]
             }
         }
-        // App-block selection is single-sourced with entry selection —
-        // selecting an app block clears any selected entry.
+        // App-block selection is single-sourced with entry and
+        // calendar-event selection — selecting an app block clears any
+        // other active selection so the accent highlight means one thing.
         if !selectedAppBlockIds.isEmpty {
             selectedEntryKey = nil
+            selectedCalendarEventId = nil
         }
         Self.logger.debug("Selection changed: \(self.selectedAppBlockIds.count) blocks selected")
     }
@@ -501,7 +509,38 @@ import os
         } else {
             selectedEntryKey = key
             selectedAppBlockIds.removeAll()
+            selectedCalendarEventId = nil
         }
+    }
+
+    // MARK: - Calendar Event Selection
+
+    /// Toggle selection for a calendar event. Clicking a selected event
+    /// deselects it; clicking any other event replaces the selection.
+    /// Selection clears app-block and entry selection to keep the
+    /// accent highlight single-sourced across the three columns.
+    func toggleCalendarEventSelection(_ event: CalendarEvent) {
+        let id = event.calendarItemIdentifier
+        if selectedCalendarEventId == id {
+            selectedCalendarEventId = nil
+        } else {
+            selectedCalendarEventId = id
+            selectedAppBlockIds.removeAll()
+            selectedEntryKey = nil
+        }
+    }
+
+    /// True when the event is the user's active selection OR is the
+    /// source of the currently selected entry. Drives the accent border
+    /// on calendar blocks during cross-column highlighting.
+    func isCalendarEventHighlighted(_ event: CalendarEvent) -> Bool {
+        if selectedCalendarEventId == event.calendarItemIdentifier { return true }
+        if let entry = selectedEntry,
+           let sid = entry.sourceCalendarEventId,
+           sid == event.calendarItemIdentifier {
+            return true
+        }
+        return false
     }
 
     func clearEntrySelection() {
@@ -520,6 +559,13 @@ import os
     /// app blocks.
     func isEntryHighlighted(_ entry: ShadowEntry) -> Bool {
         if selectedEntryKey == Self.entryKey(for: entry) { return true }
+        // Cross-highlight from a selected calendar event: entries
+        // created from that event light up so the user can see which
+        // tracked work the meeting produced.
+        if let eventId = selectedCalendarEventId,
+           entry.sourceCalendarEventId == eventId {
+            return true
+        }
         guard !selectedAppBlockIds.isEmpty,
               let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty
         else { return false }

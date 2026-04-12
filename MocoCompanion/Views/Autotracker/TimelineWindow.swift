@@ -93,16 +93,19 @@ struct TimelineWindow: View {
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 let _ = syncLabelTick
-                if let lastSync = viewModel.lastSyncedAt {
-                    Text(Self.relativeTimeString(since: lastSync))
-                        .font(.system(size: Theme.FontSize.footnote))
-                        .foregroundStyle(theme.textTertiary)
-                        .monospacedDigit()
-                } else {
-                    Text(String(localized: "Not synced"))
-                        .font(.system(size: Theme.FontSize.footnote))
-                        .foregroundStyle(theme.textTertiary)
+                Group {
+                    if let lastSync = viewModel.lastSyncedAt {
+                        Text(Self.relativeTimeString(since: lastSync))
+                            .font(.system(size: Theme.FontSize.footnote))
+                            .foregroundStyle(theme.textTertiary)
+                            .monospacedDigit()
+                    } else {
+                        Text(String(localized: "Not synced"))
+                            .font(.system(size: Theme.FontSize.footnote))
+                            .foregroundStyle(theme.textTertiary)
+                    }
                 }
+                .padding(.leading, 8)
             }
             ToolbarItem(placement: .automatic) {
                 Button {

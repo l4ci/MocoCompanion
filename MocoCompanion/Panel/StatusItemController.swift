@@ -206,7 +206,7 @@ final class StatusItemController {
             MenuBarDisplayState.from(
                 timerState: timerService.timerState,
                 currentActivity: timerService.currentActivity,
-                hasError: timerService.lastError != nil
+                hasError: timerService.lastError?.requiresUserReauthentication == true
             )
         } onChange: { [weak self] in
             // onChange fires from an arbitrary thread; re-enter on main.
@@ -274,7 +274,7 @@ final class StatusItemController {
                 let state = MenuBarDisplayState.from(
                     timerState: self.timerService.timerState,
                     currentActivity: self.timerService.currentActivity,
-                    hasError: self.timerService.lastError != nil
+                    hasError: self.timerService.lastError?.requiresUserReauthentication == true
                 )
                 self.applyDisplayState(state)
             }
@@ -323,7 +323,7 @@ final class StatusItemController {
         let displayState = MenuBarDisplayState.from(
             timerState: timerService.timerState,
             currentActivity: timerService.currentActivity,
-            hasError: timerService.lastError != nil
+            hasError: timerService.lastError?.requiresUserReauthentication == true
         )
         button.title = displayState.title
         refreshRunningLabelCache()

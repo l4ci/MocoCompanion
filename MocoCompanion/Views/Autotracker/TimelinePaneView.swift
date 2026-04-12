@@ -58,6 +58,12 @@ struct TimelinePaneView: View {
                 Divider()
             }
 
+            // Column header row — labels the three content columns so
+            // new users can map icons to their meanings. Mirrors the
+            // widths of the scroll content columns below.
+            columnHeaderRow
+            Divider()
+
             // Aboveline region — column-aligned HStack that mirrors the
             // scroll content's column widths. All-day calendar events
             // sit above the calendar column; unassigned Moco entries
@@ -68,11 +74,6 @@ struct TimelinePaneView: View {
                 abovelineRegion
                 Divider()
             }
-
-            // (Column header row removed — the divider between panes
-            // and the icon-led content inside each column carry enough
-            // meaning on their own. The toolbar's refresh button sits in
-            // the window chrome, so no extra header row is needed here.)
 
             // Main timeline scroll area. Always rendered so the entry
             // column remains a valid drop target even on empty days; the
@@ -244,6 +245,43 @@ struct TimelinePaneView: View {
             }
     }
 
+    // MARK: - Column Headers
+
+    /// Compact header row that labels each content column. Widths
+    /// mirror the scroll content's layout so each label sits above
+    /// its column. The time-axis gutter stays unlabeled.
+    private var columnHeaderRow: some View {
+        HStack(alignment: .center, spacing: 0) {
+            Color.clear.frame(width: TimelineLayout.timeAxisWidth)
+
+            if viewModel.settings?.appRecordingEnabled == true {
+                columnHeaderLabel("columnHeader.appActivity")
+                    .frame(width: TimelineLayout.appUsagePaneWidth, alignment: .leading)
+                theme.divider.frame(width: 1, height: 14)
+            }
+
+            if viewModel.settings?.calendarEnabled == true {
+                columnHeaderLabel("columnHeader.calendar")
+                    .frame(width: TimelineLayout.calendarPaneWidth, alignment: .leading)
+                theme.divider.frame(width: 1, height: 14)
+            }
+
+            columnHeaderLabel("columnHeader.trackedEntries")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 6)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func columnHeaderLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+            .foregroundStyle(theme.textTertiary)
+            .textCase(.uppercase)
+            .tracking(0.3)
+            .padding(.horizontal, 8)
+    }
+
     // MARK: - Aboveline Region
 
     /// Column-aligned HStack that mirrors the scroll content's column
@@ -273,6 +311,13 @@ struct TimelinePaneView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .padding(.vertical, 8)
+        // Color.clear spacers above have no intrinsic height; without
+        // this, the HStack reports flexible height and the parent
+        // VStack splits leftover space between it and the scrolling
+        // timeline — ballooning the aboveline region to ~half the
+        // window. fixedSize pins the HStack to the intrinsic height of
+        // its event rows.
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var allDayCalendarColumn: some View {
@@ -540,9 +585,12 @@ struct TimelinePaneView: View {
                     let gap: CGFloat = layout.columnCount > 1 ? 2 : 0
                     CalendarEventBlockView(
                         event: layout.event,
-                        isSelected: false, // no first-class selection for calendar blocks yet
+                        isSelected: viewModel.isCalendarEventHighlighted(layout.event),
                         isLinked: viewModel.isEventLinkedToEntry(layout.event),
                         rulesEnabled: viewModel.settings?.rulesEnabled ?? false,
+                        onSelect: {
+                            viewModel.toggleCalendarEventSelection(layout.event)
+                        },
                         onCreateEntry: {
                             openCreationSheetForEvent(layout.event)
                         },

@@ -67,6 +67,16 @@
         }
       }
     },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
     "%@ tab" : {
 
     },
@@ -111,6 +121,9 @@
       }
     },
     "%@.mocoapp.com" : {
+
+    },
+    "%@h" : {
 
     },
     "%lld" : {
@@ -740,6 +753,70 @@
         }
       }
     },
+    "accessibility.placeholder.denied" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedienungshilfen verweigert — Systemeinstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility denied — open System Settings"
+          }
+        }
+      }
+    },
+    "accessibility.placeholder.grantAccess" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff anfragen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request access"
+          }
+        }
+      }
+    },
+    "accessibility.placeholder.needsPermission" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedienungshilfen-Zugriff gewähren, um Fenstertitel zu erfassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant Accessibility access to capture window titles"
+          }
+        }
+      }
+    },
+    "accessibility.placeholder.openSettings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systemeinstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open System Settings"
+          }
+        }
+      }
+    },
     "Action" : {
 
     },
@@ -856,7 +933,13 @@
         }
       }
     },
+    "Add Rule" : {
+
+    },
     "API Key" : {
+
+    },
+    "Approve" : {
 
     },
     "Approve all (%lld)" : {
@@ -879,6 +962,7 @@
       }
     },
     "autotracker.data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -911,6 +995,7 @@
       }
     },
     "autotracker.enable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1040,6 +1125,7 @@
       }
     },
     "autotracker.status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1067,6 +1153,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stopped"
+          }
+        }
+      }
+    },
+    "Billed — read-only" : {
+
+    },
+    "Booked Entries" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebuchte Einträge"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Booked Entries"
+          }
+        }
+      }
+    },
+    "budget.projectCritical.tooltip" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projektbudget zu über 90% verbraucht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project budget over 90% consumed"
+          }
+        }
+      }
+    },
+    "budget.projectWarning.tooltip" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projektbudget zu über 50% verbraucht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project budget over 50% consumed"
+          }
+        }
+      }
+    },
+    "budget.taskCritical.tooltip" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe hat weniger als 1 Stunde übrig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task has less than 1 hour remaining"
           }
         }
       }
@@ -1215,138 +1369,6 @@
         }
       }
     },
-    "accessibility.placeholder.denied" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bedienungshilfen verweigert — Systemeinstellungen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accessibility denied — open System Settings"
-          }
-        }
-      }
-    },
-    "accessibility.placeholder.grantAccess" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zugriff anfragen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request access"
-          }
-        }
-      }
-    },
-    "accessibility.placeholder.needsPermission" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bedienungshilfen-Zugriff gewähren, um Fenstertitel zu erfassen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grant Accessibility access to capture window titles"
-          }
-        }
-      }
-    },
-    "accessibility.placeholder.openSettings" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Systemeinstellungen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open System Settings"
-          }
-        }
-      }
-    },
-    "Billed — read-only" : {
-
-    },
-    "Booked Entries" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebuchte Einträge"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Booked Entries"
-          }
-        }
-      }
-    },
-    "budget.projectCritical.tooltip" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Projektbudget zu über 90% verbraucht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project budget over 90% consumed"
-          }
-        }
-      }
-    },
-    "budget.projectWarning.tooltip" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Projektbudget zu über 50% verbraucht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project budget over 50% consumed"
-          }
-        }
-      }
-    },
-    "budget.taskCritical.tooltip" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aufgabe hat weniger als 1 Stunde übrig"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Task has less than 1 hour remaining"
-          }
-        }
-      }
-    },
     "Cancel" : {
 
     },
@@ -1373,6 +1395,54 @@
     },
     "Date" : {
 
+    },
+    "columnHeader.appActivity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-Aktivität"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App activity"
+          }
+        }
+      }
+    },
+    "columnHeader.calendar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalender"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "columnHeader.trackedEntries" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeiteinträge"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracked entries"
+          }
+        }
+      }
     },
     "date.today" : {
       "localizations" : {
@@ -1614,6 +1684,9 @@
         }
       }
     },
+    "Decline" : {
+
+    },
     "Delete" : {
 
     },
@@ -1621,6 +1694,9 @@
 
     },
     "Delete entry" : {
+
+    },
+    "Delete Entry" : {
 
     },
     "Delete entry?" : {
@@ -2928,6 +3004,9 @@
         }
       }
     },
+    "Jump to today" : {
+
+    },
     "Linked to recorded activity" : {
 
     },
@@ -2947,6 +3026,7 @@
 
     },
     "menu.autotracker" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2958,22 +3038,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autotracker"
-          }
-        }
-      }
-    },
-    "menu.timeline" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
           }
         }
       }
@@ -3042,6 +3106,22 @@
         }
       }
     },
+    "menu.timeline" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        }
+      }
+    },
     "min" : {
 
     },
@@ -3084,6 +3164,9 @@
       }
     },
     "New Rule" : {
+
+    },
+    "Next Day" : {
 
     },
     "No activity for this day" : {
@@ -3917,7 +4000,7 @@
         }
       }
     },
-    "of %@" : {
+    "of %@h" : {
 
     },
     "offline.banner" : {
@@ -4086,6 +4169,9 @@
         }
       }
     },
+    "Previous Day" : {
+
+    },
     "Project" : {
 
     },
@@ -4160,8 +4246,151 @@
     "Rule name" : {
 
     },
-    "Rules" : {
-
+    "rule.field.eventTitle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminname enthält"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event title contains"
+          }
+        }
+      }
+    },
+    "rule.field.eventTitle.hint" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groß-/Kleinschreibung ignorieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Case-insensitive substring match"
+          }
+        }
+      }
+    },
+    "rule.field.windowTitlePattern" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenstertitel enthält"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window title contains"
+          }
+        }
+      }
+    },
+    "rule.field.windowTitlePattern.disclaimer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Einstellungen 'Fenstertitel erfassen' aktivieren, damit dies greift"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable 'Track window titles' in Settings for this to match"
+          }
+        }
+      }
+    },
+    "rule.section.app" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App abgleichen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match an app"
+          }
+        }
+      }
+    },
+    "rule.section.calendar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalendertermin abgleichen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match a calendar event"
+          }
+        }
+      }
+    },
+    "rule.type.app" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        }
+      }
+    },
+    "rule.type.calendar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalender"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "rule.type.label" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regeltyp"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule type"
+          }
+        }
+      }
     },
     "Save" : {
 
@@ -4329,6 +4558,9 @@
         }
       }
     },
+    "Select date" : {
+
+    },
     "settings.about" : {
       "localizations" : {
         "de" : {
@@ -4474,6 +4706,7 @@
       }
     },
     "settings.autotracker" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5529,6 +5762,9 @@
     "Switch to timer mode" : {
 
     },
+    "Sync with Moco" : {
+
+    },
     "Sync with Moco (⌘R)" : {
 
     },
@@ -5601,57 +5837,6 @@
     },
     "Target Entry" : {
 
-    },
-    "Today" : {
-
-    },
-    "today.noEntries" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keine Einträge heute"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No entries today"
-          }
-        }
-      }
-    },
-    "today.pressTab" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tab drücken zum Suchen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Press Tab to search"
-          }
-        }
-      }
-    },
-    "today.title" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Heute"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today"
-          }
-        }
-      }
     },
     "timeline.calendar.none" : {
       "localizations" : {
@@ -5765,22 +5950,6 @@
         }
       }
     },
-    "timeline.window.title" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timeline"
-          }
-        }
-      }
-    },
     "timeline.toggle.appRecording" : {
       "localizations" : {
         "de" : {
@@ -5845,6 +6014,22 @@
         }
       }
     },
+    "timeline.window.title" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeline"
+          }
+        }
+      }
+    },
     "timeline.windowTitle.notGranted" : {
       "localizations" : {
         "de" : {
@@ -5857,6 +6042,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accessibility access not granted"
+          }
+        }
+      }
+    },
+    "Today" : {
+
+    },
+    "today.noEntries" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Einträge heute"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No entries today"
+          }
+        }
+      }
+    },
+    "today.pressTab" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab drücken zum Suchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Tab to search"
+          }
+        }
+      }
+    },
+    "today.title" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
           }
         }
       }
@@ -5913,6 +6149,7 @@
 
     },
     "Unassigned" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6024,12 +6261,6 @@
     "When" : {
 
     },
-    "Window title matching is not available in sandboxed mode" : {
-
-    },
-    "Window Title Pattern" : {
-
-    },
     "yesterday.hoursIncomplete" : {
       "localizations" : {
         "de" : {
@@ -6105,150 +6336,6 @@
     },
     "Your personal Moco API key from Profile → Integrations" : {
 
-    },
-    "rule.type.label" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regeltyp"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rule type"
-          }
-        }
-      }
-    },
-    "rule.type.app" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App"
-          }
-        }
-      }
-    },
-    "rule.type.calendar" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kalender"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar"
-          }
-        }
-      }
-    },
-    "rule.section.app" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App abgleichen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Match an app"
-          }
-        }
-      }
-    },
-    "rule.section.calendar" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kalendertermin abgleichen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Match a calendar event"
-          }
-        }
-      }
-    },
-    "rule.field.eventTitle" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terminname enthält"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Event title contains"
-          }
-        }
-      }
-    },
-    "rule.field.eventTitle.hint" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Groß-/Kleinschreibung ignorieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Case-insensitive substring match"
-          }
-        }
-      }
-    },
-    "rule.field.windowTitlePattern" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fenstertitel enthält"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Window title contains"
-          }
-        }
-      }
-    },
-    "rule.field.windowTitlePattern.disclaimer" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In Einstellungen 'Fenstertitel erfassen' aktivieren, damit dies greift"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable 'Track window titles' in Settings for this to match"
-          }
-        }
-      }
     }
   },
   "version" : "1.0"

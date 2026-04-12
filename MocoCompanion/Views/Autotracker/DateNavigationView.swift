@@ -14,6 +14,14 @@ struct DateNavigationView: View {
         return f
     }()
 
+    /// "Do., 9 Apr. 2026 (KW: 13)" — appends the ISO calendar week so
+    /// users can match the date to their weekly planning views.
+    private static func dateLabel(for date: Date) -> String {
+        let base = displayFormatter.string(from: date)
+        let week = Calendar.current.component(.weekOfYear, from: date)
+        return "\(base) (KW: \(week))"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button("Previous Day", systemImage: "chevron.left", action: viewModel.selectPreviousDay)
@@ -25,7 +33,7 @@ struct DateNavigationView: View {
 
             Spacer()
 
-            Text(Self.displayFormatter.string(from: viewModel.selectedDate))
+            Text(Self.dateLabel(for: viewModel.selectedDate))
                 .font(.system(size: Theme.FontSize.title, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .onTapGesture(count: 1) {
@@ -56,13 +64,12 @@ struct DateNavigationView: View {
                     .padding()
                 }
 
-            if viewModel.isToday {
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 8, height: 8)
-                    .help("Today")
-                    .accessibilityLabel(String(localized: "date.today"))
-            }
+            Button("Today", action: viewModel.selectToday)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(viewModel.isToday)
+                .help("Jump to today")
+                .accessibilityLabel(String(localized: "date.today"))
 
             Spacer()
 

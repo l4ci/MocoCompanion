@@ -17,6 +17,21 @@ enum MocoError: Error, LocalizedError, Sendable {
         return .serverError(statusCode: 0, message: error.localizedDescription)
     }
 
+    /// True when the error stems from Moco rejecting our credentials or
+    /// the API not being configured — i.e. user action (re-entering the
+    /// API key in Settings) is required. Transient issues like rate
+    /// limiting, network blips, or server errors don't qualify: those
+    /// will heal on retry and don't warrant a menubar alarm.
+    var requiresUserReauthentication: Bool {
+        switch self {
+        case .unauthorized, .invalidConfiguration:
+            return true
+        case .rateLimited, .notFound, .validationError, .serverError,
+             .networkError, .decodingError:
+            return false
+        }
+    }
+
     var errorDescription: String? {
         switch self {
         case .unauthorized:
