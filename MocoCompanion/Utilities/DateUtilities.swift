@@ -6,9 +6,6 @@ enum DateUtilities {
     // MARK: - Cached Formatters
 
     /// ISO8601 formatter with fractional seconds.
-    /// Note: DateFormatters are not Sendable but this is only accessed from @MainActor contexts
-    /// via SwiftUI views and @MainActor-isolated state. nonisolated(unsafe) suppresses the
-    /// concurrency warning; the formatters are immutable after initialization.
     nonisolated(unsafe) private static let iso8601Fractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

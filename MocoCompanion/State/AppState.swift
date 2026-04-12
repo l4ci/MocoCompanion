@@ -234,8 +234,6 @@ final class AppState {
             fatalError("Failed to initialize database: \(error)")
         }
 
-        // SyncEngine is a non-MainActor actor. These closures access @MainActor state
-        // but SyncEngine calls them synchronously from its actor context.
         // nonisolated(unsafe) suppresses the sending diagnostic — safe because
         // the closures only read Sendable values (String, Int, Bool) from settings/userIdBox.
         nonisolated(unsafe) let existingClientFactory = clientFactory
