@@ -13,7 +13,7 @@ actor SyncEngine {
     /// Called when a validation error indicates the Moco instance requires descriptions.
     nonisolated(unsafe) var onDescriptionRequired: (() -> Void)?
     private let logger = Logger(subsystem: "com.mococompanion", category: "SyncEngine")
-    private static let isoFormatter = ISO8601DateFormatter()
+    nonisolated(unsafe) private static let isoFormatter = ISO8601DateFormatter()
 
     init(
         store: ShadowEntryStore,

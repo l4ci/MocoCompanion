@@ -6,7 +6,7 @@ import os
 actor RuleStore {
 
     private static let logger = Logger(category: "RuleStore")
-    private static let isoFormatter: ISO8601DateFormatter = {
+    nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
