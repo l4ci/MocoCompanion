@@ -336,6 +336,9 @@ final class SettingsStore {
     // MARK: - Init
 
     init() {
+        // One-time migration: move API key from legacy login.keychain to Data Protection Keychain
+        KeychainHelper.migrateToDataProtectionKeychain(service: Self.keychainService, account: Self.keychainAccount)
+
         let loadedKey = KeychainHelper.load(service: Self.keychainService, account: Self.keychainAccount) ?? ""
 
         self.subdomain = Self.read(Key.subdomain, default: "")
@@ -378,10 +381,6 @@ final class SettingsStore {
             self.workingDays = [2, 3, 4, 5, 6]
         }
 
-        // Migrate Keychain item to use kSecAttrAccessibleWhenUnlocked
-        if !loadedKey.isEmpty {
-            KeychainHelper.save(value: loadedKey, service: Self.keychainService, account: Self.keychainAccount)
-        }
     }
 
     // MARK: - Reset
