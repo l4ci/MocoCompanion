@@ -95,13 +95,18 @@ struct TodayView: View {
             // returning all-users data for accounts with elevated permissions.
             if appState.session.currentUserId == nil {
                 for _ in 0..<50 { // up to 5 seconds
-                    try? await Task.sleep(for: .milliseconds(100))
+                    do { try await Task.sleep(for: .milliseconds(100)) }
+                    catch { return }
                     if appState.session.currentUserId != nil { break }
                 }
             }
+            guard !Task.isCancelled else { return }
             await vm.refreshTodayStats()
+            guard !Task.isCancelled else { return }
             await vm.refreshYesterdayActivities()
+            guard !Task.isCancelled else { return }
             await vm.refreshAllPlanning()
+            guard !Task.isCancelled else { return }
             await vm.refreshAbsences()
             vm.lastSyncedAt = .now
             if let idx = vm.activeEntryIndex {
