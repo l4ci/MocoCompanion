@@ -4,6 +4,8 @@ import SwiftUI
 /// Dual-pane timeline layout: time axis + app usage blocks on left, Moco entry blocks on right.
 /// Synchronized scrolling via a single ScrollView wrapping both panes.
 struct TimelinePaneView: View {
+    private static let calendar = Calendar.current
+
     let positionedEntries: [ShadowEntry]
     let unpositionedEntries: [ShadowEntry]
     let appUsageBlocks: [AppUsageBlock]
@@ -449,7 +451,7 @@ struct TimelinePaneView: View {
     /// Y position for the scroll anchor: now-line on today, 8:00 AM otherwise.
     private var scrollAnchorY: CGFloat {
         if isToday {
-            let components = Calendar.current.dateComponents([.hour, .minute], from: Date.now)
+            let components = Self.calendar.dateComponents([.hour, .minute], from: Date.now)
             let minutes = CGFloat((components.hour ?? 0) * 60 + (components.minute ?? 0))
             return minutes * TimelineLayout.pixelsPerMinute
         }
@@ -473,7 +475,7 @@ struct TimelinePaneView: View {
                             ruleEditorConfig = RuleEditorConfig(prefillBundleId: bundleId, prefillAppName: appName)
                         },
                         onCreateEntry: { block in
-                            let comps = Calendar.current.dateComponents([.hour, .minute], from: block.startTime)
+                            let comps = Self.calendar.dateComponents([.hour, .minute], from: block.startTime)
                             let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
                             let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
                             pendingCreation = PendingCreation(startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
@@ -759,7 +761,7 @@ struct TimelinePaneView: View {
     // MARK: - Positioning Helpers
 
     private func yOffset(for date: Date) -> CGFloat {
-        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let components = Self.calendar.dateComponents([.hour, .minute], from: date)
         let minutes = CGFloat((components.hour ?? 0) * 60 + (components.minute ?? 0))
         return minutes * TimelineLayout.pixelsPerMinute
     }
