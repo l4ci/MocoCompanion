@@ -45,16 +45,18 @@ struct EntryBlockView: View {
 
     // MARK: - Gesture State
 
+    private enum GestureMode {
+        case idle, dragging, resizingTop, resizingBottom
+    }
+
     /// Styling flags only — the visible preview during a gesture is
     /// drawn as a ghost overlay by `TimelinePaneView`, not by this
     /// view. See `TimelineViewModel.gesturePreviewState`.
-    @State private var isDragging: Bool = false
-    @State private var isResizingTop: Bool = false
-    @State private var isResizingBottom: Bool = false
+    @State private var gestureMode: GestureMode = .idle
     @State private var showDeleteConfirm: Bool = false
 
     private var isGestureActive: Bool {
-        isDragging || isResizingTop || isResizingBottom
+        gestureMode != .idle
     }
 
     // MARK: - Computed
@@ -222,7 +224,7 @@ struct EntryBlockView: View {
                     .stroke(Color.accentColor, lineWidth: 2)
                     .opacity(isHighlighted ? 1 : 0)
             }
-            .opacity(entry.isReadOnly ? 0.7 : isDragging ? 0.85 : 1.0)
+            .opacity(entry.isReadOnly ? 0.7 : gestureMode == .dragging ? 0.85 : 1.0)
             .shadow(color: .black.opacity(isGestureActive ? 0.2 : 0), radius: isGestureActive ? 4 : 0)
 
             // Edge resize handles (only for unlocked, non-running entries)
@@ -297,7 +299,7 @@ struct EntryBlockView: View {
     private var dragMoveGesture: some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { value in
-                isDragging = true
+                gestureMode = .dragging
                 let newMinutes = snappedStartMinutes(gestureDelta: value.translation.height)
                 let durationMinutes = max(entry.seconds / 60, TimelineLayout.snapMinutes)
                 pushPreview(startMinutes: newMinutes, durationMinutes: durationMinutes)
@@ -308,7 +310,7 @@ struct EntryBlockView: View {
                 Task { @MainActor in
                     await viewModel.moveEntry(entry, toStartTime: newTime)
                     viewModel.clearGesturePreview()
-                    isDragging = false
+                    gestureMode = .idle
                 }
             }
     }
@@ -318,7 +320,7 @@ struct EntryBlockView: View {
     private var topResizeGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
-                isResizingTop = true
+                gestureMode = .resizingTop
                 let (newStart, newDurationMinutes) = snappedTopResize(gestureDelta: value.translation.height)
                 pushPreview(startMinutes: newStart, durationMinutes: newDurationMinutes)
             }
@@ -329,7 +331,7 @@ struct EntryBlockView: View {
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: newTime, newDurationSeconds: newDurationSeconds)
                     viewModel.clearGesturePreview()
-                    isResizingTop = false
+                    gestureMode = .idle
                 }
             }
     }
@@ -339,7 +341,7 @@ struct EntryBlockView: View {
     private var bottomResizeGesture: some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
-                isResizingBottom = true
+                gestureMode = .resizingBottom
                 let newDurationMinutes = snappedBottomDuration(gestureDelta: value.translation.height)
                 pushPreview(startMinutes: entryStartMinutes, durationMinutes: newDurationMinutes)
             }
@@ -349,7 +351,7 @@ struct EntryBlockView: View {
                 Task { @MainActor in
                     await viewModel.resizeEntry(entry, newStartTime: entry.startTime ?? "00:00", newDurationSeconds: newDurationSeconds)
                     viewModel.clearGesturePreview()
-                    isResizingBottom = false
+                    gestureMode = .idle
                 }
             }
     }

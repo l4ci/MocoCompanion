@@ -17,7 +17,7 @@ struct TimelinePaneView: View {
     /// fresh drag-to-create gesture or a drop from a calendar event row.
     /// Always nil when no creation flow is active; setting / clearing
     /// happens atomically so the sheet can't see a half-populated state.
-    private struct PendingCreation: Equatable {
+    private struct PendingCreation: Equatable, Identifiable {
         var startMinutes: Int
         var durationMinutes: Int
         var appName: String
@@ -26,6 +26,8 @@ struct TimelinePaneView: View {
         /// event, this carries the event's `calendarItemIdentifier` so the
         /// resulting ShadowEntry can be stamped with `sourceCalendarEventId`.
         var calendarEventId: String?
+
+        var id: String { "\(startMinutes)-\(durationMinutes)-\(appName)" }
     }
 
     @State private var pendingCreation: PendingCreation? = nil
@@ -173,53 +175,39 @@ struct TimelinePaneView: View {
                 onCancel: { editingEntry = nil }
             )
         }
-        .sheet(isPresented: showCreationSheet) {
-            if let creation = pendingCreation {
-                let dateStr = TimelineGeometry.dateString(from: selectedDate)
-                let startTimeStr = TimelineGeometry.timeString(fromMinutes: creation.startMinutes)
-                TimelineEntryCreationSheet(
-                    date: dateStr,
-                    startTime: startTimeStr,
-                    durationMinutes: creation.durationMinutes,
-                    suggestedDescription: creation.appName,
-                    projectCatalog: projectCatalog,
-                    descriptionRequired: descriptionRequired,
-                    onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
-                        let calendarEventId = pendingCreation?.calendarEventId
-                        Task {
-                            await viewModel.createEntry(
-                                date: dateStr,
-                                startTime: startTimeStr,
-                                durationSeconds: creation.durationMinutes * 60,
-                                projectId: projectId,
-                                taskId: taskId,
-                                projectName: projectName,
-                                taskName: taskName,
-                                customerName: customerName,
-                                description: description,
-                                sourceAppBundleId: creation.sourceBundleId,
-                                sourceCalendarEventId: calendarEventId
-                            )
-                        }
-                        pendingCreation = nil
-                    },
-                    onCancel: {
-                        pendingCreation = nil
+        .sheet(item: $pendingCreation) { creation in
+            let dateStr = TimelineGeometry.dateString(from: selectedDate)
+            let startTimeStr = TimelineGeometry.timeString(fromMinutes: creation.startMinutes)
+            TimelineEntryCreationSheet(
+                date: dateStr,
+                startTime: startTimeStr,
+                durationMinutes: creation.durationMinutes,
+                suggestedDescription: creation.appName,
+                projectCatalog: projectCatalog,
+                descriptionRequired: descriptionRequired,
+                onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
+                    Task {
+                        await viewModel.createEntry(
+                            date: dateStr,
+                            startTime: startTimeStr,
+                            durationSeconds: creation.durationMinutes * 60,
+                            projectId: projectId,
+                            taskId: taskId,
+                            projectName: projectName,
+                            taskName: taskName,
+                            customerName: customerName,
+                            description: description,
+                            sourceAppBundleId: creation.sourceBundleId,
+                            sourceCalendarEventId: creation.calendarEventId
+                        )
                     }
-                )
-            }
-        }
-    }
-
-    private var showCreationSheet: Binding<Bool> {
-        Binding(
-            get: { pendingCreation != nil },
-            set: {
-                if !$0 {
+                    pendingCreation = nil
+                },
+                onCancel: {
                     pendingCreation = nil
                 }
-            }
-        )
+            )
+        }
     }
 
     // MARK: - Empty-Area Drag Gesture

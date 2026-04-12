@@ -14,6 +14,7 @@ struct RuleListView: View {
     @State private var rules: [TrackingRule] = []
     @State private var editingRule: TrackingRule?
     @State private var deletingRule: TrackingRule?
+    @State private var showDeleteConfirm = false
     @State private var showCreateSheet = false
 
     var body: some View {
@@ -54,10 +55,7 @@ struct RuleListView: View {
         }
         .confirmationDialog(
             "Delete Rule",
-            isPresented: Binding(
-                get: { deletingRule != nil },
-                set: { if !$0 { deletingRule = nil } }
-            ),
+            isPresented: $showDeleteConfirm,
             presenting: deletingRule
         ) { rule in
             Button("Delete", role: .destructive) {
@@ -197,6 +195,7 @@ struct RuleListView: View {
 
             Button("Delete Rule", systemImage: "trash") {
                 deletingRule = rule
+                showDeleteConfirm = true
             }
             .labelStyle(.iconOnly)
             .buttonStyle(.plain)
