@@ -128,6 +128,7 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
 @Observable @MainActor
 final class Autotracker {
     private static let atLogger = Logger(category: "Autotracker")
+    private static let isoFormatter = ISO8601DateFormatter()
 
     // MARK: - Internal composed state
 
@@ -572,7 +573,7 @@ final class Autotracker {
 
     func approveSuggestion(_ suggestion: Suggestion) async {
         let nowDate = clock()
-        let nowString = ISO8601DateFormatter().string(from: nowDate)
+        let nowString = Autotracker.isoFormatter.string(from: nowDate)
         let dateString = loadedDeclinedDate ?? Self.atDateString(from: nowDate)
 
         let entry = ShadowEntry(
@@ -717,7 +718,7 @@ final class Autotracker {
         sourceCalendarEventId: String? = nil,
         now: Date
     ) -> ShadowEntry {
-        let nowString = ISO8601DateFormatter().string(from: now)
+        let nowString = Autotracker.isoFormatter.string(from: now)
         let userEntry = existingEntries.first
 
         return ShadowEntry(

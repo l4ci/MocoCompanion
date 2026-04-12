@@ -13,6 +13,7 @@ actor SyncEngine {
     /// Called when a validation error indicates the Moco instance requires descriptions.
     nonisolated(unsafe) var onDescriptionRequired: (() -> Void)?
     private let logger = Logger(subsystem: "com.mococompanion", category: "SyncEngine")
+    private static let isoFormatter = ISO8601DateFormatter()
 
     init(
         store: ShadowEntryStore,
@@ -206,7 +207,7 @@ actor SyncEngine {
             entry.hours = Double(seconds) / 3600.0
         }
         entry.syncStatus = .dirty
-        entry.localUpdatedAt = ISO8601DateFormatter().string(from: Date.now)
+        entry.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         try await store.update(entry)
         try await pushDirty()
     }

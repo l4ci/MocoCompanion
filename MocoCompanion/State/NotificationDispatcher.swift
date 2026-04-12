@@ -20,6 +20,11 @@ extension NotificationSending {
 @MainActor
 final class NotificationDispatcher: NotificationSending {
     private let logger = Logger(category: "Notifications")
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     // MARK: - Dependencies
 
@@ -86,15 +91,13 @@ final class NotificationDispatcher: NotificationSending {
         if type == .endOfDaySummary || type == .yesterdayUnderBooked {
             content.categoryIdentifier = Self.autotrackerCategoryId
             // Embed the target date so the action handler can navigate there
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd"
             let targetDate: Date
             if type == .yesterdayUnderBooked {
                 targetDate = Calendar.current.date(byAdding: .day, value: -1, to: Date.now) ?? Date.now
             } else {
                 targetDate = Date.now
             }
-            content.userInfo["targetDate"] = fmt.string(from: targetDate)
+            content.userInfo["targetDate"] = Self.dateFormatter.string(from: targetDate)
         }
         if !userInfo.isEmpty {
             for (k, v) in userInfo { content.userInfo[k] = v }

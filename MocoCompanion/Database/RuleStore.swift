@@ -6,6 +6,11 @@ import os
 actor RuleStore {
 
     private static let logger = Logger(category: "RuleStore")
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 
     private let database: SQLiteDatabase
 
@@ -170,8 +175,6 @@ actor RuleStore {
     }
 
     private static func isoNow() -> String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f.string(from: Date.now)
+        isoFormatter.string(from: Date.now)
     }
 }
