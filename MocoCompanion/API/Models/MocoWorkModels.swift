@@ -25,7 +25,8 @@ struct EmploymentPattern: Codable, Sendable {
     let pm: [Double]
 
     func expectedHours(weekdayIndex: Int) -> Double {
-        guard weekdayIndex >= 0 && weekdayIndex < 5 else { return 0 }
+        guard weekdayIndex >= 0, weekdayIndex < 5,
+              weekdayIndex < am.count, weekdayIndex < pm.count else { return 0 }
         return am[weekdayIndex] + pm[weekdayIndex]
     }
 }
