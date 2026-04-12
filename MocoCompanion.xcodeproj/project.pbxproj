@@ -101,6 +101,7 @@
 		7D3C41AAA4948CEE74F50A29 /* ActivityEditOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */; };
 		7F3F53A76F22D7C4C7092433 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */; };
 		8031ACA863899456340F6371 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F5FEA3B2CCB6B815D8C914 /* Theme.swift */; };
+		80CD674437C21211370C525B /* TomorrowPlanningRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */; };
 		82C82D0F4DAF8A4BFFFF946E /* QuickEntryContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259B61E27F0D689549B9F1E8 /* QuickEntryContracts.swift */; };
 		8346AB40F0FA5721FEBA4D2C /* ValueBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 438422F3B01E22301B030204 /* ValueBox.swift */; };
 		8498015E58D696514349E1F6 /* LaunchAtLoginHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */; };
@@ -110,6 +111,7 @@
 		8CC9B1A620F6577ADDDF4682 /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9230F5232E57326E6B57713F /* ProjectCatalog.swift */; };
 		8E3133D5EE791C5BFD376DF7 /* TimelineGesturePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE7D952BF1995D141415F91 /* TimelineGesturePreview.swift */; };
 		907F693566D37220983C0CC0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADD519E64051033A0F06C83 /* SettingsView.swift */; };
+		9102951654F8E57866C4EE75 /* AbsenceStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */; };
 		939938CB4E5F5C976BCD0CB0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */; };
 		9431BDDC2C4708214FEE803B /* ActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */; };
 		944023A464965603EFD6E625 /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2A0A29840D8E4016EC8727 /* BudgetService.swift */; };
@@ -358,6 +360,7 @@
 		B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEditOverlay.swift; sourceTree = "<group>"; };
 		B448296216A68B6333D8C91C /* RuleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleStore.swift; sourceTree = "<group>"; };
 		B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
+		B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TomorrowPlanningRowView.swift; sourceTree = "<group>"; };
 		B7CF2C37E2A1814C38C62627 /* AllDayCalendarEventRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllDayCalendarEventRow.swift; sourceTree = "<group>"; };
 		B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
 		B9DA9CCA27BC6EBC1EA79046 /* AutotrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutotrackerTests.swift; sourceTree = "<group>"; };
@@ -380,6 +383,7 @@
 		CEC0065706C321F573697AB9 /* DescriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionStore.swift; sourceTree = "<group>"; };
 		D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEntriesTracker.swift; sourceTree = "<group>"; };
 		D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStoreTests.swift; sourceTree = "<group>"; };
+		D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AbsenceStyle.swift; sourceTree = "<group>"; };
 		D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
 		D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMocoClient.swift; sourceTree = "<group>"; };
 		D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerState.swift; sourceTree = "<group>"; };
@@ -720,6 +724,8 @@
 				8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */,
 				F50C1858D767F7B2CEA82A37 /* Autotracker */,
 				5CA49B8B4E058BE0941F33EA /* Shared */,
+				B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */,
+				D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -762,8 +768,6 @@
 			dependencies = (
 			);
 			name = MocoCompanion;
-			packageProductDependencies = (
-			);
 			productName = MocoCompanion;
 			productReference = 2D280BBA036682BB1D8A44F0 /* MocoCompanion.app */;
 			productType = "com.apple.product-type.application";
@@ -780,8 +784,6 @@
 				5874CF48A12B69C2869D51BE /* PBXTargetDependency */,
 			);
 			name = MocoCompanionTests;
-			packageProductDependencies = (
-			);
 			productName = MocoCompanionTests;
 			productReference = A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -990,6 +992,8 @@
 				003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */,
 				129BCB84138D649D7723A2FC /* YesterdayBannerView.swift in Sources */,
 				C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */,
+				80CD674437C21211370C525B /* TomorrowPlanningRowView.swift in Sources */,
+				9102951654F8E57866C4EE75 /* AbsenceStyle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
