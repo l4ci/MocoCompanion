@@ -89,22 +89,23 @@ import os
     /// Timed events laid out with cluster/column assignment. All-day
     /// events are excluded — they're surfaced via `allDayEvents` for
     /// the aboveline region instead.
-    var calendarEventLayouts: [CalendarEventLayout] {
+    private(set) var calendarEventLayouts: [CalendarEventLayout] = []
+
+    /// All-day events for the current day. Rendered in the aboveline
+    /// region of the calendar column (not positioned on the timeline).
+    private(set) var allDayEvents: [CalendarEvent] = []
+
+    private func recomputeCalendarLayouts() {
         let timed: [(event: CalendarEvent, start: Int, end: Int)] = calendarEvents.compactMap { ev in
             guard !ev.isAllDay, let start = ev.startMinutes else { return nil }
             let end = start + max(ev.durationMinutes, 1)
             return (ev, start, end)
         }
         let assignments = ClusterColumns.assign(timed.map { ($0.start, $0.end) })
-        return zip(timed, assignments).map { item, a in
+        calendarEventLayouts = zip(timed, assignments).map { item, a in
             CalendarEventLayout(event: item.event, columnIndex: a.columnIndex, columnCount: a.columnCount)
         }
-    }
-
-    /// All-day events for the current day. Rendered in the aboveline
-    /// region of the calendar column (not positioned on the timeline).
-    var allDayEvents: [CalendarEvent] {
-        calendarEvents.filter { $0.isAllDay }
+        allDayEvents = calendarEvents.filter { $0.isAllDay }
     }
 
     // MARK: - Selection State
@@ -222,6 +223,7 @@ import os
         } else {
             calendarEvents = []
         }
+        recomputeCalendarLayouts()
 
         Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.appUsageBlocks.count) usage blocks, \(self.calendarEvents.count) calendar events for \(dateString)")
 
