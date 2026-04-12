@@ -81,7 +81,7 @@ struct TimelineEntryCreationSheet: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(entries.prefix(20), id: \.taskId) { entry in
+                        ForEach(entries.prefix(20)) { entry in
                             ProjectPickerRow(
                                 entry: entry,
                                 isSelected: selectedEntry?.projectId == entry.projectId
@@ -491,7 +491,7 @@ struct TimelineEntryEditSheet: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(entries.prefix(20), id: \.taskId) { row in
+                        ForEach(entries.prefix(20)) { row in
                             ProjectPickerRow(
                                 entry: row,
                                 isSelected: selectedEntry?.projectId == row.projectId
