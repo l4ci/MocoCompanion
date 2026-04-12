@@ -125,10 +125,10 @@ private struct PanelContentInner: View {
         }
         .background(theme.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(theme.divider, lineWidth: 0.5)
-        )
+        }
         // Single softer shadow instead of the stacked radius-40+radius-6
         // pair — the two-shadow cost (offline GPU render passes) was
         // measurably visible on integrated graphics and the visual delta
@@ -218,7 +218,7 @@ private struct PanelContentInner: View {
     }
 
     private var todayDateString: String {
-        Self.formattedDate(for: Date(), locale: appState.settings.resolvedLocale)
+        Self.formattedDate(for: Date.now, locale: appState.settings.resolvedLocale)
     }
 
     // MARK: - Formatter cache

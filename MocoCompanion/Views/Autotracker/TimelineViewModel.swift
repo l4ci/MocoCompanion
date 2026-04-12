@@ -8,6 +8,7 @@ import os
 /// entries by positioning status.
 @Observable @MainActor final class TimelineViewModel {
     private static let logger = Logger(category: "TimelineViewModel")
+    private static let isoFormatter = ISO8601DateFormatter()
 
     // MARK: - Dependencies
 
@@ -63,7 +64,7 @@ import os
 
     // MARK: - Published State
 
-    var selectedDate: Date = Calendar.current.startOfDay(for: Date())
+    var selectedDate: Date = Calendar.current.startOfDay(for: Date.now)
     private(set) var shadowEntries: [ShadowEntry] = []
     private(set) var appRecords: [AppRecord] = []
     /* internal for test */ var appUsageBlocks: [AppUsageBlock] = []
@@ -257,13 +258,13 @@ import os
         await loadData()
         // Stamp the local fallback so the toolbar label keeps ticking
         // even when the upstream sync didn't succeed (e.g. offline).
-        _lastSyncedAt = Date()
+        _lastSyncedAt = Date.now
     }
 
     // MARK: - Date Navigation
 
     func selectPreviousDay() {
-        let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        guard let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) else { return }
         // Don't navigate past the autotracker retention window — there's
         // no data there anyway.
         let earliest = Calendar.current.startOfDay(for: autotracker.earliestRetainedDate)
@@ -276,18 +277,19 @@ import os
     /// without crossing the retention boundary. Used to disable the left
     /// arrow button.
     var canSelectPreviousDay: Bool {
-        let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        guard let candidate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) else { return false }
         let earliest = Calendar.current.startOfDay(for: autotracker.earliestRetainedDate)
         return candidate >= earliest
     }
 
     func selectNextDay() {
         guard !isToday else { return }
-        selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate)!
+        guard let next = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) else { return }
+        selectedDate = next
     }
 
     func selectToday() {
-        selectedDate = Calendar.current.startOfDay(for: Date())
+        selectedDate = Calendar.current.startOfDay(for: Date.now)
     }
 
     func selectDate(_ date: Date) {
@@ -305,7 +307,7 @@ import os
         guard !entry.isReadOnly else { return }
         var updated = entry
         updated.startTime = newStartTime
-        updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
                 updated.syncStatus = .dirty
@@ -354,7 +356,7 @@ import os
         updated.startTime = startTime
         updated.seconds = durationSeconds
         updated.hours = Double(durationSeconds) / 3600.0
-        updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
                 updated.syncStatus = .dirty
@@ -384,7 +386,7 @@ import os
         updated.startTime = newStartTime
         updated.seconds = newDurationSeconds
         updated.hours = Double(newDurationSeconds) / 3600.0
-        updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
                 updated.syncStatus = .dirty
@@ -432,7 +434,7 @@ import os
             } else if entry.id != nil {
                 var updated = entry
                 updated.syncStatus = .pendingDelete
-                updated.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+                updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
                 try await shadowEntryStore.update(updated)
             }
             Self.logger.info("Deleted entry \(entry.id ?? 0)")
@@ -611,10 +613,10 @@ import os
     /// Update the ghost block position during drag based on the cursor's y in
     /// the entry column coordinate space.
     func updateDragCreation(targetY: CGFloat) {
-        guard dragCreationState != nil else { return }
+        guard let state = dragCreationState else { return }
         let rawMinutes = Double(targetY) / Double(TimelineLayout.pixelsPerMinute)
         let snapped = TimelineGeometry.snapToGrid(minutes: rawMinutes, gridMinutes: TimelineLayout.snapMinutes)
-        let duration = dragCreationState!.durationMinutes
+        let duration = state.durationMinutes
         let overlaps = !overlappingEntries(startMinutes: snapped, durationMinutes: duration).isEmpty
         dragCreationState?.startMinutes = snapped
         dragCreationState?.isOverlapping = overlaps
@@ -719,7 +721,7 @@ import os
         sourceAppBundleId: String? = nil,
         sourceCalendarEventId: String? = nil
     ) async {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = Self.isoFormatter.string(from: Date.now)
 
         // Try to inherit user fields from an existing entry on the same date
         let existingEntries = shadowEntries

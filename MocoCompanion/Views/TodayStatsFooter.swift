@@ -19,10 +19,10 @@ struct TodayStatsFooter: View {
             HStack(spacing: 8) {
                 statCard(
                     label: String(localized: "stats.total"),
-                    value: String(format: "%.1fh", totalHours),
+                    value: "\(totalHours.formatted(.number.precision(.fractionLength(1))))h",
                     accent: isFullDay ? .green : nil
                 )
-                statCard(label: String(localized: "stats.billable"), value: String(format: "%.0f%%", billablePercentage))
+                statCard(label: String(localized: "stats.billable"), value: "\(billablePercentage.formatted(.number.precision(.fractionLength(0))))%")
                 statCard(label: String(localized: "stats.entries"), value: "\(entryCount)")
             }
             .padding(.horizontal, 14)

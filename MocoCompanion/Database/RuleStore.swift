@@ -172,6 +172,6 @@ actor RuleStore {
     private static func isoNow() -> String {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
-        return f.string(from: Date())
+        return f.string(from: Date.now)
     }
 }

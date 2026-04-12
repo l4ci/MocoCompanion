@@ -8,13 +8,10 @@ struct GeneralSettingsTab: View {
     var body: some View {
         Form {
             Section {
-                Toggle(String(localized: "settings.launchAtLogin"), isOn: Binding(
-                    get: { settings.launchAtLogin },
-                    set: { newValue in
-                        settings.launchAtLogin = newValue
+                Toggle(String(localized: "settings.launchAtLogin"), isOn: $settings.launchAtLogin)
+                    .onChange(of: settings.launchAtLogin) { _, newValue in
                         LaunchAtLoginHelper.update(newValue)
                     }
-                ))
 
                 Picker(String(localized: "settings.defaultTab"), selection: $settings.defaultTab) {
                     Text(String(localized: "settings.defaultTab.search")).tag(DefaultTab.search)

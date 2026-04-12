@@ -21,7 +21,7 @@ enum TagExtractor {
     /// Used to avoid duplicate tag info in the API payload (tag is sent separately).
     static func stripTags(from text: String) -> String {
         text.replacingOccurrences(of: #"#[A-Za-z0-9][\w-]*"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: "  ", with: " ")
+            .replacing("  ", with: " ")
             .trimmingCharacters(in: .whitespaces)
     }
 }

@@ -39,7 +39,7 @@ actor SyncEngine {
             }
             try await pushDirty()
             await MainActor.run {
-                syncState.setLastSynced(Date())
+                syncState.setLastSynced(Date.now)
                 syncState.setLastError(nil)
             }
             let pending = try await store.dirtyEntries().count
@@ -206,7 +206,7 @@ actor SyncEngine {
             entry.hours = Double(seconds) / 3600.0
         }
         entry.syncStatus = .dirty
-        entry.localUpdatedAt = ISO8601DateFormatter().string(from: Date())
+        entry.localUpdatedAt = ISO8601DateFormatter().string(from: Date.now)
         try await store.update(entry)
         try await pushDirty()
     }

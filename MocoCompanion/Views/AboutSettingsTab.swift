@@ -56,16 +56,18 @@ struct AboutSettingsTab: View {
             Spacer().frame(height: 20)
 
             // Repository link
-            Link(destination: URL(string: "https://github.com/l4ci/MocoCompanion")!) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left.forwardslash.chevron.right")
-                        .font(.system(size: 12))
-                    Text(String(localized: "about.repository"))
-                        .font(.system(size: 13, weight: .medium))
+            if let repoURL = URL(string: "https://github.com/l4ci/MocoCompanion") {
+                Link(destination: repoURL) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .font(.system(size: 12))
+                        Text(String(localized: "about.repository"))
+                            .font(.system(size: 13, weight: .medium))
+                    }
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.accentColor)
 
             Spacer().frame(height: 16)
 

@@ -81,7 +81,7 @@ final class TodayViewModel {
         case .tomorrow:
             await planningStore.refreshAllPlanning()
         }
-        lastSyncedAt = Date()
+        lastSyncedAt = .now
         isRefreshing = false
     }
 
@@ -366,7 +366,7 @@ final class TodayViewModel {
     func editPayload() -> (description: String, hours: String)? {
         guard sortedActivities.indices.contains(selectedIndex) else { return nil }
         let activity = sortedActivities[selectedIndex]
-        return (activity.description, String(format: "%.2f", activity.hours))
+        return (activity.description, activity.hours.formatted(.number.precision(.fractionLength(2))))
     }
 
     // MARK: - Private

@@ -152,7 +152,8 @@ struct QuickEntryView: View {
             if !initialSearchText.isEmpty {
                 let prefill = initialSearchText
                 initialSearchText = ""
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(100))
                     sm.searchText = prefill
                 }
             }

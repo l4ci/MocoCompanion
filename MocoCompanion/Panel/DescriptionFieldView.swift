@@ -73,7 +73,7 @@ struct DescriptionFieldView: View {
                         .focused($focusedField, equals: .description)
                         .accessibilityLabel(String(localized: "a11y.activityDescription"))
                         .onSubmit { onSubmit() }
-                        .onChange(of: descriptionText) {
+                        .onChange(of: descriptionText) { _, _ in
                             onTextChanged()
                         }
                         .onKeyPress(.tab) {

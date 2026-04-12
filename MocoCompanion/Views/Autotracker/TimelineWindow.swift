@@ -17,7 +17,7 @@ struct TimelineWindow: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.theme) private var theme
     @State private var showRuleList = false
-    @State private var syncLabelTick = Date()
+    @State private var syncLabelTick = Date.now
 
     init(shadowEntryStore: ShadowEntryStore, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, workdayStartHour: Int = 8, workdayEndHour: Int = 17, descriptionRequired: Bool = false, onEntryChanged: (() async -> Void)? = nil) {
         let vm = TimelineViewModel(
@@ -111,6 +111,7 @@ struct TimelineWindow: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .help("Sync with Moco (⌘R)")
+                .accessibilityLabel("Sync with Moco")
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(viewModel.isRefreshing || viewModel.isSyncing)
             }
@@ -122,6 +123,7 @@ struct TimelineWindow: View {
                         Image(systemName: "list.bullet")
                     }
                     .help("Manage Rules")
+                    .accessibilityLabel("Manage Rules")
                 }
             }
         }
@@ -143,7 +145,7 @@ struct TimelineWindow: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
-                syncLabelTick = Date()
+                syncLabelTick = Date.now
             }
         }
         .onChange(of: viewModel.selectedDate) {
@@ -154,7 +156,7 @@ struct TimelineWindow: View {
     }
 
     private static func relativeTimeString(since date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
+        let seconds = Int(Date.now.timeIntervalSince(date))
         if seconds < 5 { return String(localized: "sync.now") }
         if seconds < 60 { return "\(seconds)s" }
         let minutes = seconds / 60
@@ -172,12 +174,12 @@ struct TimelineWindow: View {
             HStack(spacing: 8) {
                 statCard(
                     label: String(localized: "stats.total"),
-                    value: String(format: "%.1fh", viewModel.totalHours),
+                    value: "\(viewModel.totalHours.formatted(.number.precision(.fractionLength(1))))h",
                     accent: viewModel.totalHours >= 8.0 ? .green : nil
                 )
                 statCard(
                     label: String(localized: "stats.billable"),
-                    value: String(format: "%.0f%%", viewModel.billablePercentage)
+                    value: "\(viewModel.billablePercentage.formatted(.number.precision(.fractionLength(0))))%"
                 )
                 statCard(
                     label: String(localized: "stats.entries"),
@@ -216,10 +218,10 @@ struct TimelineWindow: View {
                 .fill(theme.surfaceElevated)
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
         )
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                 .stroke(theme.textTertiary.opacity(0.15), lineWidth: 1)
-        )
+        }
         .frame(maxWidth: 360)
     }
 

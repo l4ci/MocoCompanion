@@ -103,7 +103,7 @@ struct TodayView: View {
             await vm.refreshYesterdayActivities()
             await vm.refreshAllPlanning()
             await vm.refreshAbsences()
-            vm.lastSyncedAt = Date()
+            vm.lastSyncedAt = .now
             if let idx = vm.activeEntryIndex {
                 vm.selectedIndex = idx
                 vm.trackSelectedId()
@@ -231,7 +231,7 @@ struct TodayView: View {
     /// Format a Date into a compact relative string: "now", "30s", "2m", "1h".
     /// Accepts an explicit `now` so callers inside a `TimelineView` can pass
     /// the frame's context date instead of allocating `Date()` every call.
-    private func relativeTimeString(from date: Date, to now: Date = Date()) -> String {
+    private func relativeTimeString(from date: Date, to now: Date = .now) -> String {
         let seconds = Int(now.timeIntervalSince(date))
         if seconds < 5 { return String(localized: "sync.now") }
         if seconds < 60 { return "\(seconds)s" }
@@ -444,7 +444,7 @@ private struct TomorrowPlanningRowView: View {
 
             Spacer()
 
-            Text(String(format: "%.0fh", entry.hoursPerDay))
+            Text("\(entry.hoursPerDay.formatted(.number.precision(.fractionLength(0))))h")
                 .font(.system(size: captionSize, weight: .medium, design: .monospaced))
                 .foregroundStyle(theme.plannedIndicatorSubtle)
         }

@@ -8,33 +8,42 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            AccountSettingsTab(settings: settings, appState: appState)
-                .tabItem { Label(String(localized: "settings.account"), systemImage: "person.circle") }
-            HowToUseSettingsTab(settings: settings, onShortcutChanged: onShortcutChanged)
-                .tabItem { Label(String(localized: "settings.howToUse"), systemImage: "keyboard") }
-            GeneralSettingsTab(settings: settings, appState: appState)
-                .tabItem { Label(String(localized: "settings.general"), systemImage: "gear") }
-            FavoritesSettingsTab(settings: settings, favoritesManager: appState?.favoritesManager)
-                .tabItem { Label(String(localized: "settings.favorites"), systemImage: "star") }
-            NotificationsSettingsTab(settings: settings)
-                .tabItem { Label(String(localized: "settings.notifications"), systemImage: "bell") }
-            ProjectsSettingsTab(
-                projects: appState?.catalog.projects ?? [],
-                isLoading: appState?.catalog.isLoading ?? false,
-                onRefresh: { await appState?.fetchProjects() }
-            )
-                .tabItem { Label(String(localized: "settings.projects"), systemImage: "list.bullet") }
-            AutotrackerSettingsTab(
-                settings: settings,
-                autotracker: appState?.autotracker,
-                projectCatalog: appState?.catalog,
-                appState: appState
-            )
-                .tabItem { Label(String(localized: "timeline.tab"), systemImage: "clock") }
-            DebugSettingsTab(settings: settings)
-                .tabItem { Label(String(localized: "settings.debug"), systemImage: "ladybug") }
-            AboutSettingsTab()
-                .tabItem { Label(String(localized: "settings.about"), systemImage: "info.circle") }
+            Tab(String(localized: "settings.account"), systemImage: "person.circle") {
+                AccountSettingsTab(settings: settings, appState: appState)
+            }
+            Tab(String(localized: "settings.howToUse"), systemImage: "keyboard") {
+                HowToUseSettingsTab(settings: settings, onShortcutChanged: onShortcutChanged)
+            }
+            Tab(String(localized: "settings.general"), systemImage: "gear") {
+                GeneralSettingsTab(settings: settings, appState: appState)
+            }
+            Tab(String(localized: "settings.favorites"), systemImage: "star") {
+                FavoritesSettingsTab(settings: settings, favoritesManager: appState?.favoritesManager)
+            }
+            Tab(String(localized: "settings.notifications"), systemImage: "bell") {
+                NotificationsSettingsTab(settings: settings)
+            }
+            Tab(String(localized: "settings.projects"), systemImage: "list.bullet") {
+                ProjectsSettingsTab(
+                    projects: appState?.catalog.projects ?? [],
+                    isLoading: appState?.catalog.isLoading ?? false,
+                    onRefresh: { await appState?.fetchProjects() }
+                )
+            }
+            Tab(String(localized: "timeline.tab"), systemImage: "clock") {
+                AutotrackerSettingsTab(
+                    settings: settings,
+                    autotracker: appState?.autotracker,
+                    projectCatalog: appState?.catalog,
+                    appState: appState
+                )
+            }
+            Tab(String(localized: "settings.debug"), systemImage: "ladybug") {
+                DebugSettingsTab(settings: settings)
+            }
+            Tab(String(localized: "settings.about"), systemImage: "info.circle") {
+                AboutSettingsTab()
+            }
         }
         .frame(width: 780, height: 580)
         .padding()

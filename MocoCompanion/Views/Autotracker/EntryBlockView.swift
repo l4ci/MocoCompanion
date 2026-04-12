@@ -72,7 +72,7 @@ struct EntryBlockView: View {
     private var baseHeight: CGFloat {
         let seconds: CGFloat
         if isRunning, let startedAt = parsedTimerStart {
-            seconds = CGFloat(max(Date().timeIntervalSince(startedAt), 60))
+            seconds = CGFloat(max(Date.now.timeIntervalSince(startedAt), 60))
         } else {
             seconds = CGFloat(entry.seconds)
         }
@@ -83,9 +83,11 @@ struct EntryBlockView: View {
         max(baseHeight, TimelineLayout.pixelsPerMinute * CGFloat(TimelineLayout.snapMinutes))
     }
 
+    private static let isoFormatter = ISO8601DateFormatter()
+
     private var parsedTimerStart: Date? {
         guard let iso = entry.timerStartedAt else { return nil }
-        return ISO8601DateFormatter().date(from: iso)
+        return Self.isoFormatter.date(from: iso)
     }
 
     private var background: Color {
@@ -215,11 +217,11 @@ struct EntryBlockView: View {
             }
             .frame(height: displayHeight)
             .background(background, in: RoundedRectangle(cornerRadius: TimelineLayout.blockCornerRadius, style: .continuous))
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: TimelineLayout.blockCornerRadius, style: .continuous)
                     .stroke(Color.accentColor, lineWidth: 2)
                     .opacity(isHighlighted ? 1 : 0)
-            )
+            }
             .opacity(entry.isReadOnly ? 0.7 : isDragging ? 0.85 : 1.0)
             .shadow(color: .black.opacity(isGestureActive ? 0.2 : 0), radius: isGestureActive ? 4 : 0)
 

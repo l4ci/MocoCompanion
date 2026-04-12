@@ -16,25 +16,26 @@ struct DateNavigationView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: viewModel.selectPreviousDay) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: Theme.FontSize.callout, weight: .medium))
-            }
-            .disabled(!viewModel.canSelectPreviousDay)
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.textSecondary)
+            Button("Previous Day", systemImage: "chevron.left", action: viewModel.selectPreviousDay)
+                .labelStyle(.iconOnly)
+                .font(.system(size: Theme.FontSize.callout, weight: .medium))
+                .disabled(!viewModel.canSelectPreviousDay)
+                .buttonStyle(.plain)
+                .foregroundStyle(theme.textSecondary)
 
             Spacer()
 
             Text(Self.displayFormatter.string(from: viewModel.selectedDate))
                 .font(.system(size: Theme.FontSize.title, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
-                .onTapGesture {
+                .onTapGesture(count: 1) {
                     showingDatePicker.toggle()
                 }
                 .onTapGesture(count: 2) {
                     viewModel.selectToday()
                 }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel("Select date")
                 .popover(isPresented: $showingDatePicker) {
                     DatePicker(
                         "",
@@ -48,7 +49,7 @@ struct DateNavigationView: View {
                         // Clamp to the retention window: no data exists
                         // before the autotracker deletion threshold, and
                         // we don't let the user navigate into the future.
-                        in: viewModel.autotracker.earliestRetainedDate...Date(),
+                        in: viewModel.autotracker.earliestRetainedDate...Date.now,
                         displayedComponents: .date
                     )
                     .datePickerStyle(.graphical)
@@ -65,13 +66,12 @@ struct DateNavigationView: View {
 
             Spacer()
 
-            Button(action: viewModel.selectNextDay) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(viewModel.isToday ? theme.textTertiary.opacity(0.5) : theme.textSecondary)
-            .disabled(viewModel.isToday)
+            Button("Next Day", systemImage: "chevron.right", action: viewModel.selectNextDay)
+                .labelStyle(.iconOnly)
+                .font(.system(size: Theme.FontSize.body, weight: .medium))
+                .buttonStyle(.plain)
+                .foregroundStyle(viewModel.isToday ? theme.textTertiary.opacity(0.5) : theme.textSecondary)
+                .disabled(viewModel.isToday)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)

@@ -46,7 +46,7 @@ final class YesterdayService: PollingMonitor {
 
     func check() async -> [MonitorAlert] {
         guard let client = clientFactory() else { return [] }
-        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return [] }
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date.now) else { return [] }
 
         let yesterdayStr = DateUtilities.dateString(yesterday)
         let calendar = Calendar.current
@@ -121,8 +121,8 @@ struct YesterdayWarning {
     let expectedHours: Double
 
     var message: String {
-        let booked = String(format: "%.1f", bookedHours)
-        let expected = String(format: "%.1f", expectedHours)
+        let booked = bookedHours.formatted(.number.precision(.fractionLength(1)))
+        let expected = expectedHours.formatted(.number.precision(.fractionLength(1)))
         return String(localized: "yesterday.warningMessage \(booked) \(expected)")
     }
 }

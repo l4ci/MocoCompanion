@@ -319,8 +319,8 @@ final class Autotracker {
     /// Used by the timeline date picker to clamp its lower bound.
     var earliestRetainedDate: Date {
         let days = settings?.autotrackerRetentionDays ?? 14
-        return Calendar.current.date(byAdding: .day, value: -days, to: Date())
-            ?? Date()
+        return Calendar.current.date(byAdding: .day, value: -days, to: .now)
+            ?? .now
     }
 
     /// Delete app records older than the given number of days from today.

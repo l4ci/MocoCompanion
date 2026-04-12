@@ -136,7 +136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 }
 
                 let calendarId = await self.appState.settings.selectedCalendarId
-                let todayDate = Calendar.current.startOfDay(for: Date())
+                let todayDate = Calendar.current.startOfDay(for: .now)
                 let todayStr = DateUtilities.dateString(todayDate)
 
                 // Today

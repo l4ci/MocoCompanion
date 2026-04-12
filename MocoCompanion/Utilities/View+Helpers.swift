@@ -18,14 +18,16 @@ extension View {
     /// Schedule a focus change after a brief delay, working around SwiftUI's
     /// timing issues with focus assignment during view transitions.
     func setFocusAfterDelay<F: Hashable>(_ binding: FocusState<F?>.Binding, to value: F) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
             binding.wrappedValue = value
         }
     }
 
     /// Schedule a boolean focus change after a brief delay.
     func setFocusAfterDelay(_ binding: FocusState<Bool>.Binding, to value: Bool = true) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
             binding.wrappedValue = value
         }
     }

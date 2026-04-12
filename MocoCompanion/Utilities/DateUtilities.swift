@@ -41,18 +41,18 @@ enum DateUtilities {
 
     /// Today's date as "YYYY-MM-DD".
     static func todayString() -> String {
-        dateString(Date())
+        dateString(.now)
     }
 
     /// Yesterday's date as "YYYY-MM-DD". Returns nil if calendar math fails.
     static func yesterdayString() -> String? {
-        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return nil }
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: .now) else { return nil }
         return dateString(yesterday)
     }
 
     /// Tomorrow's date as "YYYY-MM-DD". Returns nil if calendar math fails.
     static func tomorrowString() -> String? {
-        guard let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) else { return nil }
+        guard let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) else { return nil }
         return dateString(tomorrow)
     }
 
@@ -122,12 +122,12 @@ enum DateUtilities {
             let matched = String(trimmed[match])
             // Extract hours part
             if let hRange = matched.range(of: #"\d+(?:[.,]\d+)?"#, options: .regularExpression) {
-                let hStr = String(matched[hRange]).replacingOccurrences(of: ",", with: ".")
+                let hStr = String(matched[hRange]).replacing(",", with: ".")
                 guard let h = Double(hStr) else { return nil }
 
                 // Extract optional minutes part
                 if let mRange = matched.range(of: #"(\d+)\s*m"#, options: .regularExpression) {
-                    let mStr = String(matched[mRange]).replacingOccurrences(of: "m", with: "").trimmingCharacters(in: .whitespaces)
+                    let mStr = String(matched[mRange]).replacing("m", with: "").trimmingCharacters(in: .whitespaces)
                     let m = Double(mStr) ?? 0
                     return h + m / 60.0
                 }
@@ -138,14 +138,14 @@ enum DateUtilities {
         // Try "Xm" pattern (minutes only)
         let mPattern = #"^(\d+)\s*m$"#
         if let match = trimmed.range(of: mPattern, options: .regularExpression) {
-            let mStr = String(trimmed[match]).replacingOccurrences(of: "m", with: "").trimmingCharacters(in: .whitespaces)
+            let mStr = String(trimmed[match]).replacing("m", with: "").trimmingCharacters(in: .whitespaces)
             if let m = Double(mStr) { return m / 60.0 }
         }
 
         // Try plain number (with comma or dot decimal)
         let plain = trimmed
-            .replacingOccurrences(of: "h", with: "")
-            .replacingOccurrences(of: ",", with: ".")
+            .replacing("h", with: "")
+            .replacing(",", with: ".")
             .trimmingCharacters(in: .whitespaces)
         if let value = Double(plain), value >= 0 { return value }
 

@@ -30,7 +30,7 @@ final class RecencyTracker {
 
     /// Record that a project was just used.
     func recordUsage(projectId: Int) {
-        usageMap[projectId] = Date()
+        usageMap[projectId] = Date.now
         schedulePersist()
         Self.logger.info("Recorded usage for project \(projectId)")
     }
@@ -80,7 +80,7 @@ final class RecencyTracker {
 
     private func persist() {
         // Prune entries older than decayDays before saving
-        let cutoff = Date().addingTimeInterval(-Self.decayDays * 86400)
+        let cutoff = Date.now.addingTimeInterval(-Self.decayDays * 86400)
         let pruned = usageMap.filter { $0.value > cutoff }
         if pruned.count < usageMap.count {
             Self.logger.info("Pruned \(self.usageMap.count - pruned.count) stale recency entries")

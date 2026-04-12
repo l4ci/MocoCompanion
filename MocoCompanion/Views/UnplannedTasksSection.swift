@@ -97,7 +97,7 @@ struct PlannedTaskRow: View {
 
             Spacer()
 
-            Text(String(format: "%.0fh", task.plannedHours))
+            Text("\(task.plannedHours.formatted(.number.precision(.fractionLength(0))))h")
                 .font(.system(size: captionSize, weight: .medium, design: .monospaced))
                 .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.plannedIndicatorSubtle)
 

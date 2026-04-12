@@ -141,7 +141,7 @@ final class BudgetService {
     ) async -> Bool {
         do {
             let existingCache = projectCaches[projectId]
-            let cacheAge = existingCache.map { Date().timeIntervalSince($0.fetchedAt) } ?? .infinity
+            let cacheAge = existingCache.map { Date.now.timeIntervalSince($0.fetchedAt) } ?? .infinity
             let reuseDetails = cacheAge < 300  // 5 minutes for project/contracts
 
             // Skip entirely if the whole cache (including report) is fresh (<60s)
@@ -170,7 +170,7 @@ final class BudgetService {
                     report: report,
                     fullProject: fullProject,
                     contracts: contracts,
-                    fetchedAt: Date()
+                    fetchedAt: Date.now
                 ),
                 for: projectId
             )

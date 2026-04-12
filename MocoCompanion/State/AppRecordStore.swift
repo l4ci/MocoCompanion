@@ -26,7 +26,7 @@ final class AppRecordStore {
         if inMemory {
             open(path: ":memory:")
         } else {
-            let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let dir = URL.applicationSupportDirectory
                 .appendingPathComponent("MocoCompanion", isDirectory: true)
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let path = dir.appendingPathComponent("app_records.sqlite").path
@@ -120,7 +120,7 @@ final class AppRecordStore {
     func records(for date: Date) -> [AppRecord] {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
 
         let startStr = Self.dateFormatter.string(from: startOfDay)
         let endStr = Self.dateFormatter.string(from: endOfDay)
@@ -155,7 +155,7 @@ final class AppRecordStore {
     }
 
     func cleanup(olderThan days: Int) {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date.now) else { return }
         let cutoffStr = Self.dateFormatter.string(from: cutoff)
         let sql = "DELETE FROM app_records WHERE timestamp < ?"
         var stmt: OpaquePointer?

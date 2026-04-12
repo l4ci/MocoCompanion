@@ -44,7 +44,7 @@ actor AppLogger {
     // MARK: - Log directory
 
     private var logDirectory: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupport = URL.applicationSupportDirectory
         let dir = appSupport.appendingPathComponent("MocoCompanion/Logs", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
@@ -119,7 +119,7 @@ actor AppLogger {
         let minLevel = category == .api ? apiLogLevel : appLogLevel
         guard level >= minLevel else { return }
 
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = dateFormatter.string(from: Date.now)
         var line = "[\(timestamp)] [\(level.label)]"
         if let ctx = context { line += " [\(ctx)]" }
         line += " \(message)\n"

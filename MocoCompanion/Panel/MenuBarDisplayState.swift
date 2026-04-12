@@ -127,7 +127,7 @@ struct MenuBarDisplayState: Equatable {
               let startedAt = activity.timerStartedAt,
               let start = DateUtilities.parseISO8601(startedAt) else { return "" }
         let previousSeconds = Double(activity.seconds)
-        let liveDelta = Date().timeIntervalSince(start)
+        let liveDelta = Date.now.timeIntervalSince(start)
         return DateUtilities.formatElapsedCompact(previousSeconds + liveDelta)
     }
 }

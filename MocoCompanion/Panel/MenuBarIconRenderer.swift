@@ -22,7 +22,7 @@ enum MenuBarIconRenderer {
         let symbolTint: NSColor = isDarkMenubar ? .white : .black
 
         let image = NSImage(size: canvasSize, flipped: false) { rect in
-            let tintedSymbol = templateSymbol.copy() as! NSImage
+            guard let tintedSymbol = templateSymbol.copy() as? NSImage else { return false }
             tintedSymbol.lockFocus()
             symbolTint.set()
             NSRect(origin: .zero, size: symbolSize).fill(using: .sourceAtop)

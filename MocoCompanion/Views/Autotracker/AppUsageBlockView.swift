@@ -73,11 +73,11 @@ struct AppUsageBlockView: View {
         .onChange(of: block.appBundleId) { _, _ in resolveAppIcon() }
         .frame(width: TimelineLayout.appUsagePaneWidth - 8, height: height)
         .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected ? 1 : 0)
-        )
+        }
         .help(helpLabel)
         .opacity(isDragging ? 0.5 : 1.0)
         .gesture(
@@ -94,11 +94,11 @@ struct AppUsageBlockView: View {
                     onDragEnded()
                 }
         )
-        .onTapGesture(count: 2) {
-            onCreateEntry?(block)
-        }
         .onTapGesture(count: 1) {
             onSelect(NSEvent.modifierFlags.contains(.shift))
+        }
+        .onTapGesture(count: 2) {
+            onCreateEntry?(block)
         }
         .contextMenu {
             Button("Create entry from this block…") {

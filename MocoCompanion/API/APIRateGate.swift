@@ -58,13 +58,13 @@ actor APIRateGate {
 
     /// Record that a request was made.
     func recordRequest() {
-        timestamps.append(Date())
+        timestamps.append(Date.now)
     }
 
     /// Record a Retry-After response from the server.
     func recordRetryAfter(seconds: Int?) {
         let delay = TimeInterval(seconds ?? 10) // Default 10s if no header
-        retryAfterDate = Date().addingTimeInterval(delay)
+        retryAfterDate = Date.now.addingTimeInterval(delay)
         logger.warning("Rate gate: Retry-After set for \(delay)s")
     }
 
@@ -76,7 +76,7 @@ actor APIRateGate {
 
     /// Remove timestamps outside the sliding window.
     private func pruneOldTimestamps() {
-        let cutoff = Date().addingTimeInterval(-windowSeconds)
+        let cutoff = Date.now.addingTimeInterval(-windowSeconds)
         timestamps.removeAll { $0 < cutoff }
     }
 }

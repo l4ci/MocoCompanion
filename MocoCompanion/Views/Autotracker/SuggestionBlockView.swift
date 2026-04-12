@@ -38,32 +38,30 @@ struct SuggestionBlockView: View {
                 Color.accentColor.opacity(0.08),
                 in: RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
             )
-            .overlay(
+            .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                     .strokeBorder(
                         Color.accentColor.opacity(0.4),
                         style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
                     )
-            )
+            }
 
             // Hover action buttons
             HStack(spacing: 4) {
-                Button {
+                Button("Approve", systemImage: "checkmark.circle.fill") {
                     Task { await viewModel.approveSuggestion(suggestion) }
-                } label: {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: Theme.FontSize.callout))
-                        .foregroundStyle(.green)
                 }
+                .labelStyle(.iconOnly)
+                .font(.system(size: Theme.FontSize.callout))
+                .foregroundStyle(.green)
                 .buttonStyle(.plain)
 
-                Button {
+                Button("Decline", systemImage: "xmark.circle.fill") {
                     viewModel.declineSuggestion(suggestion)
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: Theme.FontSize.callout))
-                        .foregroundStyle(.red)
                 }
+                .labelStyle(.iconOnly)
+                .font(.system(size: Theme.FontSize.callout))
+                .foregroundStyle(.red)
                 .buttonStyle(.plain)
             }
             .padding(4)

@@ -19,6 +19,12 @@ struct CalendarEventBlockView: View {
 
     private static let compactThreshold: CGFloat = 44
 
+    private static let timeFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "HH:mm"
+        return fmt
+    }()
+
     private var height: CGFloat {
         max(CGFloat(event.durationMinutes) * TimelineLayout.pixelsPerMinute, 20)
     }
@@ -26,9 +32,7 @@ struct CalendarEventBlockView: View {
     private var isCompact: Bool { height < Self.compactThreshold }
 
     private var timeRangeLabel: String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "HH:mm"
-        return "\(fmt.string(from: event.startDate)) – \(fmt.string(from: event.endDate))"
+        "\(Self.timeFormatter.string(from: event.startDate)) – \(Self.timeFormatter.string(from: event.endDate))"
     }
 
     private var durationLabel: String {
@@ -54,14 +58,14 @@ struct CalendarEventBlockView: View {
         }
         .frame(height: height)
         .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous))
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected || isLinked ? 1 : 0)
-        )
+        }
         .help(helpLabel)
-        .onTapGesture(count: 2) { onCreateEntry() }
         .onTapGesture(count: 1) { onSelect() }
+        .onTapGesture(count: 2) { onCreateEntry() }
         .contextMenu {
             Button(String(localized: "calendar.contextMenu.createEntry")) { onCreateEntry() }
             if rulesEnabled {

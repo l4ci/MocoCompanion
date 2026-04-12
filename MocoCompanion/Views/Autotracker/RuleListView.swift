@@ -81,11 +81,10 @@ struct RuleListView: View {
                 .font(.system(size: Theme.FontSize.callout, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
             Spacer()
-            Button {
+            Button("Add Rule", systemImage: "plus") {
                 showCreateSheet = true
-            } label: {
-                Image(systemName: "plus")
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
@@ -188,23 +187,21 @@ struct RuleListView: View {
             .controlSize(.small)
             .labelsHidden()
 
-            Button {
+            Button("Edit Rule", systemImage: "pencil") {
                 editingRule = rule
-            } label: {
-                Image(systemName: "pencil")
-                    .font(.system(size: Theme.FontSize.body))
-                    .foregroundStyle(theme.textSecondary)
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.plain)
+            .foregroundStyle(theme.textSecondary)
+            .font(.system(size: Theme.FontSize.body))
 
-            Button {
+            Button("Delete Rule", systemImage: "trash") {
                 deletingRule = rule
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: Theme.FontSize.body))
-                    .foregroundStyle(.red.opacity(0.8))
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.plain)
+            .foregroundStyle(.red.opacity(0.8))
+            .font(.system(size: Theme.FontSize.body))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

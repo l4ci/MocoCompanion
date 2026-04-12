@@ -45,7 +45,7 @@ final class RecentEntriesTracker {
                 projectName: projectName,
                 taskName: taskName,
                 description: description,
-                date: Date()
+                date: Date.now
             )
 
             // Insert at front (most recent first)

@@ -458,12 +458,12 @@ struct TimelinePaneView: View {
             .onAppear {
                 // Defer so the ScrollView has completed its initial layout
                 // pass; otherwise scrollTo runs before the anchor has a frame.
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     proxy.scrollTo("scrollAnchor", anchor: .center)
                 }
             }
             .onChange(of: selectedDate) {
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     proxy.scrollTo("scrollAnchor", anchor: .center)
                 }
             }
@@ -473,7 +473,7 @@ struct TimelinePaneView: View {
     /// Y position for the scroll anchor: now-line on today, 8:00 AM otherwise.
     private var scrollAnchorY: CGFloat {
         if isToday {
-            let components = Calendar.current.dateComponents([.hour, .minute], from: Date())
+            let components = Calendar.current.dateComponents([.hour, .minute], from: Date.now)
             let minutes = CGFloat((components.hour ?? 0) * 60 + (components.minute ?? 0))
             return minutes * TimelineLayout.pixelsPerMinute
         }

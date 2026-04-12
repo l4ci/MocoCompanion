@@ -92,7 +92,7 @@ struct TodayActivityRow: View {
                         )
 
                         if let planned = plannedHours {
-                            Text("of \(String(format: "%.0fh", planned))")
+                            Text("of \(planned.formatted(.number.precision(.fractionLength(0))))h")
                                 .font(.system(size: captionSize, weight: .medium))
                                 .foregroundStyle(isSelected ? theme.selectedTextTertiary : .secondary)
                         }

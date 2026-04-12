@@ -43,7 +43,7 @@ enum GreetingHelper {
 
     /// Generate a greeting using the current time and user profile.
     static func currentGreeting(name: String?, locale: Locale = .current) -> String {
-        let now = Date()
+        let now = Date.now
         let cal = Calendar.current
         let hour = cal.component(.hour, from: now)
         let weekday = cal.component(.weekday, from: now)

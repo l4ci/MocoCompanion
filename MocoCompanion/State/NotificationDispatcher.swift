@@ -90,9 +90,9 @@ final class NotificationDispatcher: NotificationSending {
             fmt.dateFormat = "yyyy-MM-dd"
             let targetDate: Date
             if type == .yesterdayUnderBooked {
-                targetDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+                targetDate = Calendar.current.date(byAdding: .day, value: -1, to: Date.now) ?? Date.now
             } else {
-                targetDate = Date()
+                targetDate = Date.now
             }
             content.userInfo["targetDate"] = fmt.string(from: targetDate)
         }
@@ -150,12 +150,12 @@ extension NotificationDispatcher {
     }
 
     func manualEntry(projectName: String, hours: Double) {
-        let formatted = String(format: "%.1fh", hours)
+        let formatted = "\(hours.formatted(.number.precision(.fractionLength(1))))h"
         send(.manualEntry, message: "Booked \(formatted) for \(projectName)")
     }
 
     func entryDuplicated(projectName: String, hours: Double) {
-        let formatted = String(format: "%.1fh", hours)
+        let formatted = "\(hours.formatted(.number.precision(.fractionLength(1))))h"
         send(.activityDuplicated, message: "Duplicated \(formatted) for \(projectName)")
     }
 

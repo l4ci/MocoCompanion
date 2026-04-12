@@ -7,7 +7,7 @@ struct DedupLedger {
     private var entries: [String: Date] = [:]
 
     /// Check whether an alert should fire based on its dedup strategy.
-    func shouldFire(_ alert: MonitorAlert, now: Date = Date()) -> Bool {
+    func shouldFire(_ alert: MonitorAlert, now: Date = .now) -> Bool {
         switch alert.dedupStrategy {
         case .once:
             return entries[alert.dedupKey] == nil
@@ -21,7 +21,7 @@ struct DedupLedger {
     }
 
     /// Record that an alert fired.
-    mutating func markFired(_ alert: MonitorAlert, at date: Date = Date()) {
+    mutating func markFired(_ alert: MonitorAlert, at date: Date = .now) {
         entries[alert.dedupKey] = date
     }
 

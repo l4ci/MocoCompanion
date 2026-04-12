@@ -46,7 +46,7 @@ struct SearchFieldView: View {
                 .accessibilityLabel(String(localized: "a11y.searchField"))
                 .accessibilityHint(String(localized: "a11y.searchHint"))
                 .onSubmit { onSubmit() }
-                .onChange(of: searchText) {
+                .onChange(of: searchText) { _, _ in
                     selectedIndex = (isSearchEmpty && hasActiveTimer) ? -1 : 0
                 }
                 .onKeyPress(.downArrow) {

@@ -34,9 +34,8 @@ final class EntryQueue {
     }
 
     private static var appSupportDir: URL {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        URL.applicationSupportDirectory
             .appendingPathComponent("MocoCompanion", isDirectory: true)
-        return dir
     }
 
     /// Queue an entry for later sync.
@@ -51,7 +50,7 @@ final class EntryQueue {
             description: description,
             seconds: seconds,
             tag: tag,
-            createdAt: Date()
+            createdAt: Date.now
         )
         entries.append(entry)
         saveToDisk()

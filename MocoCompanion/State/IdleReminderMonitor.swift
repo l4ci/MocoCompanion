@@ -77,7 +77,7 @@ final class IdleReminderMonitor: PollingMonitor {
         self.settings = settings
         // Seed idleSince based on current state
         if timerService.timerState == .idle {
-            idleSince = Date()
+            idleSince = Date.now
         }
     }
 
@@ -105,7 +105,7 @@ final class IdleReminderMonitor: PollingMonitor {
         switch timerService.timerState {
         case .idle:
             if idleSince == nil {
-                idleSince = Date()
+                idleSince = Date.now
                 forgottenTimerFired = false
             }
         case .running, .paused:
@@ -115,12 +115,12 @@ final class IdleReminderMonitor: PollingMonitor {
 
         // Working hours gate for idle reminders
         guard settings.schedule.isWithinWorkingHours(
-            weekday: Calendar.current.component(.weekday, from: Date()),
-            hour: Calendar.current.component(.hour, from: Date())
+            weekday: Calendar.current.component(.weekday, from: Date.now),
+            hour: Calendar.current.component(.hour, from: Date.now)
         ) else { return alerts }
 
         // Idle 5+ minutes
-        if let start = idleSince, Date().timeIntervalSince(start) / 60 >= 5 {
+        if let start = idleSince, Date.now.timeIntervalSince(start) / 60 >= 5 {
             let msg = Self.messages.randomElement() ?? String(localized: "idle.default")
             alerts.append(MonitorAlert(
                 type: .idleReminder,
@@ -147,11 +147,11 @@ final class IdleReminderMonitor: PollingMonitor {
               let startedAt = activity.timerStartedAt,
               let start = DateUtilities.parseISO8601(startedAt) else { return nil }
 
-        let hoursRunning = Date().timeIntervalSince(start) / 3600.0
+        let hoursRunning = Date.now.timeIntervalSince(start) / 3600.0
         guard hoursRunning >= 3 else { return nil }
 
         forgottenTimerFired = true
-        let hours = String(format: "%.0f", hoursRunning)
+        let hours = hoursRunning.formatted(.number.precision(.fractionLength(0)))
         return MonitorAlert(
             type: .forgottenTimer,
             message: String(localized: "forgotten.message \(hours) \(projectName)"),
@@ -161,7 +161,7 @@ final class IdleReminderMonitor: PollingMonitor {
     }
 
     private func checkEndOfDay() -> MonitorAlert? {
-        let now = Date()
+        let now = Date.now
         let cal = Calendar.current
         let weekday = cal.component(.weekday, from: now)
         let hour = cal.component(.hour, from: now)
@@ -173,11 +173,11 @@ final class IdleReminderMonitor: PollingMonitor {
         let hours = activityService.todayTotalHours
         let message: String
         if hours >= 8 {
-            message = String(localized: "eod.fullDay \(String(format: "%.1f", hours))")
+            message = String(localized: "eod.fullDay \(hours.formatted(.number.precision(.fractionLength(1))))")
         } else if hours >= 4 {
-            message = String(localized: "eod.solidDay \(String(format: "%.1f", hours))")
+            message = String(localized: "eod.solidDay \(hours.formatted(.number.precision(.fractionLength(1))))")
         } else if hours > 0 {
-            message = String(localized: "eod.lightDay \(String(format: "%.1f", hours))")
+            message = String(localized: "eod.lightDay \(hours.formatted(.number.precision(.fractionLength(1))))")
         } else {
             message = String(localized: "eod.noEntries")
         }

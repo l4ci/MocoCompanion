@@ -112,7 +112,7 @@ struct TimelineEntryCreationSheet: View {
             TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
-                .onChange(of: descriptionText) { hasInteracted = true }
+                .onChange(of: descriptionText) { _, _ in hasInteracted = true }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
                     .font(.system(size: Theme.FontSize.caption))
@@ -155,6 +155,12 @@ struct TimelineEntryCreationSheet: View {
         return TimelineGeometry.timeString(fromMinutes: endMinutes)
     }
 
+    private static let headerDateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMMM d"
+        return fmt
+    }()
+
     private var formattedDateHeader: String {
         // Parse YYYY-MM-DD and format nicely
         let parts = date.split(separator: "-")
@@ -169,9 +175,7 @@ struct TimelineEntryCreationSheet: View {
         comps.month = month
         comps.day = day
         guard let d = Calendar.current.date(from: comps) else { return date }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM d"
-        return formatter.string(from: d)
+        return Self.headerDateFormatter.string(from: d)
     }
 }
 
@@ -275,14 +279,13 @@ struct TimelineEntryEditSheet: View {
                     .foregroundStyle(theme.textPrimary)
                 Spacer()
                 if onDelete != nil, !entry.isReadOnly {
-                    Button(role: .destructive) {
+                    Button("Delete Entry", systemImage: "trash", role: .destructive) {
                         showDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: Theme.FontSize.body))
                     }
+                    .labelStyle(.iconOnly)
                     .buttonStyle(.plain)
                     .foregroundStyle(.red)
+                    .font(.system(size: Theme.FontSize.body))
                     .help("Delete entry")
                 }
             }
@@ -522,7 +525,7 @@ struct TimelineEntryEditSheet: View {
             TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
-                .onChange(of: descriptionText) { hasInteracted = true }
+                .onChange(of: descriptionText) { _, _ in hasInteracted = true }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
                     .font(.system(size: Theme.FontSize.caption))

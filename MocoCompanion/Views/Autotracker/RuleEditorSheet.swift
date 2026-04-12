@@ -416,6 +416,8 @@ struct RuleEditorSheet: View {
 
     // MARK: - Validation & Save
 
+    private static let isoFormatter = ISO8601DateFormatter()
+
     private var isValid: Bool {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty,
               selectedEntry != nil else { return false }
@@ -431,7 +433,7 @@ struct RuleEditorSheet: View {
         guard let entry = selectedEntry else { return }
         errorMessage = nil
 
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = Self.isoFormatter.string(from: Date.now)
         var rule = existingRule ?? TrackingRule(
             id: nil,
             name: "",

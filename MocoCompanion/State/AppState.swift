@@ -222,12 +222,17 @@ final class AppState {
         }
         let userIdProvider: () -> Int? = { userIdBox.value }
 
-        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupportURL = URL.applicationSupportDirectory
             .appendingPathComponent("MocoCompanion")
         try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
-        let db = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
-        let shadowStore = try! ShadowEntryStore(database: db)
         let sState = SyncState()
+        let shadowStore: ShadowEntryStore
+        do {
+            let db = try SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
+            shadowStore = try ShadowEntryStore(database: db)
+        } catch {
+            fatalError("Failed to initialize database: \(error)")
+        }
 
         // SyncEngine is a non-MainActor actor. These closures access @MainActor state
         // but SyncEngine calls them synchronously from its actor context.
@@ -380,11 +385,16 @@ final class AppState {
         let entryQueue = EntryQueue()
         let offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
 
-        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupportURL = URL.applicationSupportDirectory
             .appendingPathComponent("MocoCompanion")
         let recordStore = AppRecordStore()
-        let rulesDb = try! SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
-        let rStore = try! RuleStore(database: rulesDb)
+        let rStore: RuleStore
+        do {
+            let rulesDb = try SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
+            rStore = try RuleStore(database: rulesDb)
+        } catch {
+            fatalError("Failed to initialize database: \(error)")
+        }
         let autotracker = Autotracker(
             shadowEntryStore: shadowEntryStore,
             appRecordStore: recordStore,

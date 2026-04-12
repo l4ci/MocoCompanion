@@ -41,7 +41,7 @@ final class LiveQuickEntryCommands: QuickEntryCommands {
         )
         switch result {
         case .success:
-            let formatted = String(format: "%.1fh", hours)
+            let formatted = "\(hours.formatted(.number.precision(.fractionLength(1))))h"
             return .success("\(entry.projectName) (\(formatted))")
         case .failure(let error): return .failure(.apiFailure(error))
         }
