@@ -8,14 +8,10 @@ import os
 final class AppRecordStore {
     private static let logger = Logger(category: "AppRecordStore")
 
-    /// SQLite connection handle. Must remain accessible from deinit (which
-    /// is nonisolated) so the connection is closed on last release.
-    /// Swift warns that `nonisolated(unsafe)` is redundant here, but
-    /// removing it breaks the deinit — `db` becomes @MainActor-isolated and
-    /// cannot be referenced from the nonisolated deinit. Keep this until
-    /// Swift supports `isolated deinit` on @Observable classes.
-    // swiftlint:disable:next redundant_nonisolated_unsafe
-    nonisolated(unsafe) private var db: OpaquePointer?
+    /// SQLite connection handle. Opted out of observation (not UI state) so
+    /// `nonisolated(unsafe)` applies to the real stored property and deinit
+    /// can close the connection without isolation errors.
+    @ObservationIgnored nonisolated(unsafe) private var db: OpaquePointer?
     private static let dateFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

@@ -34,12 +34,9 @@ final class CalendarService {
     private var changeBumpTask: Task<Void, Never>?
 
     private let eventStore = EKEventStore()
-    /// Must be nonisolated(unsafe) so deinit (which is nonisolated) can read it
-    /// to remove the observer. Safe because the token is only written on the
-    /// main actor and deinit is only reached after all strong references are gone.
-    /// Pattern established by AppRecordStore — keep until Swift supports isolated deinit.
-    // swiftlint:disable:next redundant_nonisolated_unsafe
-    nonisolated(unsafe) private var changeObserver: NSObjectProtocol?
+    /// Opted out of observation (not UI state) so `nonisolated(unsafe)` applies
+    /// to the real stored property and deinit can remove the observer.
+    @ObservationIgnored nonisolated(unsafe) private var changeObserver: NSObjectProtocol?
 
     // MARK: - Permission
 
