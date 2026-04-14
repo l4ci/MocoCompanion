@@ -47,7 +47,7 @@ struct MocoActivity: Codable, Identifiable, Sendable, Equatable {
         task = try container.decode(ActivityTask.self, forKey: .task)
         customer = try container.decode(MocoCustomer.self, forKey: .customer)
         user = try container.decode(MocoUser.self, forKey: .user)
-        hourlyRate = try container.decode(Double.self, forKey: .hourlyRate)
+        hourlyRate = try container.decodeIfPresent(Double.self, forKey: .hourlyRate) ?? 0
         timerStartedAt = try container.decodeIfPresent(String.self, forKey: .timerStartedAt)
         locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
         createdAt = try container.decode(String.self, forKey: .createdAt)

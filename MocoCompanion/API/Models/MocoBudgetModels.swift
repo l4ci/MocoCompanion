@@ -15,6 +15,19 @@ struct MocoFullProject: Codable, Identifiable, Sendable {
     let hourlyRate: Double
     let tasks: [MocoFullTask]
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        identifier = try container.decodeIfPresent(String.self, forKey: .identifier) ?? ""
+        active = try container.decode(Bool.self, forKey: .active)
+        billable = try container.decode(Bool.self, forKey: .billable)
+        billingVariant = try container.decodeIfPresent(String.self, forKey: .billingVariant) ?? ""
+        budget = try container.decodeIfPresent(Double.self, forKey: .budget)
+        hourlyRate = try container.decodeIfPresent(Double.self, forKey: .hourlyRate) ?? 0
+        tasks = try container.decodeIfPresent([MocoFullTask].self, forKey: .tasks) ?? []
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, identifier, active, billable, budget, tasks
         case billingVariant = "billing_variant"
@@ -91,5 +104,17 @@ struct MocoProjectContract: Codable, Identifiable, Sendable {
         case id, firstname, lastname, billable, active, budget
         case userId = "user_id"
         case hourlyRate = "hourly_rate"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        userId = try container.decode(Int.self, forKey: .userId)
+        firstname = try container.decodeIfPresent(String.self, forKey: .firstname) ?? ""
+        lastname = try container.decodeIfPresent(String.self, forKey: .lastname) ?? ""
+        billable = try container.decodeIfPresent(Bool.self, forKey: .billable) ?? false
+        active = try container.decodeIfPresent(Bool.self, forKey: .active) ?? true
+        budget = try container.decodeIfPresent(Double.self, forKey: .budget)
+        hourlyRate = try container.decodeIfPresent(Double.self, forKey: .hourlyRate) ?? 0
     }
 }
