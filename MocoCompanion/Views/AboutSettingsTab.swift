@@ -32,7 +32,7 @@ struct AboutSettingsTab: View {
                 .foregroundStyle(theme.textPrimary)
 
             // Version
-            Text("Version \(appVersion) (\(buildNumber))")
+            Text("Version \(appVersion)")
                 .font(.system(size: 13))
                 .foregroundStyle(theme.textSecondary)
                 .padding(.top, 2)
