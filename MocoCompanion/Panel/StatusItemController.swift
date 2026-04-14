@@ -34,7 +34,6 @@ final class StatusItemController {
         setupPopover()
         setupMenu()
         startObservingTimerState()
-        startObservingAppearance()
         Self.logger.info("Status item created")
     }
 
@@ -61,7 +60,6 @@ final class StatusItemController {
             button.image = MenuBarIconRenderer.makeIconWithDot(
                 symbolName: "timer",
                 dotColor: .systemRed,
-                isDarkMenubar: button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua,
                 accessibilityDescription: "Moco Timer"
             )
             button.target = self
@@ -72,8 +70,6 @@ final class StatusItemController {
 
     func teardown() {
         elapsedTimerTask?.cancel()
-        appearanceObservation?.invalidate()
-        appearanceObservation = nil
     }
 
     // MARK: - Popover & Menu
@@ -177,10 +173,6 @@ final class StatusItemController {
     private var lastIconName: String?
     /// Cached dot color to avoid re-compositing when unchanged.
     private var lastDotColor: NSColor?
-    /// Cached appearance to detect light/dark transitions.
-    private var lastIsDark: Bool?
-    /// KVO observation for menubar appearance changes.
-    private var appearanceObservation: NSKeyValueObservation?
 
     /// Cached label portion ("project · task") for the currently running
     /// timer, so the 1 s elapsed refresh loop doesn't re-run the emoji
@@ -222,19 +214,16 @@ final class StatusItemController {
     private func applyDisplayState(_ state: MenuBarDisplayState) {
         guard let button = statusItem?.button else { return }
 
-        let isDark = button.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-
-        // Recreate NSImage when icon name, dot color, or appearance changes
-        if state.iconName != lastIconName || state.dotColor != lastDotColor || isDark != lastIsDark {
+        // Recreate NSImage when icon name or dot color changes.
+        // The icon is a template image — macOS handles light/dark tinting.
+        if state.iconName != lastIconName || state.dotColor != lastDotColor {
             button.image = MenuBarIconRenderer.makeIconWithDot(
                 symbolName: state.iconName,
                 dotColor: state.dotColor,
-                isDarkMenubar: isDark,
                 accessibilityDescription: state.accessibilityDescription
             )
             lastIconName = state.iconName
             lastDotColor = state.dotColor
-            lastIsDark = isDark
         }
         button.title = state.title
 
@@ -263,21 +252,8 @@ final class StatusItemController {
         }
     }
 
-    /// Observe system appearance changes and re-render the icon.
-    private func startObservingAppearance() {
-        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                // Force re-render by clearing the cache
-                self.lastIsDark = nil
-                let state = MenuBarDisplayState.from(
-                    timerState: self.timerService.timerState,
-                    currentActivity: self.timerService.currentActivity
-                )
-                self.applyDisplayState(state)
-            }
-        }
-    }
+    // Appearance observation removed — the icon is a template image now,
+    // so macOS handles light/dark tinting automatically.
 
     private func updateElapsedTimer(for state: TimerState) {
         switch state {
