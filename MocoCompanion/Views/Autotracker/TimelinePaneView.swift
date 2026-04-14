@@ -89,28 +89,8 @@ struct TimelinePaneView: View {
             // column remains a valid drop target even on empty days; the
             // empty-state messages overlay the ScrollView instead of
             // replacing it.
-            ZStack(alignment: .top) {
-                scrollContent
-
-                if positionedEntries.isEmpty && appUsageBlocks.isEmpty && unpositionedEntries.isEmpty {
-                    Text("No activity for this day")
-                        .font(.system(size: Theme.FontSize.body + fontBoost))
-                        .foregroundStyle(theme.textTertiary)
-                        .padding(12)
-                        .background(theme.surface.opacity(0.85), in: Capsule())
-                        .padding(.top, 60)
-                        .allowsHitTesting(false)
-                } else if positionedEntries.isEmpty && appUsageBlocks.isEmpty {
-                    Text("No timed entries for this day")
-                        .font(.system(size: Theme.FontSize.body + fontBoost))
-                        .foregroundStyle(theme.textTertiary)
-                        .padding(12)
-                        .background(theme.surface.opacity(0.85), in: Capsule())
-                        .padding(.top, 60)
-                        .allowsHitTesting(false)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            scrollContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .focusable()
@@ -568,6 +548,8 @@ struct TimelinePaneView: View {
                     onRequestAccess: { _ = AccessibilityPermission.requestAccess() }
                 )
                 .padding(.top, 40)
+            } else if appUsageBlocks.isEmpty {
+                columnEmptyLabel(String(localized: "timeline.noAppActivity"))
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
@@ -763,6 +745,10 @@ struct TimelinePaneView: View {
             if let preview = viewModel.gesturePreviewState {
                 GesturePreviewBlockView(preview: preview, columnWidth: entryColumnWidth)
             }
+
+            if positionedEntries.isEmpty {
+                columnEmptyLabel(String(localized: "timeline.noEntries"))
+            }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
         .dropDestination(for: String.self) { items, location in
@@ -822,6 +808,20 @@ struct TimelinePaneView: View {
         .onPreferenceChange(EntryColumnWidthKey.self) { value in
             entryColumnWidth = value
         }
+    }
+
+    // MARK: - Column Empty Label
+
+    private func columnEmptyLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: Theme.FontSize.caption + fontBoost))
+            .foregroundStyle(theme.textTertiary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(theme.surface.opacity(0.85), in: Capsule())
+            .frame(maxWidth: .infinity)
+            .padding(.top, 60)
+            .allowsHitTesting(false)
     }
 
     // MARK: - Positioning Helpers
