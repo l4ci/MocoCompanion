@@ -257,6 +257,12 @@ final class SettingsStore {
         didSet { Self.save(Key.autotrackerRetentionDays, autotrackerRetentionDays) }
     }
 
+    /// Default bundle IDs excluded from app tracking (sensitive apps + self).
+    private static let defaultExcludedApps = [
+        "com.1password.1password",
+        "com.mococompanion.app",
+    ]
+
     /// Bundle IDs excluded from autotracker recording. Persisted as JSON array in UserDefaults.
     var autotrackerExcludedApps: [String] {
         didSet { Self.saveJSON(Key.autotrackerExcludedApps, autotrackerExcludedApps) }
@@ -361,7 +367,7 @@ final class SettingsStore {
         self.descriptionRequired = Self.read(Key.descriptionRequired, default: false)
         self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
         self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
-        self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: [])
+        self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: Self.defaultExcludedApps)
         self.calendarEnabled = Self.read(Key.calendarEnabled, default: false)
         // New users default rules off; existing users who had autotracker on
         // (= rules were implicitly active) keep them enabled.
