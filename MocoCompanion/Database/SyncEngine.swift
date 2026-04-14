@@ -154,13 +154,19 @@ actor SyncEngine {
                 guard let id = entry.id else { continue }
                 do {
                     try await client.deleteActivity(activityId: id)
-                } catch let error as MocoError where error.isGone {
-                    // 403 (locked/forbidden) or 404 (already deleted) —
-                    // the entry is gone on the server, just clean up locally.
-                    logger.info("Delete \(id): server returned gone/forbidden — removing local row")
+                    try await store.delete(id: id)
+                    pushCount += 1
+                } catch let error as MocoError where error.isNotFound {
+                    // 404 — already deleted on server, clean up locally.
+                    logger.info("Delete \(id): not found on server — removing local row")
+                    try await store.delete(id: id)
+                    pushCount += 1
+                } catch let error as MocoError where error.isForbidden {
+                    // 403 — locked/billed, can't delete. Revert to synced
+                    // so the entry stays visible as read-only.
+                    logger.info("Delete \(id): forbidden (locked/billed) — reverting to synced")
+                    try await store.markSynced(id: id, serverUpdatedAt: entry.updatedAt)
                 }
-                try await store.delete(id: id)
-                pushCount += 1
 
             case .synced:
                 break

@@ -22,17 +22,21 @@ enum MocoError: Error, LocalizedError, Sendable {
     /// API key in Settings) is required. Transient issues like rate
     /// limiting, network blips, or server errors don't qualify: those
     /// will heal on retry and don't warrant a menubar alarm.
-    /// True when the resource is gone or inaccessible on the server —
-    /// 403 (locked/forbidden) or 404 (deleted). Used by SyncEngine to
-    /// stop retrying deletes that will never succeed.
-    var isGone: Bool {
+    /// True when the resource no longer exists — 404 (deleted).
+    /// SyncEngine removes the local shadow row.
+    var isNotFound: Bool {
         switch self {
-        case .notFound:
-            return true
-        case .serverError(let code, _) where code == 403:
-            return true
-        default:
-            return false
+        case .notFound: return true
+        default: return false
+        }
+    }
+
+    /// True when the server forbids the action — 403 (locked/billed).
+    /// SyncEngine reverts the local row to synced instead of retrying.
+    var isForbidden: Bool {
+        switch self {
+        case .serverError(let code, _) where code == 403: return true
+        default: return false
         }
     }
 
