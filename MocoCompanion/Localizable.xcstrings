@@ -4102,6 +4102,9 @@
         }
       }
     },
+    "Open Timeline" : {
+
+    },
     "Pending deletion" : {
 
     },
@@ -5413,6 +5416,22 @@
         }
       }
     },
+    "settings.showKeyboardHints" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tastaturkürzel anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Keyboard Hints"
+          }
+        }
+      }
+    },
     "settings.sound" : {
       "localizations" : {
         "de" : {
@@ -5838,6 +5857,9 @@
     "Synced to Moco" : {
 
     },
+    "TAB" : {
+
+    },
     "tab.search" : {
       "localizations" : {
         "de" : {
@@ -5871,6 +5893,9 @@
       }
     },
     "Target Entry" : {
+
+    },
+    "Timeline (⌘T)" : {
 
     },
     "timeline.calendar.none" : {
