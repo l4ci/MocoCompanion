@@ -39,6 +39,8 @@ xcuserdata/
 
 # ── Build artifacts ──
 *.log
+*.profraw
+MocoCompanion-*.zip
 coverage/
 .cache/
 tmp/
