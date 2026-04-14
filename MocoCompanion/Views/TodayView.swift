@@ -93,6 +93,9 @@ struct TodayView: View {
         .focused($listFocused)
         .focusEffectDisabled()
         .task(id: refreshId) {
+            // Only run when explicitly triggered (refreshId set to non-nil).
+            guard refreshId != nil else { return }
+
             // Wait for session to establish userId before fetching — prevents
             // returning all-users data for accounts with elevated permissions.
             if appState.session.currentUserId == nil {
