@@ -8,8 +8,10 @@ struct SetupWizardView: View {
     @Bindable var settings: SettingsStore
     var onComplete: () -> Void
 
-    @Environment(\.theme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    /// Derived from the window's actual color scheme — the theme
+    /// environment key defaults to light and isn't set above this view.
+    private var theme: Theme { Theme(colorScheme: colorScheme) }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var step: WizardStep = .domain
