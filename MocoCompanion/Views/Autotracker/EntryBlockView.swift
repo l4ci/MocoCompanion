@@ -250,9 +250,6 @@ struct EntryBlockView: View {
                 .frame(height: displayHeight)
             }
         }
-        .onHover { hovering in
-            showPopover = hovering && !isGestureActive
-        }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.projectName)
@@ -279,6 +276,8 @@ struct EntryBlockView: View {
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
+            // Show popover on click for compact entries
+            if isCompact { showPopover = true }
         }
         .onTapGesture(count: 2) {
             if !entry.isReadOnly {

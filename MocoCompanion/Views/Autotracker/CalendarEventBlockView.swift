@@ -65,7 +65,6 @@ struct CalendarEventBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected || isLinked ? 1 : 0)
         }
-        .onHover { showPopover = $0 }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
             HStack(spacing: 8) {
                 Image(systemName: "calendar")
@@ -87,7 +86,10 @@ struct CalendarEventBlockView: View {
             }
             .padding(10)
         }
-        .onTapGesture(count: 1) { onSelect() }
+        .onTapGesture(count: 1) {
+            onSelect()
+            showPopover = true
+        }
         .onTapGesture(count: 2) { onCreateEntry() }
         .contextMenu {
             Button(String(localized: "calendar.contextMenu.createEntry")) { onCreateEntry() }

@@ -81,9 +81,6 @@ struct AppUsageBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected ? 1 : 0)
         }
-        .onHover { hovering in
-            showPopover = hovering && !isDragging
-        }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
             hoverPopover
         }
@@ -104,6 +101,7 @@ struct AppUsageBlockView: View {
         )
         .onTapGesture(count: 1) {
             onSelect(NSEvent.modifierFlags.contains(.shift))
+            showPopover = true
         }
         .onTapGesture(count: 2) {
             onCreateEntry?(block)

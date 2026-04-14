@@ -111,7 +111,7 @@ struct TimelineEntryCreationSheet: View {
             }
             TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
+                .font(.system(size: Theme.FontSize.callout))
                 .onChange(of: descriptionText) { _, _ in hasInteracted = true }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
@@ -275,7 +275,7 @@ struct TimelineEntryEditSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Edit Entry")
-                    .font(.system(size: Theme.FontSize.callout, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.title, weight: .semibold))
                     .foregroundStyle(theme.textPrimary)
                 Spacer()
                 if onDelete != nil, !entry.isReadOnly {
@@ -318,8 +318,8 @@ struct TimelineEntryEditSheet: View {
 
             buttonRow
         }
-        .padding(16)
-        .frame(width: 440, alignment: .topLeading)
+        .padding(20)
+        .frame(width: 520, alignment: .topLeading)
         .onAppear {
             // Pre-select the current project/task from the catalog so the
             // collapsed view shows the entry's current assignment.
@@ -367,17 +367,17 @@ struct TimelineEntryEditSheet: View {
                         .foregroundStyle(theme.textTertiary)
                     HStack(spacing: 2) {
                         TextField("", value: $startHour, format: .number)
-                            .frame(width: 34)
+                            .frame(width: 44)
                             .multilineTextAlignment(.center)
                             .textFieldStyle(.roundedBorder)
                         Text(":")
                             .foregroundStyle(theme.textTertiary)
                         TextField("", value: $startMinute, format: .number)
-                            .frame(width: 34)
+                            .frame(width: 44)
                             .multilineTextAlignment(.center)
                             .textFieldStyle(.roundedBorder)
                     }
-                    .font(.system(size: Theme.FontSize.body, design: .monospaced))
+                    .font(.system(size: Theme.FontSize.callout, design: .monospaced))
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -386,7 +386,7 @@ struct TimelineEntryEditSheet: View {
                         .foregroundStyle(theme.textTertiary)
                     HStack(spacing: 4) {
                         TextField("", value: $durationMinutes, format: .number)
-                            .frame(width: 50)
+                            .frame(width: 60)
                             .multilineTextAlignment(.trailing)
                             .textFieldStyle(.roundedBorder)
                         Text("min")
@@ -524,7 +524,7 @@ struct TimelineEntryEditSheet: View {
             }
             TextField("Description (required)", text: $descriptionText)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
+                .font(.system(size: Theme.FontSize.callout))
                 .onChange(of: descriptionText) { _, _ in hasInteracted = true }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
