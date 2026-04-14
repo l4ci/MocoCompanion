@@ -4,7 +4,7 @@ A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.
 
 <img src="docs/screenshots/Log.png" alt="MocoCompanion Log View" width="667">
 
-> **[Full Documentation & User Guide](docs/README.md)**
+[Installation](#installation) · [Features](#features) · [Documentation](docs/README.md) · [Requirements](#requirements)
 
 ## Features
 
