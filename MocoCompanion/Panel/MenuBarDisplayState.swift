@@ -10,21 +10,11 @@ struct MenuBarDisplayState: Equatable {
     /// Indicator dot color: red=idle, orange=paused, green=running.
     let dotColor: NSColor
 
-    /// Compute the current display state from timer state and error info.
+    /// Compute the current display state from timer state.
     static func from(
         timerState: TimerState,
-        currentActivity: ShadowEntry?,
-        hasError: Bool
+        currentActivity: ShadowEntry?
     ) -> MenuBarDisplayState {
-        if hasError {
-            return MenuBarDisplayState(
-                iconName: "exclamationmark.triangle.fill",
-                title: "",
-                accessibilityDescription: "Moco Error",
-                dotColor: .systemRed
-            )
-        }
-
         switch timerState {
         case .idle:
             return MenuBarDisplayState(

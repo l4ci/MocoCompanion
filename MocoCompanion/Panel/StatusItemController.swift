@@ -205,8 +205,7 @@ final class StatusItemController {
         let state = withObservationTracking {
             MenuBarDisplayState.from(
                 timerState: timerService.timerState,
-                currentActivity: timerService.currentActivity,
-                hasError: timerService.lastError?.requiresUserReauthentication == true
+                currentActivity: timerService.currentActivity
             )
         } onChange: { [weak self] in
             // onChange fires from an arbitrary thread; re-enter on main.
@@ -273,8 +272,7 @@ final class StatusItemController {
                 self.lastIsDark = nil
                 let state = MenuBarDisplayState.from(
                     timerState: self.timerService.timerState,
-                    currentActivity: self.timerService.currentActivity,
-                    hasError: self.timerService.lastError?.requiresUserReauthentication == true
+                    currentActivity: self.timerService.currentActivity
                 )
                 self.applyDisplayState(state)
             }
@@ -322,8 +320,7 @@ final class StatusItemController {
         // also populate the cache for subsequent ticks.
         let displayState = MenuBarDisplayState.from(
             timerState: timerService.timerState,
-            currentActivity: timerService.currentActivity,
-            hasError: timerService.lastError?.requiresUserReauthentication == true
+            currentActivity: timerService.currentActivity
         )
         button.title = displayState.title
         refreshRunningLabelCache()
