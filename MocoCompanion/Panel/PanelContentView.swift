@@ -174,6 +174,19 @@ private struct PanelContentInner: View {
 
             Spacer()
 
+            if let onShowAutotracker {
+                Button {
+                    onShowAutotracker()
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 14 + fontBoost))
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Timeline (⌘T)")
+                .accessibilityLabel("Open Timeline")
+            }
+
             PanelTabSwitcher(activeTab: $activeTab)
         }
         .padding(.horizontal, 18)

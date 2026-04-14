@@ -227,6 +227,17 @@ struct TodayView: View {
             Spacer()
 
             syncIndicator
+
+            // Timeline shortcut hint
+            Text("⌘T")
+                .font(.system(size: captionSize - 1, weight: .medium, design: .rounded))
+                .foregroundStyle(theme.textTertiary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(theme.tabPillBackground)
+                )
         }
         .padding(.horizontal, 14)
         .padding(.top, 6)
