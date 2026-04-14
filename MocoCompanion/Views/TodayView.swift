@@ -117,6 +117,14 @@ struct TodayView: View {
                 vm.trackSelectedId()
             }
         }
+        .task {
+            // Always load from local shadow store — instant, no API calls.
+            await vm.loadFromStore()
+            if let idx = vm.activeEntryIndex {
+                vm.selectedIndex = idx
+                vm.trackSelectedId()
+            }
+        }
         .onAppear {
             // Only trigger a full API refresh if stale (>5 min since last sync).
             // Check the shared timestamp (survives view recreation on tab switch).

@@ -103,6 +103,23 @@ final class ActivityService: ActivitySyncing {
         }
     }
 
+    /// Load today's entries from the local shadow store without any API call.
+    /// Used on tab switch to show instant results from SQLite.
+    func loadTodayFromStore() async {
+        guard let syncEngine else { return }
+        let activities = await syncEngine.entries(forDate: DateUtilities.todayString())
+        applyFetchedTodayActivities(activities)
+    }
+
+    /// Load yesterday's entries from the local shadow store without any API call.
+    func loadYesterdayFromStore() async {
+        guard let syncEngine, let yesterday = DateUtilities.yesterdayString() else { return }
+        let activities = await syncEngine.entries(forDate: yesterday)
+        yesterdayActivities = activities
+        _sortedYesterday = nil
+        yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
+    }
+
     /// Apply already-fetched today activities without making an API call.
     /// Used by timer sync to avoid a duplicate fetch.
     func applyFetchedTodayActivities(_ activities: [ShadowEntry]) {

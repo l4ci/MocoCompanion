@@ -86,6 +86,17 @@ final class TodayViewModel {
         isRefreshing = false
     }
 
+    // MARK: - Local-Only Load (instant, no API calls)
+
+    /// Load entries from the local shadow store — instant, no network.
+    func loadFromStore() async {
+        await activityService.loadTodayFromStore()
+        await activityService.loadYesterdayFromStore()
+        recomputeYesterdayStats()
+    }
+
+    // MARK: - Full API Refresh
+
     func refreshTodayStats() async {
         await activityService.refreshTodayStats()
     }
