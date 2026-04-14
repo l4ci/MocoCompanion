@@ -209,7 +209,7 @@ struct TodayView: View {
 
     private var dayToggle: some View {
         HStack {
-            keyBadge("←")
+            if appState.settings.showKeyboardHints { keyBadge("←") }
 
             HStack(spacing: 2) {
                 ForEach(DaySelection.allCases, id: \.self) { day in
@@ -238,13 +238,13 @@ struct TodayView: View {
                     .fill(theme.tabPillBackground)
             )
 
-            keyBadge("→")
+            if appState.settings.showKeyboardHints { keyBadge("→") }
 
             Spacer()
 
             syncIndicator
 
-            keyBadge("⌘R")
+            if appState.settings.showKeyboardHints { keyBadge("⌘R") }
         }
         .padding(.horizontal, 14)
         .padding(.top, 6)

@@ -187,7 +187,7 @@ private struct PanelContentInner: View {
                 .accessibilityLabel("Open Timeline")
             }
 
-            PanelTabSwitcher(activeTab: $activeTab)
+            PanelTabSwitcher(activeTab: $activeTab, showKeyboardHint: appState.settings.showKeyboardHints)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)

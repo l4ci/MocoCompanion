@@ -65,6 +65,7 @@ struct QuickEntryView: View {
                     displayItemCount: sm.displayItems.count,
                     avatarImage: appState.session.cachedAvatarImage,
                     userFirstname: appState.session.currentUserProfile?.firstname,
+                    showKeyboardHints: appState.settings.showKeyboardHints,
                     onSubmit: handleSearchSubmit,
                     onMoveSelection: { sm.moveSelection(by: $0) },
                     onSelectByIndex: { _ = sm.selectByIndex($0); focusAfterSelect() },

@@ -14,6 +14,7 @@ struct SearchFieldView: View {
     let displayItemCount: Int
     var avatarImage: NSImage? = nil
     var userFirstname: String? = nil
+    var showKeyboardHints: Bool = true
 
     var onSubmit: () -> Void
     var onMoveSelection: (Int) -> Void
@@ -85,7 +86,7 @@ struct SearchFieldView: View {
                 .accessibilityLabel(String(localized: "a11y.clearSearch"))
             }
 
-            PanelTabSwitcher(activeTab: $activeTab)
+            PanelTabSwitcher(activeTab: $activeTab, showKeyboardHint: showKeyboardHints)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)

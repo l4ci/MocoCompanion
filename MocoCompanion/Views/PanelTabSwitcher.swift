@@ -4,6 +4,7 @@ import SwiftUI
 /// Used in both QuickEntryView and PanelContentView.
 struct PanelTabSwitcher: View {
     @Binding var activeTab: PanelContentView.PanelTab
+    var showKeyboardHint: Bool = true
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -39,15 +40,17 @@ struct PanelTabSwitcher: View {
                     .fill(theme.tabPillBackground)
             )
 
-            Text("TAB")
-                .font(.system(size: 10 + fontBoost, weight: .medium, design: .rounded))
-                .foregroundStyle(theme.textTertiary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(theme.tabPillBackground)
-                )
+            if showKeyboardHint {
+                Text("TAB")
+                    .font(.system(size: 10 + fontBoost, weight: .medium, design: .rounded))
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(theme.tabPillBackground)
+                    )
+            }
         }
     }
 }

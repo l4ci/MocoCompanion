@@ -103,6 +103,8 @@ struct GeneralSettingsTab: View {
                 }
 
                 Toggle(String(localized: "settings.autocomplete"), isOn: $settings.autoCompleteEnabled)
+
+                Toggle(String(localized: "settings.showKeyboardHints"), isOn: $settings.showKeyboardHints)
             } header: {
                 Text(String(localized: "settings.display"))
             }

@@ -82,6 +82,7 @@ final class SettingsStore {
         static let hasSeenFirstUseHint = "hasSeenFirstUseHint"
         static let appLanguage = "appLanguage"
         static let descriptionRequired = "descriptionRequired"
+        static let showKeyboardHints = "showKeyboardHints"
     }
 
     // MARK: - Defaults Helper
@@ -215,6 +216,11 @@ final class SettingsStore {
     /// Auto-detected from API validation errors; can also be toggled manually.
     var descriptionRequired: Bool {
         didSet { Self.save(Key.descriptionRequired, descriptionRequired) }
+    }
+
+    /// Show keyboard shortcut hint badges (TAB, ←→, ⌘R) in the panel.
+    var showKeyboardHints: Bool {
+        didSet { Self.save(Key.showKeyboardHints, showKeyboardHints) }
     }
 
     // MARK: - Preferences: Work Schedule
@@ -365,6 +371,7 @@ final class SettingsStore {
         self.hasSeenFirstUseHint = Self.read(Key.hasSeenFirstUseHint, default: false)
         self.appLanguage = Self.read(Key.appLanguage, default: "system")
         self.descriptionRequired = Self.read(Key.descriptionRequired, default: false)
+        self.showKeyboardHints = Self.read(Key.showKeyboardHints, default: true)
         self.autotrackerEnabled = Self.read(Key.autotrackerEnabled, default: false)
         self.autotrackerRetentionDays = Self.read(Key.autotrackerRetentionDays, default: 14)
         self.autotrackerExcludedApps = Self.loadJSON(Key.autotrackerExcludedApps, default: Self.defaultExcludedApps)
@@ -427,6 +434,7 @@ final class SettingsStore {
         apiLogLevel = .info
         appLogLevel = .info
         descriptionRequired = false
+        showKeyboardHints = true
         autotrackerEnabled = false
         autotrackerRetentionDays = 14
         autotrackerExcludedApps = []
