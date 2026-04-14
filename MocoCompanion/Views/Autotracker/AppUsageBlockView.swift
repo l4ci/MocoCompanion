@@ -7,6 +7,7 @@ struct AppUsageBlockView: View {
     let block: AppUsageBlock
     let isSelected: Bool
     var rulesEnabled: Bool = true
+    var columnWidth: CGFloat = TimelineLayout.appUsagePaneWidth
     var onSelect: (_ shiftHeld: Bool) -> Void = { _ in }
     var onCreateRule: ((_ bundleId: String, _ appName: String) -> Void)?
     var onCreateEntry: ((AppUsageBlock) -> Void)?
@@ -14,6 +15,7 @@ struct AppUsageBlockView: View {
     var onDragUpdated: (_ targetY: CGFloat) -> Void = { _ in }
     var onDragEnded: () -> Void = {}
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
     @State private var isDragging: Bool = false
     @State private var appIcon: NSImage?
 
@@ -61,7 +63,7 @@ struct AppUsageBlockView: View {
             }
 
             Text(block.appName)
-                .font(.system(size: Theme.FontSize.subhead))
+                .font(.system(size: Theme.FontSize.subhead + fontBoost))
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -71,7 +73,7 @@ struct AppUsageBlockView: View {
         }
         .onAppear { resolveAppIcon() }
         .onChange(of: block.appBundleId) { _, _ in resolveAppIcon() }
-        .frame(width: TimelineLayout.appUsagePaneWidth - 8, height: height)
+        .frame(width: columnWidth - 8, height: height)
         .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)

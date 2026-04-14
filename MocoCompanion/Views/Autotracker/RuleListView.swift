@@ -11,6 +11,7 @@ struct RuleListView: View {
     var settings: SettingsStore? = nil
 
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @State private var rules: [TrackingRule] = []
     @State private var editingRule: TrackingRule?
     @State private var deletingRule: TrackingRule?
@@ -41,6 +42,7 @@ struct RuleListView: View {
                 settings: settings,
                 onSave: { Task { await loadRules() } }
             )
+            .withTheme(colorScheme: colorScheme)
         }
         .sheet(isPresented: $showCreateSheet) {
             RuleEditorSheet(
@@ -52,6 +54,7 @@ struct RuleListView: View {
                 settings: settings,
                 onSave: { Task { await loadRules() } }
             )
+            .withTheme(colorScheme: colorScheme)
         }
         .confirmationDialog(
             "Delete Rule",

@@ -11,23 +11,32 @@ enum TimelineLayout {
     /// For finer-grained edits (precise minute adjustment), use the Edit sheet.
     static let snapMinutes: Int = 15
     static let totalHeight: CGFloat = 24 * 60 * pixelsPerMinute
+
+    /// Scale factor derived from the user's font-size boost (0–3 pt).
+    /// Matches the panel's width-scaling formula: `base * (15 + boost) / 15`.
+    static func scale(for fontBoost: CGFloat) -> CGFloat {
+        (15 + fontBoost) / 15
+    }
 }
 
 /// Vertical time ruler showing 00:00–23:00 hour labels with faint 5-minute grid lines.
 struct TimeAxisView: View {
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+
+    private var scaledWidth: CGFloat { TimelineLayout.timeAxisWidth * TimelineLayout.scale(for: fontBoost) }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             // Hour labels
             ForEach(0..<24, id: \.self) { hour in
                 Text(String(format: "%02d:00", hour))
-                    .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                    .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                     .foregroundStyle(theme.textTertiary)
                     .offset(y: CGFloat(hour * 60) * TimelineLayout.pixelsPerMinute - 6)
             }
         }
-        .frame(width: TimelineLayout.timeAxisWidth, height: TimelineLayout.totalHeight, alignment: .topLeading)
+        .frame(width: scaledWidth, height: TimelineLayout.totalHeight, alignment: .topLeading)
         .padding(.leading, 4)
     }
 }

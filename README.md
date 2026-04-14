@@ -13,6 +13,16 @@ A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.
 - 🎨 Light/Dark mode with customizable appearance
 - 🇩🇪 German and English localization
 
+### Timeline & Autotracker (v0.5.0)
+
+- 📊 Visual timeline with dual-column layout — app usage blocks alongside Moco entries on a time axis
+- 🤖 Autotracker records which apps you use and for how long, then suggests matching Moco entries
+- 📅 Calendar integration — see your calendar events inline on the timeline with all-day event support
+- 📐 Drag to create, move, and resize entries directly on the timeline
+- 🔗 Rule engine — define rules that auto-match app usage or calendar events to projects and tasks
+- 🔄 Bidirectional sync engine with shadow entries, conflict resolution, and periodic background sync
+- 🎨 Project colors synced from Moco with palette fallback
+
 ## Installation
 
 ### Homebrew (recommended)

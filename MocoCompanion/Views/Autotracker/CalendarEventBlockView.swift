@@ -16,6 +16,7 @@ struct CalendarEventBlockView: View {
     var onOpenInCalendar: () -> Void = {}
 
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     private static let compactThreshold: CGFloat = 44
 
@@ -82,13 +83,13 @@ struct CalendarEventBlockView: View {
     private var compactContent: some View {
         HStack(spacing: 6) {
             Text(compactTitle)
-                .font(.system(size: Theme.FontSize.subhead, weight: .medium))
+                .font(.system(size: Theme.FontSize.subhead + fontBoost, weight: .medium))
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 0)
             Text(timeRangeLabel)
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                 .foregroundStyle(theme.textTertiary)
         }
         .padding(.horizontal, 6)
@@ -99,23 +100,23 @@ struct CalendarEventBlockView: View {
     private var expandedContent: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(timeRangeLabel)
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                 .foregroundStyle(theme.textTertiary)
             Text(event.title)
-                .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                .font(.system(size: Theme.FontSize.body + fontBoost, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             if let loc = event.location, !loc.isEmpty {
                 Text(loc)
-                    .font(.system(size: Theme.FontSize.subhead))
+                    .font(.system(size: Theme.FontSize.subhead + fontBoost))
                     .foregroundStyle(theme.textTertiary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
             Spacer(minLength: 0)
             Text(durationLabel)
-                .font(.system(size: Theme.FontSize.footnote, design: .rounded).monospacedDigit())
+                .font(.system(size: Theme.FontSize.footnote + fontBoost, design: .rounded).monospacedDigit())
                 .foregroundStyle(theme.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }

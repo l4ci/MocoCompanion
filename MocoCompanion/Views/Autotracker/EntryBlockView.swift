@@ -12,6 +12,7 @@ struct EntryBlockView: View {
     var onDelete: ((ShadowEntry) -> Void)? = nil
     var onSelect: (() -> Void)? = nil
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     /// Height threshold below which the three-line layout is collapsed
     /// into a single compact row (project — task — description).
@@ -108,20 +109,20 @@ struct EntryBlockView: View {
     private var expandedTextContent: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(entry.projectName)
-                .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                .font(.system(size: Theme.FontSize.body + fontBoost, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             Text(entry.taskName)
-                .font(.system(size: Theme.FontSize.subhead))
+                .font(.system(size: Theme.FontSize.subhead + fontBoost))
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             if !entry.description.isEmpty {
                 Text(entry.description)
-                    .font(.system(size: Theme.FontSize.subhead))
+                    .font(.system(size: Theme.FontSize.subhead + fontBoost))
                     .foregroundStyle(theme.textTertiary)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -135,14 +136,14 @@ struct EntryBlockView: View {
     private var compactTextContent: some View {
         HStack(spacing: 6) {
             Text(entry.projectName)
-                .font(.system(size: Theme.FontSize.subhead, weight: .semibold))
+                .font(.system(size: Theme.FontSize.subhead + fontBoost, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
 
             Text(inlineSecondaryText)
-                .font(.system(size: Theme.FontSize.subhead))
+                .font(.system(size: Theme.FontSize.subhead + fontBoost))
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -208,7 +209,7 @@ struct EntryBlockView: View {
                     // row of text.
                     if !isCompact {
                         Text(durationLabel)
-                            .font(.system(size: Theme.FontSize.footnote, design: .rounded).monospacedDigit())
+                            .font(.system(size: Theme.FontSize.footnote + fontBoost, design: .rounded).monospacedDigit())
                             .foregroundStyle(theme.textTertiary)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)

@@ -14,9 +14,11 @@ enum CalendarColumnPlaceholder {
 
 struct CalendarColumnPlaceholderView: View {
     let state: CalendarColumnPlaceholder
+    var columnWidth: CGFloat = TimelineLayout.calendarPaneWidth
     var onOpenSettings: () -> Void = {}
     var onRequestAccess: () -> Void = {}
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         VStack(spacing: 8) {
@@ -24,18 +26,18 @@ struct CalendarColumnPlaceholderView: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(title)
-                .font(.system(size: Theme.FontSize.footnote, weight: .medium))
+                .font(.system(size: Theme.FontSize.footnote + fontBoost, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)
             if let action {
                 Button(action.label, action: action.handler)
                     .buttonStyle(.borderless)
-                    .font(.system(size: Theme.FontSize.footnote))
+                    .font(.system(size: Theme.FontSize.footnote + fontBoost))
                     .foregroundStyle(Color.accentColor)
             }
         }
         .padding(16)
-        .frame(width: TimelineLayout.calendarPaneWidth - 8)
+        .frame(width: columnWidth - 8)
     }
 
     private var color: Color {
@@ -77,9 +79,11 @@ enum AccessibilityColumnPlaceholder {
 
 struct AccessibilityColumnPlaceholderView: View {
     let state: AccessibilityColumnPlaceholder
+    var columnWidth: CGFloat = TimelineLayout.appUsagePaneWidth
     var onOpenSettings: () -> Void = {}
     var onRequestAccess: () -> Void = {}
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         VStack(spacing: 8) {
@@ -89,7 +93,7 @@ struct AccessibilityColumnPlaceholderView: View {
             Text(state == .denied
                  ? String(localized: "accessibility.placeholder.denied")
                  : String(localized: "accessibility.placeholder.needsPermission"))
-                .font(.system(size: Theme.FontSize.footnote, weight: .medium))
+                .font(.system(size: Theme.FontSize.footnote + fontBoost, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)
             Button(state == .denied
@@ -97,10 +101,10 @@ struct AccessibilityColumnPlaceholderView: View {
                    : String(localized: "accessibility.placeholder.grantAccess"),
                    action: state == .denied ? onOpenSettings : onRequestAccess)
                 .buttonStyle(.borderless)
-                .font(.system(size: Theme.FontSize.footnote))
+                .font(.system(size: Theme.FontSize.footnote + fontBoost))
                 .foregroundStyle(Color.accentColor)
         }
         .padding(16)
-        .frame(width: TimelineLayout.appUsagePaneWidth - 8)
+        .frame(width: columnWidth - 8)
     }
 }

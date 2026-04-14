@@ -5,6 +5,7 @@ struct SuggestionBlockView: View {
     let suggestion: Suggestion
     let viewModel: TimelineViewModel
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
     @State private var isHovered = false
 
     private var height: CGFloat {
@@ -16,17 +17,17 @@ struct SuggestionBlockView: View {
             // Content
             VStack(alignment: .leading, spacing: 1) {
                 Text(suggestion.projectName)
-                    .font(.system(size: Theme.FontSize.caption, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .semibold))
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
 
                 Text(suggestion.taskName)
-                    .font(.system(size: Theme.FontSize.caption))
+                    .font(.system(size: Theme.FontSize.caption + fontBoost))
                     .foregroundStyle(theme.textSecondary)
                     .lineLimit(1)
 
                 Text(suggestion.appName)
-                    .font(.system(size: Theme.FontSize.caption))
+                    .font(.system(size: Theme.FontSize.caption + fontBoost))
                     .foregroundStyle(theme.textTertiary)
                     .lineLimit(1)
             }
@@ -52,7 +53,7 @@ struct SuggestionBlockView: View {
                     Task { await viewModel.approveSuggestion(suggestion) }
                 }
                 .labelStyle(.iconOnly)
-                .font(.system(size: Theme.FontSize.callout))
+                .font(.system(size: Theme.FontSize.callout + fontBoost))
                 .foregroundStyle(.green)
                 .buttonStyle(.plain)
 
@@ -60,7 +61,7 @@ struct SuggestionBlockView: View {
                     viewModel.declineSuggestion(suggestion)
                 }
                 .labelStyle(.iconOnly)
-                .font(.system(size: Theme.FontSize.callout))
+                .font(.system(size: Theme.FontSize.callout + fontBoost))
                 .foregroundStyle(.red)
                 .buttonStyle(.plain)
             }

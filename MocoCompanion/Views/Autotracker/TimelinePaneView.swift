@@ -15,6 +15,16 @@ struct TimelinePaneView: View {
     let projectCatalog: ProjectCatalog
     var descriptionRequired: Bool = false
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+
+    // MARK: - Scaled Layout
+
+    private var scale: CGFloat { TimelineLayout.scale(for: fontBoost) }
+    private var timeAxisWidth: CGFloat { TimelineLayout.timeAxisWidth * scale }
+    private var appUsagePaneWidth: CGFloat { TimelineLayout.appUsagePaneWidth * scale }
+    private var calendarPaneWidth: CGFloat { TimelineLayout.calendarPaneWidth * scale }
+
     /// Encapsulates the pending state for the creation sheet: either a
     /// fresh drag-to-create gesture or a drop from a calendar event row.
     /// Always nil when no creation flow is active; setting / clearing
@@ -84,7 +94,7 @@ struct TimelinePaneView: View {
 
                 if positionedEntries.isEmpty && appUsageBlocks.isEmpty && unpositionedEntries.isEmpty {
                     Text("No activity for this day")
-                        .font(.system(size: Theme.FontSize.body))
+                        .font(.system(size: Theme.FontSize.body + fontBoost))
                         .foregroundStyle(theme.textTertiary)
                         .padding(12)
                         .background(theme.surface.opacity(0.85), in: Capsule())
@@ -92,7 +102,7 @@ struct TimelinePaneView: View {
                         .allowsHitTesting(false)
                 } else if positionedEntries.isEmpty && appUsageBlocks.isEmpty {
                     Text("No timed entries for this day")
-                        .font(.system(size: Theme.FontSize.body))
+                        .font(.system(size: Theme.FontSize.body + fontBoost))
                         .foregroundStyle(theme.textTertiary)
                         .padding(12)
                         .background(theme.surface.opacity(0.85), in: Capsule())
@@ -145,6 +155,7 @@ struct TimelinePaneView: View {
                     Task { await viewModel.loadData() }
                 }
             )
+            .withTheme(colorScheme: colorScheme)
         }
         .sheet(item: $editingEntry) { wrapper in
             TimelineEntryEditSheet(
@@ -177,6 +188,7 @@ struct TimelinePaneView: View {
                 },
                 onCancel: { editingEntry = nil }
             )
+            .withTheme(colorScheme: colorScheme)
         }
         .sheet(item: $pendingCreation) { creation in
             let dateStr = TimelineGeometry.dateString(from: selectedDate)
@@ -210,6 +222,7 @@ struct TimelinePaneView: View {
                     pendingCreation = nil
                 }
             )
+            .withTheme(colorScheme: colorScheme)
         }
     }
 
@@ -252,17 +265,17 @@ struct TimelinePaneView: View {
     /// its column. The time-axis gutter stays unlabeled.
     private var columnHeaderRow: some View {
         HStack(alignment: .center, spacing: 0) {
-            Color.clear.frame(width: TimelineLayout.timeAxisWidth)
+            Color.clear.frame(width: timeAxisWidth)
 
             if viewModel.settings?.appRecordingEnabled == true {
                 columnHeaderLabel("columnHeader.appActivity")
-                    .frame(width: TimelineLayout.appUsagePaneWidth, alignment: .leading)
+                    .frame(width: appUsagePaneWidth, alignment: .leading)
                 theme.divider.frame(width: 1, height: 14)
             }
 
             if viewModel.settings?.calendarEnabled == true {
                 columnHeaderLabel("columnHeader.calendar")
-                    .frame(width: TimelineLayout.calendarPaneWidth, alignment: .leading)
+                    .frame(width: calendarPaneWidth, alignment: .leading)
                 theme.divider.frame(width: 1, height: 14)
             }
 
@@ -275,7 +288,7 @@ struct TimelinePaneView: View {
 
     private func columnHeaderLabel(_ key: LocalizedStringKey) -> some View {
         Text(key)
-            .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+            .font(.system(size: Theme.FontSize.footnote + fontBoost, weight: .semibold))
             .foregroundStyle(theme.textTertiary)
             .textCase(.uppercase)
             .tracking(0.3)
@@ -291,18 +304,18 @@ struct TimelinePaneView: View {
     private var abovelineRegion: some View {
         HStack(alignment: .top, spacing: 0) {
             // Time axis spacer
-            Color.clear.frame(width: TimelineLayout.timeAxisWidth)
+            Color.clear.frame(width: timeAxisWidth)
 
             // App column — reserved for future use; empty for now.
             if viewModel.settings?.appRecordingEnabled == true {
-                Color.clear.frame(width: TimelineLayout.appUsagePaneWidth)
+                Color.clear.frame(width: appUsagePaneWidth)
                 theme.divider.frame(width: 1)
             }
 
             // Calendar column — all-day events, draggable.
             if viewModel.settings?.calendarEnabled == true {
                 allDayCalendarColumn
-                    .frame(width: TimelineLayout.calendarPaneWidth, alignment: .topLeading)
+                    .frame(width: calendarPaneWidth, alignment: .topLeading)
                 theme.divider.frame(width: 1)
             }
 
@@ -326,7 +339,7 @@ struct TimelinePaneView: View {
                 AllDayCalendarEventRow(event: event)
                     .draggable("cal:\(event.calendarItemIdentifier)") {
                         Text(event.title)
-                            .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                            .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
                             .padding(6)
                             .background(theme.surface, in: Capsule())
                     }
@@ -340,19 +353,19 @@ struct TimelinePaneView: View {
             ForEach(unpositionedEntries, id: \.id) { entry in
                 HStack(spacing: 6) {
                     Text(entry.projectName)
-                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
 
                     Text(entry.taskName)
-                        .font(.system(size: Theme.FontSize.caption))
+                        .font(.system(size: Theme.FontSize.caption + fontBoost))
                         .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
 
                     Spacer(minLength: 0)
 
                     Text(Self.formatDuration(entry.seconds))
-                        .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                        .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                         .foregroundStyle(theme.textTertiary)
                 }
                 .padding(.horizontal, 8)
@@ -398,9 +411,9 @@ struct TimelinePaneView: View {
                     // Drag preview: a simple compact label.
                     HStack(spacing: 4) {
                         Text(entry.projectName)
-                            .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                            .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
                         Text(entry.taskName)
-                            .font(.system(size: Theme.FontSize.caption))
+                            .font(.system(size: Theme.FontSize.caption + fontBoost))
                     }
                     .padding(6)
                     .background(theme.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous))
@@ -445,7 +458,7 @@ struct TimelinePaneView: View {
                         // App usage column (optional)
                         if viewModel.settings?.appRecordingEnabled == true {
                             appUsageColumn
-                                .frame(width: TimelineLayout.appUsagePaneWidth)
+                                .frame(width: appUsagePaneWidth)
                             theme.divider
                                 .frame(width: 1, height: TimelineLayout.totalHeight)
                         }
@@ -513,6 +526,7 @@ struct TimelinePaneView: View {
                         block: block,
                         isSelected: viewModel.isAppBlockHighlighted(block),
                         rulesEnabled: viewModel.settings?.rulesEnabled ?? false,
+                        columnWidth: appUsagePaneWidth,
                         onSelect: { shiftHeld in
                             viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
                         },
@@ -547,6 +561,7 @@ struct TimelinePaneView: View {
             if let state = accessibilityPlaceholderState {
                 AccessibilityColumnPlaceholderView(
                     state: state,
+                    columnWidth: appUsagePaneWidth,
                     onOpenSettings: openSystemSettingsForAccessibility,
                     onRequestAccess: { _ = AccessibilityPermission.requestAccess() }
                 )
@@ -578,7 +593,7 @@ struct TimelinePaneView: View {
         ZStack(alignment: .top) {
             ZStack(alignment: .topLeading) {
                 ForEach(viewModel.calendarEventLayouts) { layout in
-                    let availableWidth = TimelineLayout.calendarPaneWidth - 8 // 4pt inset per side
+                    let availableWidth = calendarPaneWidth - 8 // 4pt inset per side
                     let columnWidth = layout.columnCount > 0
                         ? availableWidth / CGFloat(layout.columnCount)
                         : availableWidth
@@ -612,6 +627,7 @@ struct TimelinePaneView: View {
             if let state = calendarPlaceholderState {
                 CalendarColumnPlaceholderView(
                     state: state,
+                    columnWidth: calendarPaneWidth,
                     onOpenSettings: openSystemSettingsForCalendar,
                     onRequestAccess: {
                         Task { _ = await viewModel.calendarService?.requestAccessIfNeeded() }
@@ -621,7 +637,7 @@ struct TimelinePaneView: View {
             }
         }
         .frame(
-            width: TimelineLayout.calendarPaneWidth,
+            width: calendarPaneWidth,
             height: TimelineLayout.totalHeight,
             alignment: .topLeading
         )
@@ -839,6 +855,7 @@ struct TimelinePaneView: View {
 private struct GhostBlockView: View {
     let drag: TimelineViewModel.DragCreationState
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         let yPos = CGFloat(drag.startMinutes) * TimelineLayout.pixelsPerMinute
@@ -849,10 +866,10 @@ private struct GhostBlockView: View {
 
         VStack(alignment: .leading, spacing: 2) {
             Text("\(startLabel) – \(endLabel)")
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                 .foregroundStyle(tint)
             Text(drag.appName)
-                .font(.system(size: Theme.FontSize.caption))
+                .font(.system(size: Theme.FontSize.caption + fontBoost))
                 .foregroundStyle(tint.opacity(0.8))
                 .lineLimit(1)
         }
@@ -884,6 +901,7 @@ private struct GesturePreviewBlockView: View {
     let preview: TimelineGesturePreview.ActiveState
     let columnWidth: CGFloat
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         let yPos = CGFloat(preview.startMinutes) * TimelineLayout.pixelsPerMinute
@@ -899,11 +917,11 @@ private struct GesturePreviewBlockView: View {
 
         VStack(alignment: .leading, spacing: 2) {
             Text("\(startLabel) – \(endLabel)")
-                .font(.system(size: Theme.FontSize.caption, design: .monospaced))
+                .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                 .foregroundStyle(tint)
                 .lineLimit(1)
             Text(preview.durationLabel)
-                .font(.system(size: Theme.FontSize.caption))
+                .font(.system(size: Theme.FontSize.caption + fontBoost))
                 .foregroundStyle(tint.opacity(0.8))
                 .lineLimit(1)
         }
@@ -931,6 +949,7 @@ private struct BatchApproveBar: View {
     let count: Int
     let onApproveAll: () async -> Void
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         HStack {
@@ -939,7 +958,7 @@ private struct BatchApproveBar: View {
                 Task { await onApproveAll() }
             } label: {
                 Text("Approve all (\(count))")
-                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.12), in: Capsule())

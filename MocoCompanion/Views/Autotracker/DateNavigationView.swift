@@ -5,6 +5,7 @@ import SwiftUI
 struct DateNavigationView: View {
     @Bindable var viewModel: TimelineViewModel
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     @State private var showingDatePicker = false
 
@@ -26,7 +27,7 @@ struct DateNavigationView: View {
         HStack(spacing: 12) {
             Button("Previous Day", systemImage: "chevron.left", action: viewModel.selectPreviousDay)
                 .labelStyle(.iconOnly)
-                .font(.system(size: Theme.FontSize.callout, weight: .medium))
+                .font(.system(size: Theme.FontSize.callout + fontBoost, weight: .medium))
                 .disabled(!viewModel.canSelectPreviousDay)
                 .buttonStyle(.plain)
                 .foregroundStyle(theme.textSecondary)
@@ -34,7 +35,7 @@ struct DateNavigationView: View {
             Spacer()
 
             Text(Self.dateLabel(for: viewModel.selectedDate))
-                .font(.system(size: Theme.FontSize.title, weight: .semibold))
+                .font(.system(size: Theme.FontSize.title + fontBoost, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
                 .onTapGesture(count: 1) {
                     showingDatePicker.toggle()
@@ -75,7 +76,7 @@ struct DateNavigationView: View {
 
             Button("Next Day", systemImage: "chevron.right", action: viewModel.selectNextDay)
                 .labelStyle(.iconOnly)
-                .font(.system(size: Theme.FontSize.body, weight: .medium))
+                .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
                 .buttonStyle(.plain)
                 .foregroundStyle(viewModel.isToday ? theme.textTertiary.opacity(0.5) : theme.textSecondary)
                 .disabled(viewModel.isToday)

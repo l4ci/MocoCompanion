@@ -145,7 +145,7 @@ struct Theme {
     /// Stat card background.
     var statCardBackground: Color {
         isDark
-            ? Color.white.opacity(0.08)
+            ? Color(white: 0.22)
             : Color.black.opacity(0.025)
     }
 

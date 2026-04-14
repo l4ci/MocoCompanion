@@ -426,6 +426,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         window.title = String(localized: "timeline.window.title")
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
         window.setContentSize(NSSize(width: 900, height: 700))
+        // Sync AppKit appearance with the user's appearance setting
+        // (mirrors PanelController.updatePanelAppearance).
+        switch appState.settings.appearance {
+        case "dark": window.appearance = NSAppearance(named: .darkAqua)
+        case "light": window.appearance = NSAppearance(named: .aqua)
+        default: window.appearance = nil
+        }
         window.center()
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)

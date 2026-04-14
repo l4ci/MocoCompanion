@@ -15,7 +15,12 @@ struct TimelineWindow: View {
     /// so test harnesses that don't wire settings still compile.
     var settings: SettingsStore?
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+    /// Derived from the window's actual color scheme rather than
+    /// `@Environment(\.theme)` — the theme environment key defaults
+    /// to light and isn't set above this view; `.withTheme()` inside
+    /// body only reaches child view structs, not `self` properties.
+    private var theme: Theme { Theme(colorScheme: colorScheme) }
     @State private var showRuleList = false
     @State private var syncLabelTick = Date.now
 
@@ -62,7 +67,7 @@ struct TimelineWindow: View {
                 ProgressView()
                     .controlSize(.small)
                 Text("Loading...")
-                    .font(.system(size: Theme.FontSize.body))
+                    .font(.system(size: Theme.FontSize.body + fontBoost))
                     .foregroundStyle(theme.textTertiary)
                 Spacer()
             } else {
@@ -89,6 +94,8 @@ struct TimelineWindow: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: deleteUndoManager?.pendingDelete?.activity.id)
+        .preferredColorScheme(Theme.colorScheme(from: settings?.appearance ?? ""))
+        .environment(\.entryFontSizeBoost, CGFloat(settings?.entryFontSizeBoost ?? 0))
         .withTheme(colorScheme: colorScheme)
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -96,13 +103,13 @@ struct TimelineWindow: View {
                 Group {
                     if let lastSync = viewModel.lastSyncedAt {
                         Text(Self.relativeTimeString(since: lastSync))
-                            .font(.system(size: Theme.FontSize.footnote))
-                            .foregroundStyle(theme.textTertiary)
+                            .font(.system(size: Theme.FontSize.footnote + fontBoost))
+                            .foregroundStyle(theme.textSecondary)
                             .monospacedDigit()
                     } else {
                         Text(String(localized: "Not synced"))
-                            .font(.system(size: Theme.FontSize.footnote))
-                            .foregroundStyle(theme.textTertiary)
+                            .font(.system(size: Theme.FontSize.footnote + fontBoost))
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
                 .padding(.leading, 8)
@@ -136,6 +143,8 @@ struct TimelineWindow: View {
                 projectCatalog: projectCatalog,
                 onDismiss: { showRuleList = false }
             )
+            .preferredColorScheme(Theme.colorScheme(from: settings?.appearance ?? ""))
+            .withTheme(colorScheme: colorScheme)
         }
         .task {
             // Load local data first so the UI has something to show,
@@ -205,14 +214,14 @@ struct TimelineWindow: View {
             Image(systemName: "trash")
                 .foregroundStyle(theme.textSecondary)
             Text("Entry deleted")
-                .font(.system(size: Theme.FontSize.body, weight: .medium))
+                .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
                 .foregroundStyle(theme.textPrimary)
             Spacer(minLength: 12)
             Button("Undo") {
                 manager.undoDelete()
             }
             .buttonStyle(.plain)
-            .font(.system(size: Theme.FontSize.body, weight: .semibold))
+            .font(.system(size: Theme.FontSize.body + fontBoost, weight: .semibold))
             .foregroundStyle(Color.accentColor)
         }
         .padding(.horizontal, 14)
@@ -234,12 +243,12 @@ struct TimelineWindow: View {
     private func statCard(label: String, value: String, accent: Color? = nil) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
+                .font(.system(size: Theme.FontSize.footnote + fontBoost, weight: .semibold))
                 .foregroundStyle(theme.textTertiary)
                 .textCase(.uppercase)
                 .tracking(0.3)
             Text(value)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(.system(size: 18 + fontBoost, weight: .semibold, design: .rounded))
                 .foregroundStyle(accent ?? theme.textPrimary)
         }
         .frame(maxWidth: .infinity)

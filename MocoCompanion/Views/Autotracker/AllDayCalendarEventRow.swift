@@ -6,6 +6,7 @@ import SwiftUI
 struct AllDayCalendarEventRow: View {
     let event: CalendarEvent
     @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
 
     var body: some View {
         HStack(spacing: 6) {
@@ -13,7 +14,7 @@ struct AllDayCalendarEventRow: View {
                 .fill(event.color)
                 .frame(width: 3, height: 14)
             Text(event.title)
-                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
