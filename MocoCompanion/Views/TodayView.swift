@@ -128,6 +128,13 @@ struct TodayView: View {
                 vm.trackSelectedId()
             }
         }
+        .onKeyPress(phases: .down) { press in
+            if press.modifiers == .command && press.characters == "r" {
+                refreshId = UUID()
+                return .handled
+            }
+            return .ignored
+        }
         .onAppear {
             // Only trigger a full API refresh if stale (>5 min since last sync).
             // Check the shared timestamp (survives view recreation on tab switch).
