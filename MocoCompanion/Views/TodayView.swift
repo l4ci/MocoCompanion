@@ -117,7 +117,12 @@ struct TodayView: View {
             }
         }
         .onAppear {
-            refreshId = UUID()
+            // Only trigger a full API refresh if stale (>5 min since last sync).
+            // Otherwise the cached data is shown instantly — no API calls.
+            let staleThreshold: TimeInterval = 300 // 5 minutes
+            if vm.lastSyncedAt == nil || Date.now.timeIntervalSince(vm.lastSyncedAt!) > staleThreshold {
+                refreshId = UUID()
+            }
             setFocusAfterDelay($listFocused, to: true)
         }
         .onChange(of: vm.selectedDay) {
