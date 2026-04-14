@@ -6,7 +6,9 @@ import SwiftUI
 /// Extracted to a struct so it can track its own hover state.
 struct TomorrowPlanningRowView: View {
     let entry: MocoPlanningEntry
+    var isSelected: Bool = false
     var onStartEntry: ((SearchEntry) -> Void)? = nil
+    var onHover: ((_ hovering: Bool) -> Void)? = nil
 
     @State private var isHovered = false
 
@@ -20,18 +22,18 @@ struct TomorrowPlanningRowView: View {
         HStack(spacing: 10) {
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: captionSize))
-                .foregroundStyle(theme.plannedIndicator)
+                .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.plannedIndicator)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
                     if let customer = entry.project?.customerName, !customer.isEmpty {
                         Text(customer)
-                            .foregroundStyle(theme.textSecondary)
+                            .foregroundStyle(isSelected ? theme.selectedTextSecondary : theme.textSecondary)
                         Text(" › ")
-                            .foregroundStyle(theme.textTertiary)
+                            .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     }
                     Text(entry.project?.name ?? "—")
-                        .foregroundStyle(theme.textPrimary)
+                        .foregroundStyle(isSelected ? theme.selectedTextPrimary : theme.textPrimary)
                 }
                 .font(.system(size: bodySize))
                 .lineLimit(1)
@@ -39,7 +41,7 @@ struct TomorrowPlanningRowView: View {
                 Text(entry.task?.name ?? "—")
                     .font(.system(size: bodySize))
                     .fontWeight(.semibold)
-                    .foregroundStyle(theme.textSecondary)
+                    .foregroundStyle(isSelected ? theme.selectedTextSecondary : theme.textSecondary)
                     .lineLimit(1)
 
                 if isHovered {
@@ -56,16 +58,19 @@ struct TomorrowPlanningRowView: View {
 
             Text("\(entry.hoursPerDay.formatted(.number.precision(.fractionLength(0))))h")
                 .font(.system(size: captionSize, weight: .medium, design: .monospaced))
-                .foregroundStyle(theme.plannedIndicatorSubtle)
+                .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.plannedIndicatorSubtle)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isHovered ? theme.hover : theme.surface)
+                .fill(isSelected ? Color.accentColor : isHovered ? theme.hover : theme.surface)
         )
         .contentShape(Rectangle())
-        .onHover { hovering in isHovered = hovering }
+        .onHover { hovering in
+            isHovered = hovering
+            onHover?(hovering)
+        }
         .onTapGesture {
             guard let project = entry.project, let task = entry.task else { return }
             let searchEntry = SearchEntry(

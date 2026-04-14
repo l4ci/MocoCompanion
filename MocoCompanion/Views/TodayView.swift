@@ -306,8 +306,8 @@ struct TodayView: View {
                 .padding(.bottom, 4)
 
                 VStack(spacing: 2) {
-                    ForEach(vm.tomorrowPlanningEntries) { entry in
-                        tomorrowPlanningRow(entry)
+                    ForEach(Array(vm.tomorrowPlanningEntries.enumerated()), id: \.element.id) { index, entry in
+                        tomorrowPlanningRow(entry, index: index)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -326,8 +326,15 @@ struct TodayView: View {
         }
     }
 
-    private func tomorrowPlanningRow(_ entry: MocoPlanningEntry) -> some View {
-        TomorrowPlanningRowView(entry: entry, onStartEntry: onStartEntry)
+    private func tomorrowPlanningRow(_ entry: MocoPlanningEntry, index: Int) -> some View {
+        TomorrowPlanningRowView(
+            entry: entry,
+            isSelected: index == vm.selectedIndex,
+            onStartEntry: onStartEntry,
+            onHover: { hovering in
+                if hovering { vm.selectedIndex = index }
+            }
+        )
     }
 
     // MARK: - Activities List
