@@ -55,10 +55,6 @@ struct QuickEntryView: View {
                     focusedField = .search
                 }
             } else {
-                if let warning = appState.yesterdayService.warning {
-                    YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayService.warning = nil })
-                }
-
                 SearchFieldView(
                     searchText: $sm.searchText,
                     selectedIndex: $sm.selectedIndex,
@@ -75,6 +71,10 @@ struct QuickEntryView: View {
                     onSelectCurrentResult: { selectCurrentResult() },
                     focusedField: $focusedField
                 )
+
+                if let warning = appState.yesterdayService.warning {
+                    YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayService.warning = nil })
+                }
 
                 if sm.phase.isSearching && sm.isSearchEmpty {
                     TimerHintSection(

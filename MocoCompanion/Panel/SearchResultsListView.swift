@@ -120,6 +120,7 @@ struct SearchResultsListView: View {
         .onHover { hover in
             if hover {
                 hoveredIndex = index
+                selectedIndex = index
             } else {
                 hoveredIndex = nil
             }

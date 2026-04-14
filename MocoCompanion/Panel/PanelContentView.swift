@@ -167,17 +167,10 @@ private struct PanelContentInner: View {
             // User avatar (cached) or app icon fallback (not logged in)
             userAvatarView
 
-            VStack(alignment: .leading, spacing: 2) {
-                // Greeting
-                Text(greetingText)
-                    .font(.system(size: 20 + fontBoost, weight: .medium))
-                    .foregroundStyle(theme.textPrimary)
-
-                // Date
-                Text(todayDateString)
-                    .font(.system(size: 14 + fontBoost))
-                    .foregroundStyle(theme.textSecondary)
-            }
+            // Single-line greeting — matches the Track header height
+            Text(greetingText)
+                .font(.system(size: 24 + fontBoost, weight: .regular))
+                .foregroundStyle(theme.textPrimary)
 
             Spacer()
 

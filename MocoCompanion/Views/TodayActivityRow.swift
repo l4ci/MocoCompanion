@@ -101,6 +101,7 @@ struct TodayActivityRow: View {
                 .onHover { hover in
                     if hover {
                         hoveredActivityId = activity.id
+                        onSelect()
                     } else {
                         hoveredActivityId = nil
                     }
