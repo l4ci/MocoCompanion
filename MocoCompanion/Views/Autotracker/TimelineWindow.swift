@@ -155,10 +155,19 @@ struct TimelineWindow: View {
             await viewModel.refreshData()
         }
         .task {
+            // Tick the sync label every second + auto-refresh app
+            // activity every 60 seconds so the timeline stays current
+            // while the window is open.
+            var tickCount = 0
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(1)) }
                 catch { break }
                 syncLabelTick = .now
+                tickCount += 1
+                if tickCount >= 60 {
+                    tickCount = 0
+                    await viewModel.loadData()
+                }
             }
         }
         .onChange(of: viewModel.selectedDate) {

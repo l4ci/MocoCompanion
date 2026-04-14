@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Date navigation bar for the Autotracker timeline: previous/next day arrows,
-/// date label with popover picker, and a Today badge.
+/// date label with popover picker, and a conditional "Go to: Today" button.
 struct DateNavigationView: View {
     @Bindable var viewModel: TimelineViewModel
     @Environment(\.theme) private var theme
@@ -11,16 +11,16 @@ struct DateNavigationView: View {
 
     private static let displayFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "EEE, d MMM yyyy"
+        // "Dienstag, 14. April" / "Monday, 14 April"
+        f.dateFormat = "EEEE, d. MMMM"
         return f
     }()
 
-    /// "Do., 9 Apr. 2026 (KW: 13)" — appends the ISO calendar week so
-    /// users can match the date to their weekly planning views.
+    /// "Dienstag, 14. April (KW 16)"
     private static func dateLabel(for date: Date) -> String {
         let base = displayFormatter.string(from: date)
         let week = Calendar.current.component(.weekOfYear, from: date)
-        return "\(base) (KW: \(week))"
+        return "\(base) (KW \(week))"
     }
 
     var body: some View {
@@ -34,43 +34,51 @@ struct DateNavigationView: View {
 
             Spacer()
 
-            Text(Self.dateLabel(for: viewModel.selectedDate))
-                .font(.system(size: Theme.FontSize.title + fontBoost, weight: .semibold))
-                .foregroundStyle(theme.textPrimary)
-                .onTapGesture(count: 1) {
-                    showingDatePicker.toggle()
-                }
-                .onTapGesture(count: 2) {
-                    viewModel.selectToday()
-                }
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel("Select date")
-                .popover(isPresented: $showingDatePicker) {
-                    DatePicker(
-                        "",
-                        selection: Binding(
-                            get: { viewModel.selectedDate },
-                            set: { date in
-                                viewModel.selectDate(date)
-                                showingDatePicker = false
-                            }
-                        ),
-                        // Clamp to the retention window: no data exists
-                        // before the autotracker deletion threshold, and
-                        // we don't let the user navigate into the future.
-                        in: viewModel.autotracker.earliestRetainedDate...Date.now,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.graphical)
-                    .padding()
+            HStack(spacing: 8) {
+                // Blue dot indicator for today
+                if viewModel.isToday {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 7, height: 7)
                 }
 
-            Button("Today", action: viewModel.selectToday)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(viewModel.isToday)
-                .help("Jump to today")
-                .accessibilityLabel(String(localized: "date.today"))
+                Text(Self.dateLabel(for: viewModel.selectedDate))
+                    .font(.system(size: Theme.FontSize.title + fontBoost, weight: .semibold))
+                    .foregroundStyle(theme.textPrimary)
+            }
+            .onTapGesture(count: 1) {
+                showingDatePicker.toggle()
+            }
+            .onTapGesture(count: 2) {
+                viewModel.selectToday()
+            }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Select date")
+            .popover(isPresented: $showingDatePicker) {
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { viewModel.selectedDate },
+                        set: { date in
+                            viewModel.selectDate(date)
+                            showingDatePicker = false
+                        }
+                    ),
+                    in: viewModel.autotracker.earliestRetainedDate...Date.now,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+            }
+
+            // "Go to: Today" — only shown when viewing a past day
+            if !viewModel.isToday {
+                Button("Go to: Today", action: viewModel.selectToday)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .help("Jump to today")
+                    .accessibilityLabel(String(localized: "date.today"))
+            }
 
             Spacer()
 
