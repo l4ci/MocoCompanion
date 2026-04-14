@@ -63,7 +63,12 @@ struct CalendarEventBlockView: View {
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                 .stroke(Color.accentColor, lineWidth: 2)
-                .opacity(isSelected || isLinked ? 1 : 0)
+                .opacity(isSelected ? 1 : 0)
+        }
+        .onHover { hovering in
+            if isCompact {
+                showPopover = hovering
+            }
         }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
             HStack(spacing: 8) {

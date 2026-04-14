@@ -81,6 +81,13 @@ struct AppUsageBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected ? 1 : 0)
         }
+        .onHover { hovering in
+            if hovering && !isDragging {
+                showPopover = true
+            } else if !hovering {
+                showPopover = false
+            }
+        }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
             hoverPopover
         }
