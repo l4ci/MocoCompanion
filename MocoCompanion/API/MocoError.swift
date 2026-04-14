@@ -22,6 +22,20 @@ enum MocoError: Error, LocalizedError, Sendable {
     /// API key in Settings) is required. Transient issues like rate
     /// limiting, network blips, or server errors don't qualify: those
     /// will heal on retry and don't warrant a menubar alarm.
+    /// True when the resource is gone or inaccessible on the server —
+    /// 403 (locked/forbidden) or 404 (deleted). Used by SyncEngine to
+    /// stop retrying deletes that will never succeed.
+    var isGone: Bool {
+        switch self {
+        case .notFound:
+            return true
+        case .serverError(let code, _) where code == 403:
+            return true
+        default:
+            return false
+        }
+    }
+
     var requiresUserReauthentication: Bool {
         switch self {
         case .unauthorized, .invalidConfiguration:
