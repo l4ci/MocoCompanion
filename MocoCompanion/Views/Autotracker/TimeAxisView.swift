@@ -45,26 +45,57 @@ struct TimeAxisView: View {
 struct TimeAxisGridBackground: View {
     var workdayStartHour: Int = 8
     var workdayEndHour: Int = 17
+    /// When true, the workday band is suppressed (weekends).
+    var isWeekend: Bool = false
+    /// Optional absence for the day — rendered as a tinted band with icon.
+    var absence: MocoSchedule? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Canvas { context, size in
-            let ppm = TimelineLayout.pixelsPerMinute
+        ZStack(alignment: .topLeading) {
+            Canvas { context, size in
+                let ppm = TimelineLayout.pixelsPerMinute
 
-            // Workday background band
-            let workStart = CGFloat(workdayStartHour * 60) * ppm
-            let workEnd = CGFloat(workdayEndHour * 60) * ppm
-            let workRect = CGRect(x: 0, y: workStart, width: size.width, height: workEnd - workStart)
-            context.fill(Path(workRect), with: .color(Color.accentColor.opacity(0.04)))
-
-            // Hour lines
-            for hour in 0...24 {
-                let y = CGFloat(hour * 60) * ppm
-                let path = Path { p in
-                    p.move(to: CGPoint(x: 0, y: y))
-                    p.addLine(to: CGPoint(x: size.width, y: y))
+                // Workday background band — hidden on weekends
+                if !isWeekend {
+                    let workStart = CGFloat(workdayStartHour * 60) * ppm
+                    let workEnd = CGFloat(workdayEndHour * 60) * ppm
+                    let workRect = CGRect(x: 0, y: workStart, width: size.width, height: workEnd - workStart)
+                    context.fill(Path(workRect), with: .color(Color.accentColor.opacity(0.04)))
                 }
-                context.stroke(path, with: .color(Color.primary.opacity(0.08)), lineWidth: 0.5)
+
+                // Hour lines
+                for hour in 0...24 {
+                    let y = CGFloat(hour * 60) * ppm
+                    let path = Path { p in
+                        p.move(to: CGPoint(x: 0, y: y))
+                        p.addLine(to: CGPoint(x: size.width, y: y))
+                    }
+                    context.stroke(path, with: .color(Color.primary.opacity(0.08)), lineWidth: 0.5)
+                }
+            }
+
+            // Absence overlay — tinted band over the workday range with icon
+            if let absence {
+                let info = AbsenceStyle.resolve(absence)
+                let ppm = TimelineLayout.pixelsPerMinute
+                let startY = CGFloat(workdayStartHour * 60) * ppm
+                let endY = CGFloat(workdayEndHour * 60) * ppm
+                info.color.opacity(0.06)
+                    .frame(height: endY - startY)
+                    .offset(y: startY)
+                    .overlay(alignment: .center) {
+                        VStack(spacing: 4) {
+                            Image(systemName: info.icon)
+                                .font(.system(size: 28, weight: .light))
+                                .foregroundStyle(info.color.opacity(0.3))
+                            Text(absence.assignment.name)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(info.color.opacity(0.4))
+                        }
+                        .offset(y: startY + (endY - startY) / 2)
+                    }
+                    .allowsHitTesting(false)
             }
         }
         .frame(height: TimelineLayout.totalHeight)

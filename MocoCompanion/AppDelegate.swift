@@ -395,6 +395,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         vm.syncEngine = appState.syncEngine
         vm.settings = appState.settings
         vm.calendarService = appState.calendarService
+        vm.planningStore = appState.planningStore
         vm.onEntryChanged = { [weak self] in
             await self?.appState.activityService.refreshTodayStats()
         }

@@ -34,6 +34,9 @@ import os
     /// a retain cycle if the VM ever outlives the window. Nil in test
     /// harnesses that don't exercise calendar fetches.
     weak var calendarService: CalendarService?
+    /// Optional reference to PlanningStore for absence data. Wired by
+    /// AppDelegate; nil in test harnesses.
+    weak var planningStore: PlanningStore?
     /// Called after entries are created/modified locally. Used to refresh the Today panel.
     var onEntryChanged: (() async -> Void)?
     /// Called when the user taps the refresh button. Triggers a full sync cycle.
@@ -60,6 +63,18 @@ import os
 
     var isSyncing: Bool {
         syncState.isSyncing
+    }
+
+    // MARK: - Date Metadata
+
+    /// Whether the selected date falls on a weekend (Saturday or Sunday).
+    var isWeekend: Bool {
+        Calendar.current.isDateInWeekend(selectedDate)
+    }
+
+    /// Absence (vacation, sick day, holiday, etc.) for the selected date, if any.
+    var absence: MocoSchedule? {
+        planningStore?.absence(for: TimelineGeometry.dateString(from: selectedDate))
     }
 
     // MARK: - Published State

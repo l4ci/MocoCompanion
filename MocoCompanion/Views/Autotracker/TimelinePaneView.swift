@@ -443,7 +443,9 @@ struct TimelinePaneView: View {
                     // Grid background
                     TimeAxisGridBackground(
                         workdayStartHour: viewModel.workdayStartHour,
-                        workdayEndHour: viewModel.workdayEndHour
+                        workdayEndHour: viewModel.workdayEndHour,
+                        isWeekend: viewModel.isWeekend,
+                        absence: viewModel.absence
                     )
 
                     // Panes. Columns render conditionally based on the
