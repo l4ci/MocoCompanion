@@ -107,8 +107,6 @@ private struct PanelContentInner: View {
             case .today:
                 todayHeader
 
-                theme.divider.frame(height: 1)
-
                 TodayView(
                     appState: appState,
                     onTabSwitch: { activeTab = .search },
