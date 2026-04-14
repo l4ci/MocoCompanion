@@ -344,6 +344,15 @@ final class Autotracker {
             return
         }
 
+        // Rules only apply to today and future dates — never create
+        // suggestions or auto-entries for past days.
+        let startOfToday = Calendar.current.startOfDay(for: clock())
+        guard date >= startOfToday else {
+            Self.atLogger.debug("evaluate skipped — date is in the past")
+            suggestions = []
+            return
+        }
+
         let dateString = Self.atDateString(from: date)
         loadDeclinedIds(for: dateString)
 

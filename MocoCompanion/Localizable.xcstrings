@@ -57,6 +57,16 @@
         }
       }
     },
+    "%@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ — %2$@"
+          }
+        }
+      }
+    },
     "%@ › %@" : {
       "localizations" : {
         "en" : {
@@ -73,6 +83,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "%@ • %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ • %2$@"
           }
         }
       }
@@ -151,6 +171,16 @@
     },
     "•" : {
 
+    },
+    "• %@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "• %1$@: %2$@"
+          }
+        }
+      }
     },
     "⌘%lld" : {
 
@@ -1342,13 +1372,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Termine heute"
+            "value" : "Keine Termine"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No meetings today"
+            "value" : "No meetings"
           }
         }
       }
@@ -3173,6 +3203,7 @@
 
     },
     "No activity for this day" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3201,6 +3232,7 @@
 
     },
     "No timed entries for this day" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5869,6 +5901,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "timeline.noAppActivity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine App-Aktivität"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No app activity"
+          }
+        }
+      }
+    },
+    "timeline.noEntries" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Zeiteinträge"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No time entries"
           }
         }
       }
