@@ -51,7 +51,15 @@ struct MocoClient: MocoClientProtocol, Sendable {
     }
 
     func fetchUserProfile(userId: Int) async throws -> MocoUserProfile {
-        return try await perform(request: makeRequest(.get, path: "users/\(userId)"))
+        // Use /users?ids[]=<id> instead of /users/<id> — the latter
+        // requires admin permissions and returns 403 for regular users.
+        var components = try urlComponents(path: "users")
+        components.queryItems = [URLQueryItem(name: "ids[]", value: String(userId))]
+        let users: [MocoUserProfile] = try await perform(request: makeRequest(.get, url: components.requireURL()))
+        guard let user = users.first else {
+            throw MocoError.notFound
+        }
+        return user
     }
 
     // MARK: - Activities

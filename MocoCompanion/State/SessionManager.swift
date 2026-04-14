@@ -28,15 +28,9 @@ final class SessionManager {
             userIdBox.value = session.id
             logger.info("Session: userId=\(session.id)")
 
-            // Build profile from session response — the /session endpoint
-            // returns firstname, lastname, avatar_url directly. This avoids
-            // the /users/{id} call which requires admin permissions.
-            let profile = MocoUserProfile(
-                id: session.id,
-                firstname: session.firstname,
-                lastname: session.lastname,
-                avatarUrl: session.avatarUrl
-            )
+            // Fetch profile via /users?ids[]=<id> — works for all users,
+            // unlike /users/<id> which requires admin permissions.
+            let profile = try await client.fetchUserProfile(userId: session.id)
             currentUserProfile = profile
             logger.info("Profile: \(profile.firstname) \(profile.lastname)")
 
