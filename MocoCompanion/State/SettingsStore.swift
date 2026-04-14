@@ -336,11 +336,11 @@ final class SettingsStore {
     // MARK: - Init
 
     init() {
-        // One-time migration: move API key from legacy login.keychain to Data Protection Keychain
-        KeychainHelper.migrateToDataProtectionKeychain(service: Self.keychainService, account: Self.keychainAccount)
+        // One-time recovery: v0.5.0 moved items to the data protection keychain
+        // which fails on some Developer ID signing configs. Move them back.
+        KeychainHelper.recoverFromDataProtectionKeychain(service: Self.keychainService, account: Self.keychainAccount)
 
         let loadedKey = KeychainHelper.load(service: Self.keychainService, account: Self.keychainAccount) ?? ""
-
         self.subdomain = Self.read(Key.subdomain, default: "")
         self.apiKey = loadedKey
         self.launchAtLogin = Self.read(Key.launchAtLogin, default: false)

@@ -12,7 +12,6 @@ enum KeychainHelper {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecUseDataProtectionKeychain as String: true,
         ]
 
         if value.isEmpty {
@@ -51,17 +50,10 @@ enum KeychainHelper {
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecUseDataProtectionKeychain as String: true,
         ]
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        if status == errSecInteractionNotAllowed || status == errSecAuthFailed || status == -25293 {
-            logger.warning("Keychain item has restrictive ACL (status \(status)) — deleting for re-creation")
-            SecItemDelete(query as CFDictionary)
-            return nil
-        }
 
         guard status == errSecSuccess, let data = result as? Data else {
             if status != errSecItemNotFound {
@@ -72,34 +64,37 @@ enum KeychainHelper {
         return String(data: data, encoding: .utf8)
     }
 
-    /// One-time migration from legacy login.keychain to Data Protection Keychain.
-    /// Reads from legacy (without kSecUseDataProtectionKeychain), writes to new store,
-    /// then deletes the legacy item.
-    static func migrateToDataProtectionKeychain(service: String, account: String) {
-        let migrationKey = "keychain.migrated.\(service).\(account)"
-        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+    /// One-time recovery from the v0.5.0 data-protection-keychain migration.
+    /// That migration moved items into the data protection keychain
+    /// (kSecUseDataProtectionKeychain), which fails on some Developer ID
+    /// signing configurations. This reads from the data protection keychain,
+    /// writes back to the login keychain, and cleans up.
+    static func recoverFromDataProtectionKeychain(service: String, account: String) {
+        let recoveryKey = "keychain.recovered.\(service).\(account)"
+        guard !UserDefaults.standard.bool(forKey: recoveryKey) else { return }
+        defer { UserDefaults.standard.set(true, forKey: recoveryKey) }
 
-        // Read from legacy keychain (without data protection flag)
-        let legacyQuery: [String: Any] = [
+        // If the login keychain already has the item, nothing to recover.
+        if load(service: service, account: account) != nil { return }
+
+        // Try to read from the data protection keychain.
+        let dpQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecUseDataProtectionKeychain as String: true,
         ]
 
         var result: AnyObject?
-        let status = SecItemCopyMatching(legacyQuery as CFDictionary, &result)
+        let status = SecItemCopyMatching(dpQuery as CFDictionary, &result)
 
         if status == errSecSuccess, let data = result as? Data,
            let value = String(data: data, encoding: .utf8), !value.isEmpty {
-            // Save to Data Protection Keychain (using the new save() which includes the flag)
             save(value: value, service: service, account: account)
-            // Delete from legacy keychain
-            SecItemDelete(legacyQuery as CFDictionary)
-            logger.info("Migrated keychain item to Data Protection Keychain")
+            SecItemDelete(dpQuery as CFDictionary)
+            logger.info("Recovered keychain item from data protection keychain")
         }
-
-        UserDefaults.standard.set(true, forKey: migrationKey)
     }
 }
