@@ -42,12 +42,12 @@ struct TodayView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Yesterday under-booking warning — visible in Log view
+            dayToggle
+
+            // Yesterday under-booking warning — below day toggle in Log view
             if let warning = appState.yesterdayService.warning {
                 YesterdayBannerView(warning: warning, onDismiss: { appState.yesterdayService.warning = nil })
             }
-
-            dayToggle
 
             if let absence = vm.absence(for: vm.selectedDay.dateString) {
                 absenceBanner(absence)
