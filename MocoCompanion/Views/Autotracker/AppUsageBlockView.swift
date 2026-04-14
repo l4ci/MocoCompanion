@@ -18,6 +18,7 @@ struct AppUsageBlockView: View {
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @State private var isDragging: Bool = false
     @State private var appIcon: NSImage?
+    @State private var showPopover: Bool = false
 
     private var height: CGFloat {
         max(CGFloat(block.durationSeconds / 60) * TimelineLayout.pixelsPerMinute, 12)
@@ -80,7 +81,12 @@ struct AppUsageBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected ? 1 : 0)
         }
-        .help(helpLabel)
+        .onHover { hovering in
+            showPopover = hovering && !isDragging
+        }
+        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+            hoverPopover
+        }
         .opacity(isDragging ? 0.5 : 1.0)
         .gesture(
             DragGesture(minimumDistance: 8, coordinateSpace: .global)
@@ -112,5 +118,36 @@ struct AppUsageBlockView: View {
                 }
             }
         }
+    }
+
+    private var hoverPopover: some View {
+        HStack(spacing: 8) {
+            if let appIcon {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 24, height: 24)
+            } else {
+                Image(systemName: "app.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(theme.textTertiary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(block.appName) — \(block.durationLabel)")
+                    .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
+                    .foregroundStyle(theme.textPrimary)
+                Text("\(block.startTimeLabel) – \(block.endTimeLabel)")
+                    .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
+                    .foregroundStyle(theme.textSecondary)
+                if !block.contributingApps.isEmpty {
+                    ForEach(Array(block.contributingApps), id: \.bundleId) { contrib in
+                        Text("• \(contrib.appName): \(contrib.durationLabel)")
+                            .font(.system(size: Theme.FontSize.caption + fontBoost))
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                }
+            }
+        }
+        .padding(10)
     }
 }

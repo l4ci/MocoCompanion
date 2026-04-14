@@ -94,6 +94,17 @@ struct TimelineWindow: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: deleteUndoManager?.pendingDelete?.activity.id)
+        .onKeyPress(.leftArrow) {
+            viewModel.selectPreviousDay()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            if !viewModel.isToday {
+                viewModel.selectNextDay()
+                return .handled
+            }
+            return .ignored
+        }
         .preferredColorScheme(Theme.colorScheme(from: settings?.appearance ?? ""))
         .environment(\.entryFontSizeBoost, CGFloat(settings?.entryFontSizeBoost ?? 0))
         .withTheme(colorScheme: colorScheme)

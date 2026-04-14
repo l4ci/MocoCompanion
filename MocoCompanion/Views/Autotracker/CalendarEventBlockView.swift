@@ -17,6 +17,7 @@ struct CalendarEventBlockView: View {
 
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @State private var showPopover: Bool = false
 
     private static let compactThreshold: CGFloat = 44
 
@@ -64,7 +65,28 @@ struct CalendarEventBlockView: View {
                 .stroke(Color.accentColor, lineWidth: 2)
                 .opacity(isSelected || isLinked ? 1 : 0)
         }
-        .help(helpLabel)
+        .onHover { showPopover = $0 }
+        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 20))
+                    .foregroundStyle(event.color)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.title)
+                        .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
+                        .foregroundStyle(theme.textPrimary)
+                    Text("\(timeRangeLabel) • \(durationLabel)")
+                        .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
+                        .foregroundStyle(theme.textSecondary)
+                    if let loc = event.location, !loc.isEmpty {
+                        Text(loc)
+                            .font(.system(size: Theme.FontSize.caption + fontBoost))
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                }
+            }
+            .padding(10)
+        }
         .onTapGesture(count: 1) { onSelect() }
         .onTapGesture(count: 2) { onCreateEntry() }
         .contextMenu {

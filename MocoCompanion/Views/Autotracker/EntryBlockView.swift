@@ -55,6 +55,7 @@ struct EntryBlockView: View {
     /// view. See `TimelineViewModel.gesturePreviewState`.
     @State private var gestureMode: GestureMode = .idle
     @State private var showDeleteConfirm: Bool = false
+    @State private var showPopover: Bool = false
 
     private var isGestureActive: Bool {
         gestureMode != .idle
@@ -249,7 +250,32 @@ struct EntryBlockView: View {
                 .frame(height: displayHeight)
             }
         }
-        .help(tooltipLabel)
+        .onHover { hovering in
+            showPopover = hovering && !isGestureActive
+        }
+        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.projectName)
+                    .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
+                    .foregroundStyle(theme.textPrimary)
+                if !entry.taskName.isEmpty {
+                    Text(entry.taskName)
+                        .font(.system(size: Theme.FontSize.subhead + fontBoost))
+                        .foregroundStyle(theme.textSecondary)
+                }
+                if !entry.description.isEmpty {
+                    Text(entry.description)
+                        .font(.system(size: Theme.FontSize.subhead + fontBoost))
+                        .foregroundStyle(theme.textTertiary)
+                }
+                if let start = entry.startTime {
+                    Text("\(start) • \(durationLabel)")
+                        .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
+            .padding(10)
+        }
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
