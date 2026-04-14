@@ -1375,27 +1375,6 @@
     "Change" : {
 
     },
-    "Create" : {
-
-    },
-    "Create Entry" : {
-
-    },
-    "Create entry from this block…" : {
-
-    },
-    "Create Rule" : {
-
-    },
-    "Create rule for \"%@\"…" : {
-
-    },
-    "Created by an autotracker rule" : {
-
-    },
-    "Date" : {
-
-    },
     "columnHeader.appActivity" : {
       "localizations" : {
         "de" : {
@@ -1443,6 +1422,27 @@
           }
         }
       }
+    },
+    "Create" : {
+
+    },
+    "Create Entry" : {
+
+    },
+    "Create entry from this block…" : {
+
+    },
+    "Create Rule" : {
+
+    },
+    "Create rule for \"%@\"…" : {
+
+    },
+    "Created by an autotracker rule" : {
+
+    },
+    "Date" : {
+
     },
     "date.today" : {
       "localizations" : {
@@ -1995,6 +1995,9 @@
           }
         }
       }
+    },
+    "Go to: Today" : {
+
     },
     "hint.delete" : {
       "localizations" : {
@@ -6046,9 +6049,6 @@
         }
       }
     },
-    "Today" : {
-
-    },
     "today.noEntries" : {
       "localizations" : {
         "de" : {
@@ -6248,15 +6248,8 @@
         }
       }
     },
-    "Version %@ (%@)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Version %1$@ (%2$@)"
-          }
-        }
-      }
+    "Version %@" : {
+
     },
     "When" : {
 
