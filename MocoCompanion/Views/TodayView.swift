@@ -12,7 +12,7 @@ struct TodayView: View {
     @State private var vm: TodayViewModel
     @State private var descriptionDraft = ""
     @State private var hoursDraft = ""
-    @State private var refreshId = UUID()
+    @State private var refreshId: UUID?
 
     @FocusState private var listFocused: Bool
     @Environment(\.theme) private var theme
