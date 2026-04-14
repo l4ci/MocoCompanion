@@ -91,6 +91,9 @@ struct TimelinePaneView: View {
             // replacing it.
             scrollContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay {
+                    emptyColumnOverlays
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .focusable()
@@ -548,8 +551,6 @@ struct TimelinePaneView: View {
                     onRequestAccess: { _ = AccessibilityPermission.requestAccess() }
                 )
                 .padding(.top, 40)
-            } else if appUsageBlocks.isEmpty {
-                columnEmptyLabel(String(localized: "timeline.noAppActivity"))
             }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
@@ -745,10 +746,6 @@ struct TimelinePaneView: View {
             if let preview = viewModel.gesturePreviewState {
                 GesturePreviewBlockView(preview: preview, columnWidth: entryColumnWidth)
             }
-
-            if positionedEntries.isEmpty {
-                columnEmptyLabel(String(localized: "timeline.noEntries"))
-            }
         }
         .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
         .dropDestination(for: String.self) { items, location in
@@ -810,18 +807,58 @@ struct TimelinePaneView: View {
         }
     }
 
-    // MARK: - Column Empty Label
+    // MARK: - Column Empty Labels (sticky overlay)
+
+    /// Sticky overlay that shows per-column empty-state labels.
+    /// Positioned outside the ScrollView so they don't scroll away.
+    private var emptyColumnOverlays: some View {
+        HStack(alignment: .top, spacing: 0) {
+            // Time axis spacer
+            Color.clear.frame(width: timeAxisWidth)
+
+            // App usage column
+            if viewModel.settings?.appRecordingEnabled == true {
+                if appUsageBlocks.isEmpty && accessibilityPlaceholderState == nil {
+                    columnEmptyLabel(String(localized: "timeline.noAppActivity"))
+                        .frame(width: appUsagePaneWidth)
+                } else {
+                    Color.clear.frame(width: appUsagePaneWidth)
+                }
+                Color.clear.frame(width: 1) // divider spacer
+            }
+
+            // Calendar column
+            if viewModel.settings?.calendarEnabled == true {
+                Color.clear.frame(width: calendarPaneWidth)
+                Color.clear.frame(width: 1)
+            }
+
+            // Entry column
+            if positionedEntries.isEmpty {
+                columnEmptyLabel(String(localized: "timeline.noEntries"))
+                    .frame(maxWidth: .infinity)
+            } else {
+                Spacer()
+            }
+        }
+        .padding(.top, 40)
+        .allowsHitTesting(false)
+    }
 
     private func columnEmptyLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: Theme.FontSize.caption + fontBoost))
             .foregroundStyle(theme.textTertiary)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(theme.surface.opacity(0.85), in: Capsule())
-            .frame(maxWidth: .infinity)
-            .padding(.top, 60)
-            .allowsHitTesting(false)
+            .background(
+                theme.surface,
+                in: RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
+                    .stroke(theme.textTertiary.opacity(0.15), lineWidth: 0.5)
+            }
     }
 
     // MARK: - Positioning Helpers
