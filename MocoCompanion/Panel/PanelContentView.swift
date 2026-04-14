@@ -121,6 +121,8 @@ private struct PanelContentInner: View {
                 )
             }
         }
+        .frame(maxHeight: 600)
+        .fixedSize(horizontal: false, vertical: true)
         .background(theme.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
