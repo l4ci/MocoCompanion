@@ -56,6 +56,7 @@ struct EntryBlockView: View {
     @State private var gestureMode: GestureMode = .idle
     @State private var showDeleteConfirm: Bool = false
     @State private var showPopover: Bool = false
+    @State private var isHovered: Bool = false
 
     private var isGestureActive: Bool {
         gestureMode != .idle
@@ -224,7 +225,7 @@ struct EntryBlockView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: TimelineLayout.blockCornerRadius, style: .continuous)
                     .stroke(Color.accentColor, lineWidth: 2)
-                    .opacity(isHighlighted ? 1 : 0)
+                    .opacity(isHovered || isHighlighted ? 1 : 0)
             }
             .opacity(entry.isReadOnly ? 0.7 : gestureMode == .dragging ? 0.85 : 1.0)
             .shadow(color: .black.opacity(isGestureActive ? 0.2 : 0), radius: isGestureActive ? 4 : 0)
@@ -251,13 +252,19 @@ struct EntryBlockView: View {
             }
         }
         .onHover { hovering in
-            // Show popover on hover only for compact (truncated) entries
-            if isCompact {
-                if hovering && !isGestureActive {
+            isHovered = hovering
+            if hovering {
+                // Select to trigger cross-highlighting of linked entries
+                onSelect?()
+                // Show popover on hover only for compact entries
+                if isCompact && !isGestureActive {
                     showPopover = true
-                } else if !hovering {
-                    showPopover = false
                 }
+            } else {
+                // Clear selection when leaving — outline disappears
+                viewModel.clearEntrySelection()
+                viewModel.clearAppBlockSelection()
+                if isCompact { showPopover = false }
             }
         }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
@@ -286,7 +293,7 @@ struct EntryBlockView: View {
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
-            showPopover = true
+            if !showPopover { showPopover = true }
         }
         .onTapGesture(count: 2) {
             if !entry.isReadOnly {

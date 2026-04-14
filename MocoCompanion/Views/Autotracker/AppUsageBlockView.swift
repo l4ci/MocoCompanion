@@ -19,6 +19,7 @@ struct AppUsageBlockView: View {
     @State private var isDragging: Bool = false
     @State private var appIcon: NSImage?
     @State private var showPopover: Bool = false
+    @State private var isHovered: Bool = false
 
     private var height: CGFloat {
         max(CGFloat(block.durationSeconds / 60) * TimelineLayout.pixelsPerMinute, 12)
@@ -79,10 +80,12 @@ struct AppUsageBlockView: View {
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
                 .stroke(Color.accentColor, lineWidth: 2)
-                .opacity(isSelected ? 1 : 0)
+                .opacity(isHovered || isSelected ? 1 : 0)
         }
         .onHover { hovering in
+            isHovered = hovering
             if hovering && !isDragging {
+                onSelect(false)
                 showPopover = true
             } else if !hovering {
                 showPopover = false
@@ -108,7 +111,7 @@ struct AppUsageBlockView: View {
         )
         .onTapGesture(count: 1) {
             onSelect(NSEvent.modifierFlags.contains(.shift))
-            showPopover = true
+            if !showPopover { showPopover = true }
         }
         .onTapGesture(count: 2) {
             onCreateEntry?(block)

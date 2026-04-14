@@ -18,6 +18,7 @@ struct CalendarEventBlockView: View {
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @State private var showPopover: Bool = false
+    @State private var isHovered: Bool = false
 
     private static let compactThreshold: CGFloat = 44
 
@@ -63,11 +64,15 @@ struct CalendarEventBlockView: View {
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                 .stroke(Color.accentColor, lineWidth: 2)
-                .opacity(isSelected ? 1 : 0)
+                .opacity(isHovered || isSelected ? 1 : 0)
         }
         .onHover { hovering in
-            if isCompact {
-                showPopover = hovering
+            isHovered = hovering
+            if hovering {
+                onSelect()
+                if isCompact { showPopover = true }
+            } else {
+                if isCompact { showPopover = false }
             }
         }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {
@@ -93,7 +98,7 @@ struct CalendarEventBlockView: View {
         }
         .onTapGesture(count: 1) {
             onSelect()
-            showPopover = true
+            if !showPopover { showPopover = true }
         }
         .onTapGesture(count: 2) { onCreateEntry() }
         .contextMenu {
