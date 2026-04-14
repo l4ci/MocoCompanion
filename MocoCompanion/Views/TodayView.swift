@@ -111,6 +111,7 @@ struct TodayView: View {
             guard !Task.isCancelled else { return }
             await vm.refreshAbsences()
             vm.lastSyncedAt = .now
+            appState.syncState.lastPanelRefreshAt = .now
             if let idx = vm.activeEntryIndex {
                 vm.selectedIndex = idx
                 vm.trackSelectedId()
@@ -118,9 +119,10 @@ struct TodayView: View {
         }
         .onAppear {
             // Only trigger a full API refresh if stale (>5 min since last sync).
-            // Otherwise the cached data is shown instantly — no API calls.
+            // Check the shared timestamp (survives view recreation on tab switch).
             let staleThreshold: TimeInterval = 300 // 5 minutes
-            if vm.lastSyncedAt == nil || Date.now.timeIntervalSince(vm.lastSyncedAt!) > staleThreshold {
+            let lastRefresh = appState.syncState.lastPanelRefreshAt
+            if lastRefresh == nil || Date.now.timeIntervalSince(lastRefresh!) > staleThreshold {
                 refreshId = UUID()
             }
             setFocusAfterDelay($listFocused, to: true)

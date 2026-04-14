@@ -8,6 +8,11 @@ import Foundation
     private(set) var pendingChanges: Int = 0
     private(set) var lastError: MocoError?
 
+    /// Timestamp of the last Log view (panel) activity refresh.
+    /// Persists across TodayView recreation (tab switches) so the
+    /// 5-minute throttle works correctly.
+    var lastPanelRefreshAt: Date?
+
     func setSyncing(_ value: Bool) {
         isSyncing = value
     }
