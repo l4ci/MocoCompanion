@@ -84,6 +84,8 @@ Each planned task shows the project name, task name, and planned hours.
 
 #### 3. Start from Favorites or Search
 
+![Track Tab — Fuzzy Search](Screenshots/Track-Fuzzymatch.png)
+
 Switch to the **TRACK** tab. You'll see:
 
 - **Favorites** — your pinned project/task combos (⭐ star to toggle)
@@ -150,6 +152,8 @@ Alternatively, in the Log tab: select the paused entry and press `Enter` to resu
 
 ### Before Lunch: Review & Correct
 
+![Log View — Today's Entries](Screenshots/Log.png)
+
 #### Check Your Day
 
 Open panel → **LOG** tab → Today.
@@ -160,6 +164,10 @@ Open panel → **LOG** tab → Today.
 - **Planned hours** — entries show `1h of 2h` (tracked vs planned)
 
 Stats footer shows: **Gesamt** (total hours), **Abrechenbar** (billable %), **Einträge** (entry count).
+
+Press `⌘R` to manually sync with Moco at any time.
+
+![Log View — Keyboard Shortcuts](Screenshots/Log-Shortcuts.png)
 
 #### Edit an Entry
 
@@ -223,6 +231,8 @@ Tomorrow shows a read-only planning view:
 
 Open the Timeline via `⌘T` from the quick-entry panel or via the menubar context menu.
 
+![Timeline View](Screenshots/Timeline-View.png)
+
 The Timeline shows your workday as a visual time axis with two columns side by side:
 
 - **Left column — App usage** shows which applications you used and for how long, rendered as colored blocks. Blocks are clustered when they overlap so nothing is hidden.
@@ -271,11 +281,15 @@ When calendar access is granted (macOS will prompt on first use), your calendar 
 - **All-day events** appear in a dedicated bar above the timeline
 - Events are read-only — they serve as context for your time entries, not as editable items
 
+![Timeline — Calendar Integration](Screenshots/Timeline-App-Calender-Integration.png)
+
 Calendar events are also available as triggers for autotracker rules (see below).
 
 ### Rules
 
 Rules let you automate time entry creation based on app usage or calendar events.
+
+![Autotracker Rules](Screenshots/Autotracker-Rules.png)
 
 #### Creating a rule
 
@@ -285,6 +299,8 @@ Rules let you automate time entry creation based on app usage or calendar events
 4. For calendar rules: enter an event title pattern to match
 5. Select the **project and task** the rule should map to
 6. Save — the rule takes effect on the next autotracker evaluation cycle
+
+![Autotracker Rule Builder](Screenshots/Autotracker-Rulebuilder.png)
 
 #### Managing rules
 
@@ -314,10 +330,14 @@ Settings window (780×580) has 9 tabs:
 All instructions are localized (German/English).
 
 ### General
+
+![Settings — Display](Screenshots/Settings-Display.png)
+
 - **Startup** — Launch at Login toggle, Default Tab picker (Track / Log)
-- **Working Hours** — Start/End time pickers. Controls when idle reminders are active and when the end-of-day summary appears.
+- **Working Hours** — Start/End time pickers, working days selection. Controls when idle reminders are active and when the end-of-day summary appears.
 - **Sound** — Sound Effects toggle (Tink on start, Pop on stop)
-- **Display** — Appearance (Auto/Light/Dark), entry font size slider (15–18pt), Autocomplete Descriptions toggle
+- **Display** — Appearance (Auto/Light/Dark), entry font size slider (15–18pt), Show Keyboard Hints toggle, Autocomplete Descriptions toggle
+- **Language** — System / English / German
 
 ### Timeline
 Three sections:
@@ -332,6 +352,9 @@ Three sections:
 - Remove individual favorites (✕ button)
 
 ### Notifications
+
+![Settings — Notifications](Screenshots/Settings-Notifications.png)
+
 5 groups with per-type toggles:
 
 | Group | Types |
@@ -347,6 +370,7 @@ Three sections:
 - Refresh button for manual re-sync
 
 ### Debug
+- **Demo Mode** — use sample data for screenshots (requires restart)
 - Log levels (API, App) — adjustable verbosity
 - Open/reveal/clear log files
 
@@ -396,6 +420,8 @@ Three sections:
 | `E` | Edit entry |
 | `D` / `Delete` | Delete entry (with confirmation) |
 | `F` | Toggle favorite |
+| `⌘R` | Manual sync with Moco |
+| `⌘T` | Open Timeline |
 | `Tab` | Switch to Track tab |
 | Type | Switch to Track tab with typed character |
 

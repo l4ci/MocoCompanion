@@ -114,7 +114,11 @@ final class SettingsStore {
     // MARK: - Credentials
 
     var subdomain: String {
-        didSet { Self.save(Key.subdomain, subdomain) }
+        didSet {
+            let parsed = MocoClient.parseSubdomain(subdomain)
+            if parsed != subdomain { subdomain = parsed; return }
+            Self.save(Key.subdomain, subdomain)
+        }
     }
 
     var apiKey: String {

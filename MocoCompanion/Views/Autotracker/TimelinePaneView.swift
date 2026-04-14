@@ -13,12 +13,18 @@ struct TimelinePaneView: View {
     let isToday: Bool
     let viewModel: TimelineViewModel
     let projectCatalog: ProjectCatalog
+    var favoritesManager: FavoritesManager?
     var descriptionRequired: Bool = false
     @Environment(\.theme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.entryFontSizeBoost) private var fontBoost
 
     // MARK: - Scaled Layout
+
+    private var favoriteSearchEntries: [SearchEntry] {
+        guard let fm = favoritesManager else { return [] }
+        return fm.activeFavorites(validEntries: projectCatalog.searchEntries).map { SearchEntry(from: $0) }
+    }
 
     private var scale: CGFloat { TimelineLayout.scale(for: fontBoost) }
     private var timeAxisWidth: CGFloat { TimelineLayout.timeAxisWidth * scale }
@@ -146,6 +152,7 @@ struct TimelinePaneView: View {
                 fallbackDate: selectedDate,
                 projectCatalog: projectCatalog,
                 linkedAppName: viewModel.linkedAppName(for: wrapper.entry),
+                favorites: favoriteSearchEntries,
                 descriptionRequired: descriptionRequired,
                 onSave: { edited in
                     Task {
@@ -182,6 +189,7 @@ struct TimelinePaneView: View {
                 durationMinutes: creation.durationMinutes,
                 suggestedDescription: creation.appName,
                 projectCatalog: projectCatalog,
+                favorites: favoriteSearchEntries,
                 descriptionRequired: descriptionRequired,
                 onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
                     Task {

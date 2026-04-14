@@ -24,20 +24,9 @@ struct SetupWizardView: View {
         case apiKey = 1
     }
 
-    /// Parse subdomain from user input — strips protocol, trailing `.mocoapp.com`, whitespace.
+    /// Parse subdomain from user input — accepts bare subdomain, full host, or full URL.
     private var parsedSubdomain: String {
-        var value = domainInput
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // Strip protocol
-        if value.hasPrefix("https://") { value = String(value.dropFirst(8)) }
-        if value.hasPrefix("http://") { value = String(value.dropFirst(7)) }
-        // Strip trailing slash
-        while value.hasSuffix("/") { value = String(value.dropLast()) }
-        // Strip .mocoapp.com suffix
-        if value.hasSuffix(".mocoapp.com") {
-            value = String(value.dropLast(".mocoapp.com".count))
-        }
-        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        MocoClient.parseSubdomain(domainInput)
     }
 
     private var canProceedDomain: Bool { MocoClient.isValidSubdomain(parsedSubdomain) }
@@ -126,20 +115,15 @@ struct SetupWizardView: View {
         VStack(spacing: 6) {
             TextField(String(localized: "setup.domainPlaceholder"), text: $domainInput)
                 .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+                .textContentType(.URL)
                 .frame(width: 300)
                 .onSubmit { if canProceedDomain { advanceToApiKey() } }
 
-            // Live preview of parsed subdomain
-            if !parsedSubdomain.isEmpty {
-                if MocoClient.isValidSubdomain(parsedSubdomain) {
-                    Text("\(parsedSubdomain).mocoapp.com")
-                        .font(.system(size: Theme.FontSize.subhead))
-                        .foregroundStyle(theme.textTertiary)
-                } else {
-                    Text(String(localized: "setup.invalidSubdomain"))
-                        .font(.system(size: Theme.FontSize.subhead))
-                        .foregroundStyle(.red.opacity(0.8))
-                }
+            if !parsedSubdomain.isEmpty && !MocoClient.isValidSubdomain(parsedSubdomain) {
+                Text(String(localized: "setup.invalidSubdomain"))
+                    .font(.system(size: Theme.FontSize.subhead))
+                    .foregroundStyle(.red.opacity(0.8))
             }
         }
 

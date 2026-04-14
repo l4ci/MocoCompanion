@@ -22,9 +22,41 @@ struct MocoClient: MocoClientProtocol, Sendable {
         return URL(string: "https://\(subdomain).mocoapp.com/api/v1")
     }
 
-    /// Validate that a subdomain contains only allowed characters (a-z, 0-9, hyphen).
+    /// Validate that a subdomain contains only allowed characters (a-z, 0-9, hyphen)
+    /// and does not start or end with a hyphen.
     static func isValidSubdomain(_ value: String) -> Bool {
-        !value.isEmpty && value.range(of: #"^[a-zA-Z0-9-]+$"#, options: .regularExpression) != nil
+        let lower = value.lowercased()
+        return !lower.isEmpty
+            && lower.range(of: #"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"#, options: .regularExpression) != nil
+    }
+
+    /// Extract a clean subdomain from user input.
+    /// Accepts bare subdomain (`myco`), full host (`myco.mocoapp.com`),
+    /// or full URL (`https://myco.mocoapp.com/profile/integrations`).
+    /// Returns the extracted subdomain (lowercased) or the cleaned input as-is.
+    static func parseSubdomain(_ input: String) -> String {
+        var value = input
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        // Strip protocol
+        for prefix in ["https://", "http://"] {
+            if value.hasPrefix(prefix) { value = String(value.dropFirst(prefix.count)); break }
+        }
+
+        // Strip path and query (everything after first /)
+        if let slash = value.firstIndex(of: "/") {
+            value = String(value[..<slash])
+        }
+
+        // If host ends in .mocoapp.com, extract the single subdomain label
+        if value.hasSuffix(".mocoapp.com") {
+            let label = String(value.dropLast(".mocoapp.com".count))
+            // Reject multi-level subdomains (e.g. "a.b.mocoapp.com")
+            if !label.contains(".") { return label }
+        }
+
+        return value
     }
 
     init(subdomain: String, apiKey: String, session: URLSession = .shared, rateGate: APIRateGate? = nil) {

@@ -7,6 +7,7 @@ struct TimelineWindow: View {
     @State private var viewModel: TimelineViewModel
     let projectCatalog: ProjectCatalog
     let autotracker: Autotracker
+    var favoritesManager: FavoritesManager?
     var descriptionRequired: Bool = false
     /// Shared undo manager — when non-nil, deletes show a bottom toaster
     /// with an Undo action for 5 seconds before the Moco API call fires.
@@ -40,10 +41,11 @@ struct TimelineWindow: View {
     }
 
     /// Init with a pre-built ViewModel (allows external date navigation).
-    init(viewModel: TimelineViewModel, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, descriptionRequired: Bool = false, deleteUndoManager: DeleteUndoManager? = nil, settings: SettingsStore? = nil) {
+    init(viewModel: TimelineViewModel, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, favoritesManager: FavoritesManager? = nil, descriptionRequired: Bool = false, deleteUndoManager: DeleteUndoManager? = nil, settings: SettingsStore? = nil) {
         _viewModel = State(initialValue: viewModel)
         self.projectCatalog = projectCatalog
         self.autotracker = autotracker
+        self.favoritesManager = favoritesManager
         self.descriptionRequired = descriptionRequired
         self.deleteUndoManager = deleteUndoManager
         self.settings = settings
@@ -79,6 +81,7 @@ struct TimelineWindow: View {
                     isToday: viewModel.isToday,
                     viewModel: viewModel,
                     projectCatalog: projectCatalog,
+                    favoritesManager: favoritesManager,
                     descriptionRequired: descriptionRequired
                 )
             }

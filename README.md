@@ -2,26 +2,41 @@
 
 A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.com) time tracking.
 
+![MocoCompanion Log View](Screenshots/Log.png)
+
+> **[Full Documentation & User Guide](docu.md)**
+
 ## Features
 
-- ⌨️ Global hotkey to start/stop timers without leaving your current app
-- 🔍 Fuzzy search across all assigned projects and tasks
-- 📋 Today/Yesterday/Tomorrow views with planned vs tracked hours
-- ⭐ Favorites and recent entries for quick access
-- 💰 Budget monitoring with project and task-level warnings
-- 🔔 Idle reminders, forgotten timer alerts, and end-of-day summaries
-- 🎨 Light/Dark mode with customizable appearance
-- 🇩🇪 German and English localization
+### Quick Entry Panel
+- Global hotkey (`⌘⌃⌥M`) to start/stop timers without leaving your current app
+- Fuzzy search across all assigned projects and tasks
+- Favorites and recent entries for instant access
+- Manual time booking with flexible hour formats (`1.5`, `1h 30m`, `90m`)
+- `#TICKET-123` tag extraction from descriptions
+- Description autocomplete from your history
 
-### Timeline & Autotracker (v0.5.0)
+### Log View
+- Today/Yesterday/Tomorrow views with planned vs tracked hours
+- Inline editing of descriptions, hours, and project reassignment
+- Keyboard shortcuts for every action (`E` edit, `D` delete, `F` favorite)
+- Budget monitoring with project and task-level warnings
+- Stats footer with total hours, billable percentage, and entry count
 
-- 📊 Visual timeline with dual-column layout — app usage blocks alongside Moco entries on a time axis
-- 🤖 Autotracker records which apps you use and for how long, then suggests matching Moco entries
-- 📅 Calendar integration — see your calendar events inline on the timeline with all-day event support
-- 📐 Drag to create, move, and resize entries directly on the timeline
-- 🔗 Rule engine — define rules that auto-match app usage or calendar events to projects and tasks
-- 🔄 Bidirectional sync engine with shadow entries, conflict resolution, and periodic background sync
-- 🎨 Project colors synced from Moco with palette fallback
+### Timeline & Autotracker
+- Visual timeline with dual-column layout — app usage blocks alongside Moco entries
+- Autotracker records which apps you use and suggests matching time entries
+- Calendar integration — see events inline on the timeline
+- Drag to create, move, and resize entries directly on the timeline
+- Rule engine — auto-match app usage or calendar events to projects and tasks
+- Bidirectional sync engine with shadow entries and conflict resolution
+
+### System Integration
+- Native macOS menu bar app (SwiftUI + AppKit)
+- Light/Dark mode with customizable appearance
+- German and English localization
+- Idle reminders, forgotten timer alerts, and end-of-day summaries
+- API key stored securely in the macOS Keychain
 
 ## Installation
 

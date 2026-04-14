@@ -82,9 +82,12 @@ final class ProjectCatalog {
 }
 
 extension ProjectCatalog {
-    /// Filter search entries by fuzzy query. Returns all entries when query is empty.
-    func filter(query: String) -> [SearchEntry] {
-        guard !query.isEmpty else { return searchEntries }
+    /// Filter search entries by fuzzy query.
+    /// When query is empty, returns `favorites` if non-empty, otherwise the full catalog.
+    func filter(query: String, favorites: [SearchEntry] = []) -> [SearchEntry] {
+        guard !query.isEmpty else {
+            return favorites.isEmpty ? searchEntries : favorites
+        }
         return FuzzyMatcher.search(query: query, in: searchEntries).map(\.entry)
     }
 }

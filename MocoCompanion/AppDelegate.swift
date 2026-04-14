@@ -426,6 +426,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             syncState: appState.syncState,
             projectCatalog: appState.catalog,
             autotracker: appState.autotracker,
+            favoritesManager: appState.favoritesManager,
             descriptionRequired: appState.settings.descriptionRequired,
             deleteUndoManager: appState.deleteUndoManager,
             settings: appState.settings

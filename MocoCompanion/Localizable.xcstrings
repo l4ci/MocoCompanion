@@ -140,9 +140,6 @@
         }
       }
     },
-    "%@.mocoapp.com" : {
-
-    },
     "%@h" : {
 
     },
@@ -1586,6 +1583,22 @@
         }
       }
     },
+    "debug.clear" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
     "debug.demoMode" : {
       "localizations" : {
         "de" : {
@@ -1630,22 +1643,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Screenshots"
-          }
-        }
-      }
-    },
-    "debug.clear" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Löschen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear"
           }
         }
       }

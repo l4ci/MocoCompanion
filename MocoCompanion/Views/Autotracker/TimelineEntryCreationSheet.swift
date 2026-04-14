@@ -10,6 +10,7 @@ struct TimelineEntryCreationSheet: View {
     let durationMinutes: Int
     let suggestedDescription: String
     let projectCatalog: ProjectCatalog
+    var favorites: [SearchEntry] = []
     var descriptionRequired: Bool = false
 
     /// (projectId, taskId, projectName, taskName, customerName, description)
@@ -72,7 +73,7 @@ struct TimelineEntryCreationSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            let entries = projectCatalog.filter(query: searchText)
+            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
                     .font(.system(size: Theme.FontSize.caption))
@@ -214,6 +215,7 @@ struct TimelineEntryEditSheet: View {
     let projectCatalog: ProjectCatalog
     /// Name of the linked app usage block, if any. Display-only.
     var linkedAppName: String? = nil
+    var favorites: [SearchEntry] = []
     var descriptionRequired: Bool = false
 
     let onSave: (EditedEntryFields) -> Void
@@ -239,6 +241,7 @@ struct TimelineEntryEditSheet: View {
         fallbackDate: Date,
         projectCatalog: ProjectCatalog,
         linkedAppName: String? = nil,
+        favorites: [SearchEntry] = [],
         descriptionRequired: Bool = false,
         onSave: @escaping (EditedEntryFields) -> Void,
         onDelete: (() -> Void)? = nil,
@@ -248,6 +251,7 @@ struct TimelineEntryEditSheet: View {
         self.fallbackDate = fallbackDate
         self.projectCatalog = projectCatalog
         self.linkedAppName = linkedAppName
+        self.favorites = favorites
         self.descriptionRequired = descriptionRequired
         self.onSave = onSave
         self.onDelete = onDelete
@@ -482,7 +486,7 @@ struct TimelineEntryEditSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
 
-            let entries = projectCatalog.filter(query: searchText)
+            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
                     .font(.system(size: Theme.FontSize.caption))

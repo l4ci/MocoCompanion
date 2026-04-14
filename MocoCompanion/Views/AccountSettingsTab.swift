@@ -11,7 +11,10 @@ struct AccountSettingsTab: View {
             Section {
                 TextField(String(localized: "settings.subdomain"), text: $settings.subdomain)
                     .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+                    .textContentType(.URL)
                     .help("Your Moco subdomain, e.g. 'mycompany' for mycompany.mocoapp.com")
+                    .onSubmit { settings.subdomain = MocoClient.parseSubdomain(settings.subdomain) }
 
                 if !settings.subdomain.isEmpty && !MocoClient.isValidSubdomain(settings.subdomain) {
                     Text(String(localized: "setup.invalidSubdomain"))
