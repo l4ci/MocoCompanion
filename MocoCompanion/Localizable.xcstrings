@@ -1586,6 +1586,54 @@
         }
       }
     },
+    "debug.demoMode" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Modus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo Mode"
+          }
+        }
+      }
+    },
+    "debug.demoModeDesc" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigt Beispieldaten statt echter Moco-Daten. Neustart erforderlich."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows sample data instead of real Moco data. Restart required."
+          }
+        }
+      }
+    },
+    "debug.demoModeHeader" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshots"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Screenshots"
+          }
+        }
+      }
+    },
     "debug.clear" : {
       "localizations" : {
         "de" : {
@@ -2173,6 +2221,22 @@
         }
       }
     },
+    "howto.cmdRefresh" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘R zum Synchronisieren mit Moco"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘R to sync with Moco"
+          }
+        }
+      }
+    },
     "howto.cmdSelect" : {
       "localizations" : {
         "de" : {
@@ -2185,6 +2249,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "⌘1–⌘5 to quickly select a result"
+          }
+        }
+      }
+    },
+    "howto.cmdTimeline" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘T zum Öffnen der Timeline"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘T to open Timeline"
+          }
+        }
+      }
+    },
+    "howto.dayNav" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "←/→ wechselt zwischen Tagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "←/→ to switch between days"
           }
         }
       }
@@ -2249,6 +2345,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter to continue timer on an entry"
+          }
+        }
+      }
+    },
+    "howto.favorite" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "F zum Favorit umschalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "F to toggle favorite"
           }
         }
       }

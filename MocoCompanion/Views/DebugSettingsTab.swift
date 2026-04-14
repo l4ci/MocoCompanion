@@ -7,6 +7,14 @@ struct DebugSettingsTab: View {
     var body: some View {
         Form {
             Section {
+                Toggle(String(localized: "debug.demoMode"), isOn: $settings.demoMode)
+            } header: {
+                Text(String(localized: "debug.demoModeHeader"))
+            } footer: {
+                Text(String(localized: "debug.demoModeDesc"))
+            }
+
+            Section {
                 Picker(String(localized: "debug.apiLogLevel"), selection: $settings.apiLogLevel) {
                     ForEach(AppLogger.LogLevel.allCases, id: \.self) { level in
                         Text(level.label).tag(level)

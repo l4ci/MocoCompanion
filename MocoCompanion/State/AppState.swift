@@ -216,7 +216,9 @@ final class AppState {
         let searchEntriesBox = ValueBox<[SearchEntry]>([])
         let rateGate = APIRateGate()
 
+        let demoClient: DemoMocoClient? = settings.demoMode ? DemoMocoClient() : nil
         let clientFactory: () -> (any MocoClientProtocol)? = { [weak settings] in
+            if let demoClient { return demoClient }
             guard let settings, settings.isConfigured else { return nil }
             return MocoClient(subdomain: settings.subdomain, apiKey: settings.apiKey, rateGate: rateGate)
         }

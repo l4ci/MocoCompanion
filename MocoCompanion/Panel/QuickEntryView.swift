@@ -110,11 +110,6 @@ struct QuickEntryView: View {
                     QuickEntryNoResultsView()
                 }
 
-                // Reserve space when typing below min-char threshold to prevent panel collapse
-                if sm.phase.isSearching && !sm.isSearchEmpty && !sm.hasMinSearchChars {
-                    Spacer()
-                        .frame(height: 40)
-                }
 
                 if sm.phase.isDescribing, let entry = sm.selectedEntry {
                     SelectedEntryBannerView(entry: entry, favoritesManager: favoritesManager)

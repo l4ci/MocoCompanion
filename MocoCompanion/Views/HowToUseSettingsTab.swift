@@ -46,9 +46,13 @@ struct HowToUseSettingsTab: View {
                 VStack(alignment: .leading, spacing: 6) {
                     instructionRow(String(localized: "howto.tabSwitch"))
                     instructionRow(String(localized: "howto.todayArrowNav"))
+                    instructionRow(String(localized: "howto.dayNav"))
                     instructionRow(String(localized: "howto.enterContinue"))
                     instructionRow(String(localized: "howto.editDesc"))
+                    instructionRow(String(localized: "howto.favorite"))
                     instructionRow(String(localized: "howto.deleteEntry"))
+                    instructionRow(String(localized: "howto.cmdRefresh"))
+                    instructionRow(String(localized: "howto.cmdTimeline"))
                 }
             } header: {
                 Text(String(localized: "howto.todaySection"))

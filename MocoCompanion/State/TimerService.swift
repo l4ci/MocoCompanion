@@ -108,6 +108,7 @@ final class TimerService: TimerStopProvider {
             timerState = .running(activityId: apiActivity.id, projectName: activity.projectName)
             lastError = nil
 
+            activitySync?.upsertActivity(activity)
             onEvent?(.started(projectId: projectId, taskId: taskId, description: description, projectName: activity.projectName))
 
             return .success(activity)

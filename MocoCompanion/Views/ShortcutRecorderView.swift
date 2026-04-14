@@ -84,7 +84,7 @@ final class ShortcutRecorderNSView: NSView {
 
     private func updateDisplay() {
         if keyCode == 0 && modifiers == 0 {
-            label.stringValue = "⌘⇧M (default)"
+            label.stringValue = "⌘⌃⌥M (default)"
         } else {
             let combo = KeyCombo(carbonKeyCode: keyCode, carbonModifiers: modifiers)
             label.stringValue = combo.description.isEmpty ? "None" : combo.description

@@ -83,6 +83,7 @@ final class SettingsStore {
         static let appLanguage = "appLanguage"
         static let descriptionRequired = "descriptionRequired"
         static let showKeyboardHints = "showKeyboardHints"
+        static let demoMode = "demoMode"
     }
 
     // MARK: - Defaults Helper
@@ -329,6 +330,11 @@ final class SettingsStore {
 
     // MARK: - Preferences: Debug
 
+    /// Demo mode: use fake data for screenshots. Requires restart.
+    var demoMode: Bool {
+        didSet { Self.save(Key.demoMode, demoMode) }
+    }
+
     /// API log level (0=debug, 1=info, 2=warning, 3=error).
     var apiLogLevel: AppLogger.LogLevel {
         didSet {
@@ -384,6 +390,7 @@ final class SettingsStore {
         self.selectedCalendarId = UserDefaults.standard.string(forKey: Key.selectedCalendarId)
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
+        self.demoMode = Self.read(Key.demoMode, default: false)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
         self.appLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.appLogLevel, default: 1)) ?? .info
 

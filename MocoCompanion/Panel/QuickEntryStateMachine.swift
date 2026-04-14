@@ -112,11 +112,11 @@ final class QuickEntryStateMachine {
     }
 
     var showingFavorites: Bool {
-        isSearchEmpty && !activeFavorites.isEmpty
+        !hasMinSearchChars && !activeFavorites.isEmpty
     }
 
     var showingRecents: Bool {
-        isSearchEmpty && !activeRecents.isEmpty
+        !hasMinSearchChars && !activeRecents.isEmpty
     }
 
     var activeFavorites: [FavoritesManager.FavoriteEntry] {
@@ -143,7 +143,7 @@ final class QuickEntryStateMachine {
     }
 
     private func computeDisplayItems() -> [(entry: SearchEntry, section: ResultSection, description: String?)] {
-        if isSearchEmpty {
+        if !hasMinSearchChars {
             var items: [(SearchEntry, ResultSection, String?)] = []
             for fav in activeFavorites {
                 items.append((SearchEntry(from: fav), .favorite, nil))
@@ -158,7 +158,6 @@ final class QuickEntryStateMachine {
             }
             return items
         }
-        guard hasMinSearchChars else { return [] }
         return dataSource.search(query: searchText).map { match in
             (match.entry, ResultSection.search, nil)
         }
