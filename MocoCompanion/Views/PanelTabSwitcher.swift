@@ -9,33 +9,45 @@ struct PanelTabSwitcher: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(PanelContentView.PanelTab.allCases, id: \.self) { tab in
-                Button {
-                    animateAccessibly(reduceMotion) {
-                        activeTab = tab
+        HStack(spacing: 4) {
+            HStack(spacing: 2) {
+                ForEach(PanelContentView.PanelTab.allCases, id: \.self) { tab in
+                    Button {
+                        animateAccessibly(reduceMotion) {
+                            activeTab = tab
+                        }
+                    } label: {
+                        Text(tab.label)
+                            .font(.system(size: 12 + fontBoost, weight: activeTab == tab ? .semibold : .medium))
+                            .foregroundStyle(activeTab == tab ? theme.textPrimary : theme.textTertiary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(activeTab == tab ? theme.tabPillActive : .clear)
+                                    .shadow(color: activeTab == tab ? .black.opacity(0.06) : .clear, radius: 1, y: 0.5)
+                            )
                     }
-                } label: {
-                    Text(tab.label)
-                        .font(.system(size: 12 + fontBoost, weight: activeTab == tab ? .semibold : .medium))
-                        .foregroundStyle(activeTab == tab ? theme.textPrimary : theme.textTertiary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(activeTab == tab ? theme.tabPillActive : .clear)
-                                .shadow(color: activeTab == tab ? .black.opacity(0.06) : .clear, radius: 1, y: 0.5)
-                        )
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(tab.label) tab")
+                    .accessibilityAddTraits(activeTab == tab ? .isSelected : [])
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(tab.label) tab")
-                .accessibilityAddTraits(activeTab == tab ? .isSelected : [])
             }
+            .padding(2)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(theme.tabPillBackground)
+            )
+
+            Text("TAB")
+                .font(.system(size: 10 + fontBoost, weight: .medium, design: .rounded))
+                .foregroundStyle(theme.textTertiary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(theme.tabPillBackground)
+                )
         }
-        .padding(2)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(theme.tabPillBackground)
-        )
     }
 }

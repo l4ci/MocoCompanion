@@ -195,8 +195,22 @@ struct TodayView: View {
 
     // MARK: - Day Toggle
 
+    private func keyBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: captionSize - 1, weight: .medium, design: .rounded))
+            .foregroundStyle(theme.textTertiary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(theme.tabPillBackground)
+            )
+    }
+
     private var dayToggle: some View {
         HStack {
+            keyBadge("←")
+
             HStack(spacing: 2) {
                 ForEach(DaySelection.allCases, id: \.self) { day in
                     Button {
@@ -224,20 +238,13 @@ struct TodayView: View {
                     .fill(theme.tabPillBackground)
             )
 
+            keyBadge("→")
+
             Spacer()
 
             syncIndicator
 
-            // Timeline shortcut hint
-            Text("⌘T")
-                .font(.system(size: captionSize - 1, weight: .medium, design: .rounded))
-                .foregroundStyle(theme.textTertiary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(theme.tabPillBackground)
-                )
+            keyBadge("⌘R")
         }
         .padding(.horizontal, 14)
         .padding(.top, 6)
