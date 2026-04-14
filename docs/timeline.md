@@ -4,7 +4,7 @@
 
 Open the Timeline via `⌘T` from the quick-entry panel or via the menubar context menu.
 
-![Timeline View](screenshots/Timeline-View.png)
+<img src="screenshots/Timeline-View.png" alt="Timeline View" width="1012">
 
 The Timeline shows your workday as a visual time axis with two columns side by side:
 
@@ -58,7 +58,7 @@ When calendar access is granted (macOS will prompt on first use), your calendar 
 - **All-day events** appear in a dedicated bar above the timeline
 - Events are read-only — they serve as context for your time entries, not as editable items
 
-![Timeline — Calendar Integration](screenshots/Timeline-App-Calender-Integration.png)
+<img src="screenshots/Timeline-App-Calender-Integration.png" alt="Timeline — Calendar Integration" width="924">
 
 Calendar events are also available as triggers for autotracker rules (see below).
 
@@ -68,7 +68,7 @@ Calendar events are also available as triggers for autotracker rules (see below)
 
 Rules let you automate time entry creation based on app usage or calendar events.
 
-![Autotracker Rules](screenshots/Autotracker-Rules.png)
+<img src="screenshots/Autotracker-Rules.png" alt="Autotracker Rules" width="561">
 
 ### Creating a rule
 
@@ -79,7 +79,7 @@ Rules let you automate time entry creation based on app usage or calendar events
 5. Select the **project and task** the rule should map to
 6. Save — the rule takes effect on the next autotracker evaluation cycle
 
-![Autotracker Rule Builder](screenshots/Autotracker-Rulebuilder.png)
+<img src="screenshots/Autotracker-Rulebuilder.png" alt="Autotracker Rule Builder" width="467">
 
 ### Managing rules
 

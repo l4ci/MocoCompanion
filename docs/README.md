@@ -2,7 +2,7 @@
 
 > A native macOS menubar app for Moco time tracking. Zero-friction: shortcut → search → track. No browser needed.
 
-![MocoCompanion Log View](screenshots/Log.png)
+<img src="screenshots/Log.png" alt="MocoCompanion Log View" width="667">
 
 ---
 

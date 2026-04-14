@@ -29,7 +29,7 @@ Each planned task shows the project name, task name, and planned hours.
 
 ### 3. Start from Favorites or Search
 
-![Track Tab — Fuzzy Search](screenshots/Track-Fuzzymatch.png)
+<img src="screenshots/Track-Fuzzymatch.png" alt="Track Tab — Fuzzy Search" width="637">
 
 Switch to the **TRACK** tab. You'll see:
 
@@ -97,7 +97,7 @@ Alternatively, in the Log tab: select the paused entry and press `Enter` to resu
 
 ## Before Lunch: Review & Correct
 
-![Log View — Today's Entries](screenshots/Log.png)
+<img src="screenshots/Log.png" alt="Log View — Today's Entries" width="667">
 
 ### Check Your Day
 
@@ -112,7 +112,7 @@ Stats footer shows: **Gesamt** (total hours), **Abrechenbar** (billable %), **Ei
 
 Press `⌘R` to manually sync with Moco at any time.
 
-![Log View — Keyboard Shortcuts](screenshots/Log-Shortcuts.png)
+<img src="screenshots/Log-Shortcuts.png" alt="Log View — Keyboard Shortcuts" width="643">
 
 ### Edit an Entry
 

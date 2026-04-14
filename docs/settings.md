@@ -18,7 +18,7 @@ All instructions are localized (German/English).
 
 ## General
 
-![Settings — Display](screenshots/Settings-Display.png)
+<img src="screenshots/Settings-Display.png" alt="Settings — Display" width="924">
 
 - **Startup** — Launch at Login toggle, Default Tab picker (Track / Log)
 - **Working Hours** — Start/End time pickers, working days selection. Controls when idle reminders are active and when the end-of-day summary appears.
@@ -40,7 +40,7 @@ Three sections:
 
 ## Notifications
 
-![Settings — Notifications](screenshots/Settings-Notifications.png)
+<img src="screenshots/Settings-Notifications.png" alt="Settings — Notifications" width="924">
 
 5 groups with per-type toggles:
 

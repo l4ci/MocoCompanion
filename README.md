@@ -2,7 +2,7 @@
 
 A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.com) time tracking.
 
-![MocoCompanion Log View](docs/screenshots/Log.png)
+<img src="docs/screenshots/Log.png" alt="MocoCompanion Log View" width="667">
 
 > **[Full Documentation & User Guide](docs/README.md)**
 
