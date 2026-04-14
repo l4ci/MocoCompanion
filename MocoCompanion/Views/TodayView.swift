@@ -381,7 +381,6 @@ struct TodayView: View {
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
             }
-            .frame(maxHeight: 350)
             .id(vm.selectedDay)
             .onChange(of: vm.selectedActivityId) { _, newId in
                 if let newId {
