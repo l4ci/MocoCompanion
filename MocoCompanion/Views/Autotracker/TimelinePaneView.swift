@@ -633,8 +633,20 @@ struct TimelinePaneView: View {
         if svc.authorizationStatus == .notDetermined { return .needsPermission }
         if !svc.hasReadAccess { return .denied }
         if viewModel.settings?.selectedCalendarId == nil { return .noCalendarSelected }
-        if viewModel.calendarEvents.isEmpty { return .noEvents }
+        // .noEvents is handled by the sticky overlay (columnEmptyLabel)
+        // so it matches the style of the other empty column labels.
         return nil
+    }
+
+    /// Whether the calendar column should show the "no events" empty label
+    /// in the sticky overlay (not the placeholder system).
+    private var isCalendarEmpty: Bool {
+        guard viewModel.settings?.calendarEnabled == true,
+              let svc = viewModel.calendarService,
+              svc.hasReadAccess,
+              viewModel.settings?.selectedCalendarId != nil
+        else { return false }
+        return viewModel.calendarEvents.isEmpty
     }
 
     private func openSystemSettingsForCalendar() {
@@ -829,7 +841,12 @@ struct TimelinePaneView: View {
 
             // Calendar column
             if viewModel.settings?.calendarEnabled == true {
-                Color.clear.frame(width: calendarPaneWidth)
+                if isCalendarEmpty {
+                    columnEmptyLabel(String(localized: "calendar.placeholder.noEvents"))
+                        .frame(width: calendarPaneWidth)
+                } else {
+                    Color.clear.frame(width: calendarPaneWidth)
+                }
                 Color.clear.frame(width: 1)
             }
 
