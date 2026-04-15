@@ -73,7 +73,9 @@ final class NotificationDispatcher: NotificationSending {
             if let error {
                 Logger(category: "Notifications").error("Notification authorization failed: \(error.localizedDescription)")
             }
-            NotificationDispatcher.isAuthorized = granted
+            Task { @MainActor in
+                NotificationDispatcher.isAuthorized = granted
+            }
         }
 
         // Register category with "Open Autotracker" action

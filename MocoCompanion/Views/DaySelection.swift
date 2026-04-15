@@ -18,8 +18,8 @@ enum DaySelection: CaseIterable {
     var dateString: String {
         switch self {
         case .today: DateUtilities.todayString()
-        case .yesterday: DateUtilities.yesterdayString() ?? ""
-        case .tomorrow: DateUtilities.tomorrowString() ?? ""
+        case .yesterday: DateUtilities.yesterdayString() ?? DateUtilities.todayString()
+        case .tomorrow: DateUtilities.tomorrowString() ?? DateUtilities.todayString()
         }
     }
 }

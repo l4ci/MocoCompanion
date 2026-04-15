@@ -64,7 +64,10 @@ actor SyncEngine {
     /// Entries deleted on the server are removed locally.
     func pullRemote(date: String) async throws {
         guard let client = clientFactory() else { return }
-        let userId = userIdProvider()
+        guard let userId = userIdProvider() else {
+            logger.info("pullRemote skipped — userId not available yet")
+            return
+        }
 
         let remoteActivities = try await client.fetchActivities(from: date, to: date, userId: userId)
         let remoteIds = Set(remoteActivities.map(\.id))

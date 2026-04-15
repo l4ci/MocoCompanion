@@ -119,10 +119,26 @@ final class TodayViewModel {
     /// Opaque version token — changes whenever todayActivities changes.
     /// Lets the view observe activity list changes through the ViewModel boundary
     /// without exposing activityService directly.
-    var todayActivitiesVersion: Int { activityService.todayActivities.count ^ (activityService.todayActivities.first?.id ?? 0) }
+    var todayActivitiesVersion: Int {
+        var hasher = Hasher()
+        for a in activityService.todayActivities {
+            hasher.combine(a.id)
+            hasher.combine(a.seconds)
+            hasher.combine(a.description)
+        }
+        return hasher.finalize()
+    }
 
     /// Opaque version token for yesterdayActivities.
-    var yesterdayActivitiesVersion: Int { activityService.yesterdayActivities.count ^ (activityService.yesterdayActivities.first?.id ?? 0) }
+    var yesterdayActivitiesVersion: Int {
+        var hasher = Hasher()
+        for a in activityService.yesterdayActivities {
+            hasher.combine(a.id)
+            hasher.combine(a.seconds)
+            hasher.combine(a.description)
+        }
+        return hasher.finalize()
+    }
 
     /// Today's total tracked hours.
     var todayTotalHours: Double { activityService.todayTotalHours }

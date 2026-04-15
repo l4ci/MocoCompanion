@@ -453,6 +453,7 @@ final class SettingsStore {
         rulesEnabled = false
         windowTitleTrackingEnabled = false
         selectedCalendarId = nil
+        demoMode = false
 
         Self.logger.info("All app data has been reset")
     }
