@@ -90,7 +90,7 @@ struct SyncEngineTests {
 
         let entries = try await store.entries(forDate: "2025-06-01")
         #expect(entries.count == 2)
-        #expect(entries.allSatisfy { $0.syncStatus == .synced })
+        #expect(entries.allSatisfy { $0.sync.status == .synced })
     }
 
     @Test("Pull updates changed entries with newer updatedAt")
@@ -100,7 +100,7 @@ struct SyncEngineTests {
 
         // Insert an existing synced entry with old updatedAt
         var existing = TestFactories.makeShadowEntry(id: 10, date: "2025-06-01")
-        existing.serverUpdatedAt = "2025-01-01T00:00:00Z"
+        existing.sync.serverUpdatedAt = "2025-01-01T00:00:00Z"
         existing.updatedAt = "2025-01-01T00:00:00Z"
         existing.description = "old description"
         try await store.insert(existing)
@@ -132,7 +132,7 @@ struct SyncEngineTests {
 
         // Insert a dirty local entry with an older serverUpdatedAt than the server's updatedAt
         var dirty = TestFactories.makeShadowEntry(id: 20, date: "2025-06-01", syncStatus: .dirty)
-        dirty.serverUpdatedAt = "2024-12-01T00:00:00Z"
+        dirty.sync.serverUpdatedAt = "2024-12-01T00:00:00Z"
         dirty.description = "local edit"
         try await store.insert(dirty)
 
@@ -153,8 +153,8 @@ struct SyncEngineTests {
 
         let entry = try await store.entry(id: 20)
         #expect(entry != nil)
-        #expect(entry?.conflictFlag == true)
-        #expect(entry?.syncStatus == .synced)
+        #expect(entry?.sync.conflictFlag == true)
+        #expect(entry?.sync.status == .synced)
     }
 
     @Test("Pull removes server-deleted entries")
@@ -246,7 +246,7 @@ struct SyncEngineTests {
         #expect(local == nil)
         let server = try await store.entry(id: 999)
         #expect(server != nil)
-        #expect(server?.syncStatus == .synced)
+        #expect(server?.sync.status == .synced)
     }
 
     @Test("Push updates dirty entries via API")
@@ -272,7 +272,7 @@ struct SyncEngineTests {
         try await engine.pushDirty()
 
         let entry = try await store.entry(id: 60)
-        #expect(entry?.syncStatus == .synced)
+        #expect(entry?.sync.status == .synced)
     }
 
     // MARK: - SyncState Tests
@@ -331,7 +331,7 @@ struct SyncEngineTests {
 
         // Insert a synced entry with a local start_time and old serverUpdatedAt
         var existing = TestFactories.makeShadowEntry(id: 80, date: "2025-06-01", startTime: "09:15")
-        existing.serverUpdatedAt = "2024-12-01T00:00:00Z"
+        existing.sync.serverUpdatedAt = "2024-12-01T00:00:00Z"
         existing.updatedAt = "2024-12-01T00:00:00Z"
         try await store.insert(existing)
 

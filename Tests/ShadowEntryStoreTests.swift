@@ -70,7 +70,7 @@ struct ShadowEntryStoreTests {
         let results = try await store.dirtyEntries()
         #expect(results.count == 1)
         #expect(results[0].id == 2)
-        #expect(results[0].syncStatus == .pendingCreate)
+        #expect(results[0].sync.status == .pendingCreate)
     }
 
     @Test("mark synced changes status")
@@ -82,8 +82,8 @@ struct ShadowEntryStoreTests {
         try await store.markSynced(id: 1, serverUpdatedAt: "2025-03-15T12:00:00Z")
 
         let fetched = try await store.entry(id: 1)
-        #expect(fetched?.syncStatus == .synced)
-        #expect(fetched?.serverUpdatedAt == "2025-03-15T12:00:00Z")
+        #expect(fetched?.sync.status == .synced)
+        #expect(fetched?.sync.serverUpdatedAt == "2025-03-15T12:00:00Z")
     }
 
     // MARK: - Date Isolation
@@ -199,7 +199,7 @@ struct ShadowEntryStoreTests {
         // Simulate server update — the ShadowEntry from server has no startTime
         entry.description = "updated from server"
         entry.startTime = nil
-        entry.syncStatus = .synced
+        entry.sync.status = .synced
         try await store.updateFromServer(entry)
 
         let fetched = try await store.entry(id: 1)
@@ -223,7 +223,7 @@ struct ShadowEntryStoreTests {
         try await store.markConflict(id: 1)
 
         let fetched = try await store.entry(id: 1)
-        #expect(fetched?.conflictFlag == true)
+        #expect(fetched?.sync.conflictFlag == true)
     }
 
     // MARK: - Local-Only Column Invariant

@@ -77,15 +77,15 @@ actor SyncEngine {
             let existing = try await store.entry(id: activity.id)
 
             if let existing {
-                if existing.syncStatus == .dirty && existing.serverUpdatedAt != activity.updatedAt {
+                if existing.sync.status == .dirty && existing.sync.serverUpdatedAt != activity.updatedAt {
                     // Conflict: local is dirty and server changed — server wins
                     var resolved = shadow
-                    resolved.conflictFlag = true
-                    resolved.syncStatus = .synced
+                    resolved.sync.conflictFlag = true
+                    resolved.sync.status = .synced
                     try await store.updateFromServer(resolved)
                     try await store.markConflict(id: activity.id)
                     conflictCount += 1
-                } else if existing.syncStatus == .synced && existing.serverUpdatedAt != activity.updatedAt {
+                } else if existing.sync.status == .synced && existing.sync.serverUpdatedAt != activity.updatedAt {
                     // Server updated a synced entry — just update
                     try await store.updateFromServer(shadow)
                     pullCount += 1
@@ -114,7 +114,7 @@ actor SyncEngine {
         var pushCount = 0
 
         for entry in dirtyEntries {
-            switch entry.syncStatus {
+            switch entry.sync.status {
             case .pendingCreate:
                 let created = try await client.createActivity(
                     date: entry.date,
@@ -218,8 +218,8 @@ actor SyncEngine {
             entry.seconds = seconds
             entry.hours = Double(seconds) / 3600.0
         }
-        entry.syncStatus = .dirty
-        entry.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+        entry.sync.status = .dirty
+        entry.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         try await store.update(entry)
         try await pushDirty()
     }
@@ -239,6 +239,7 @@ actor SyncEngine {
             return try await store.entries(forDate: date)
         } catch {
             logger.error("entries(forDate:) failed: \(error.localizedDescription)")
+            await syncState.setLastError(MocoError.from(error))
             return []
         }
     }

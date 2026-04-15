@@ -39,34 +39,40 @@ struct ShadowEntry: Sendable, Equatable {
     var locked: Bool
     var createdAt: String
     var updatedAt: String
-    var syncStatus: SyncStatus
-    var localUpdatedAt: String
-    var serverUpdatedAt: String
-    var conflictFlag: Bool
+    var sync: SyncMeta
+    var origin: Origin
 
-    // MARK: - Origin Tracking
-    //
-    // Local-only metadata that records where the entry came from when it
-    // was created inside MocoCompanion. Moco has no API field for this,
-    // so these columns are purged on pull from server and re-applied on
-    // local insert. Used by the timeline view to decide whether an entry
-    // is "linked" to a recorded activity block.
+    // MARK: - Nested Structs
 
-    /// Bundle identifier of the app whose recorded activity this entry
-    /// was created from (right-click "Create entry from this block",
-    /// drag-create from a block, or a matching TrackingRule). Nil for
-    /// manually-typed entries.
-    var sourceAppBundleId: String?
+    struct SyncMeta: Sendable, Equatable {
+        var status: SyncStatus
+        var localUpdatedAt: String
+        var serverUpdatedAt: String
+        var conflictFlag: Bool
+    }
 
-    /// Id of the TrackingRule that created this entry, if any.
-    var sourceRuleId: Int64?
+    /// Local-only metadata that records where the entry came from when it
+    /// was created inside MocoCompanion. Moco has no API field for this,
+    /// so these columns are purged on pull from server and re-applied on
+    /// local insert. Used by the timeline view to decide whether an entry
+    /// is "linked" to a recorded activity block.
+    struct Origin: Sendable, Equatable {
+        /// Bundle identifier of the app whose recorded activity this entry
+        /// was created from (right-click "Create entry from this block",
+        /// drag-create from a block, or a matching TrackingRule). Nil for
+        /// manually-typed entries.
+        var appBundleId: String?
 
-    /// When this entry was created from a calendar event (double-click,
-    /// drag-drop of an all-day event, or a calendar-type rule firing),
-    /// this holds the event's `EKEvent.calendarItemIdentifier`. Lets the
-    /// Timeline cross-highlight the originating meeting. Origin-only —
-    /// not sent to Moco on push.
-    var sourceCalendarEventId: String?
+        /// Id of the TrackingRule that created this entry, if any.
+        var ruleId: Int64?
+
+        /// When this entry was created from a calendar event (double-click,
+        /// drag-drop of an all-day event, or a calendar-type rule firing),
+        /// this holds the event's `EKEvent.calendarItemIdentifier`. Lets the
+        /// Timeline cross-highlight the originating meeting. Origin-only —
+        /// not sent to Moco on push.
+        var calendarEventId: String?
+    }
 
     // MARK: - Local-Only Field Copying
 
@@ -76,9 +82,7 @@ struct ShadowEntry: Sendable, Equatable {
     /// the local draft.
     mutating func copyLocalOnlyFields(from other: ShadowEntry) {
         self.startTime = other.startTime
-        self.sourceAppBundleId = other.sourceAppBundleId
-        self.sourceRuleId = other.sourceRuleId
-        self.sourceCalendarEventId = other.sourceCalendarEventId
+        self.origin = other.origin
     }
 
     /// Whether the timer is currently running on this entry.
@@ -118,13 +122,13 @@ struct ShadowEntry: Sendable, Equatable {
             locked: activity.locked,
             createdAt: activity.createdAt,
             updatedAt: activity.updatedAt,
-            syncStatus: .synced,
-            localUpdatedAt: activity.updatedAt,
-            serverUpdatedAt: activity.updatedAt,
-            conflictFlag: false,
-            sourceAppBundleId: nil,
-            sourceRuleId: nil,
-            sourceCalendarEventId: nil
+            sync: SyncMeta(
+                status: .synced,
+                localUpdatedAt: activity.updatedAt,
+                serverUpdatedAt: activity.updatedAt,
+                conflictFlag: false
+            ),
+            origin: Origin()
         )
     }
 

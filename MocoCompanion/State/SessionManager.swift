@@ -16,6 +16,9 @@ final class SessionManager {
     /// Mutable box captured by service closures. Updated when currentUserId changes.
     let userIdBox: ValueBox<Int?>
 
+    var syncState: SyncState?
+    var notifications: NotificationDispatcher?
+
     init(userIdBox: ValueBox<Int?>) {
         self.userIdBox = userIdBox
     }
@@ -47,6 +50,9 @@ final class SessionManager {
             }
         } catch {
             logger.error("fetchSession failed: \(error.localizedDescription)")
+            let mocoError = MocoError.from(error)
+            syncState?.setLastError(mocoError)
+            notifications?.apiError(mocoError)
         }
     }
 

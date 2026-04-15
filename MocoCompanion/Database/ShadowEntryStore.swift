@@ -27,7 +27,7 @@ actor ShadowEntryStore {
         }
         if database.userVersion < 2 {
             // Origin tracking columns (local-only metadata). See
-            // ShadowEntry.sourceAppBundleId / sourceRuleId for context.
+            // ShadowEntry.Origin.appBundleId / ruleId for context.
             do {
                 try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_app_bundle_id TEXT")
             } catch { /* already exists */ }
@@ -38,7 +38,7 @@ actor ShadowEntryStore {
         }
         if database.userVersion < 3 {
             // Calendar event origin tracking (local-only metadata). See
-            // ShadowEntry.sourceCalendarEventId for context.
+            // ShadowEntry.Origin.calendarEventId for context.
             do {
                 try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_calendar_event_id TEXT")
             } catch { /* already exists */ }
@@ -259,10 +259,10 @@ actor ShadowEntryStore {
             e.projectName, e.projectBillable, e.taskId, e.taskName,
             e.taskBillable, e.customerId, e.customerName, e.userId,
             e.userFirstname, e.userLastname, e.hourlyRate, e.timerStartedAt,
-            e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
-            e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
-            e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
-            e.sourceCalendarEventId,
+            e.startTime, e.locked, e.createdAt, e.updatedAt, e.sync.status.rawValue,
+            e.sync.localUpdatedAt, e.sync.serverUpdatedAt, e.sync.conflictFlag,
+            e.origin.appBundleId, e.origin.ruleId.map { Int($0) } as Any?,
+            e.origin.calendarEventId,
         ]
     }
 
@@ -273,10 +273,10 @@ actor ShadowEntryStore {
             e.projectName, e.projectBillable, e.taskId, e.taskName,
             e.taskBillable, e.customerId, e.customerName, e.userId,
             e.userFirstname, e.userLastname, e.hourlyRate, e.timerStartedAt,
-            e.startTime, e.locked, e.createdAt, e.updatedAt, e.syncStatus.rawValue,
-            e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
-            e.sourceAppBundleId, e.sourceRuleId.map { Int($0) } as Any?,
-            e.sourceCalendarEventId,
+            e.startTime, e.locked, e.createdAt, e.updatedAt, e.sync.status.rawValue,
+            e.sync.localUpdatedAt, e.sync.serverUpdatedAt, e.sync.conflictFlag,
+            e.origin.appBundleId, e.origin.ruleId.map { Int($0) } as Any?,
+            e.origin.calendarEventId,
         ]
     }
 
@@ -288,7 +288,7 @@ actor ShadowEntryStore {
             e.taskBillable, e.customerId, e.customerName, e.userId,
             e.userFirstname, e.userLastname, e.hourlyRate, e.timerStartedAt,
             e.locked, e.createdAt, e.updatedAt, "synced",
-            e.localUpdatedAt, e.serverUpdatedAt, e.conflictFlag,
+            e.sync.localUpdatedAt, e.sync.serverUpdatedAt, e.sync.conflictFlag,
         ]
     }
 
@@ -323,13 +323,17 @@ actor ShadowEntryStore {
             locked: boolFromRow(row, "locked"),
             createdAt: row["created_at"] as? String ?? "",
             updatedAt: row["updated_at"] as? String ?? "",
-            syncStatus: SyncStatus(rawValue: row["sync_status"] as? String ?? "synced") ?? .synced,
-            localUpdatedAt: row["local_updated_at"] as? String ?? "",
-            serverUpdatedAt: row["server_updated_at"] as? String ?? "",
-            conflictFlag: boolFromRow(row, "conflict_flag"),
-            sourceAppBundleId: row["source_app_bundle_id"] as? String,
-            sourceRuleId: (row["source_rule_id"] as? Int64) ?? (row["source_rule_id"] as? Int).map { Int64($0) },
-            sourceCalendarEventId: row["source_calendar_event_id"] as? String
+            sync: ShadowEntry.SyncMeta(
+                status: SyncStatus(rawValue: row["sync_status"] as? String ?? "synced") ?? .synced,
+                localUpdatedAt: row["local_updated_at"] as? String ?? "",
+                serverUpdatedAt: row["server_updated_at"] as? String ?? "",
+                conflictFlag: boolFromRow(row, "conflict_flag")
+            ),
+            origin: ShadowEntry.Origin(
+                appBundleId: row["source_app_bundle_id"] as? String,
+                ruleId: (row["source_rule_id"] as? Int64) ?? (row["source_rule_id"] as? Int).map { Int64($0) },
+                calendarEventId: row["source_calendar_event_id"] as? String
+            )
         )
     }
 

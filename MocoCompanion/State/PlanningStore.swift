@@ -18,6 +18,8 @@ final class PlanningStore {
 
     // MARK: - Dependencies
 
+    var notifications: NotificationDispatcher?
+
     private let clientFactory: () -> (any ActivityAPI)?
     private let userIdProvider: () -> Int?
     private let todayActivitiesProvider: () -> [ShadowEntry]
@@ -49,6 +51,7 @@ final class PlanningStore {
             logger.info("Planning: \(entries.count) entries for today")
         } catch {
             logger.error("refreshTodayPlanning failed: \(error.localizedDescription)")
+            notifications?.apiError(MocoError.from(error))
         }
     }
 
@@ -68,6 +71,7 @@ final class PlanningStore {
             logger.info("Tomorrow planning: \(entries.count) entries")
         } catch {
             logger.error("refreshTomorrowPlanning failed: \(error.localizedDescription)")
+            notifications?.apiError(MocoError.from(error))
         }
     }
 
@@ -95,6 +99,7 @@ final class PlanningStore {
             logger.info("Planning: \(todayEntries.count) today, \(tomorrowEntries.count) tomorrow (1 API call)")
         } catch {
             logger.error("refreshAllPlanning failed: \(error.localizedDescription)")
+            notifications?.apiError(MocoError.from(error))
         }
     }
 
@@ -121,6 +126,7 @@ final class PlanningStore {
             logger.info("Absences: \(result.count) days")
         } catch {
             logger.error("refreshAbsences failed: \(error.localizedDescription)")
+            notifications?.apiError(MocoError.from(error))
         }
     }
 

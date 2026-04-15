@@ -287,7 +287,7 @@ struct TimelineViewModelTests {
 
         let updated = try await store.entry(id: 1)
         #expect(updated?.startTime == "10:30")
-        #expect(updated?.syncStatus == .dirty)
+        #expect(updated?.sync.status == .dirty)
     }
 
     @Test("moveEntry rejects locked entries")
@@ -305,7 +305,7 @@ struct TimelineViewModelTests {
 
         let unchanged = try await store.entry(id: 1)
         #expect(unchanged?.startTime == "09:00")
-        #expect(unchanged?.syncStatus == .synced)
+        #expect(unchanged?.sync.status == .synced)
     }
 
     // MARK: - Resize Entry
@@ -326,7 +326,7 @@ struct TimelineViewModelTests {
         let updated = try await store.entry(id: 1)
         #expect(updated?.startTime == "09:15")
         #expect(updated?.seconds == 2700)
-        #expect(updated?.syncStatus == .dirty)
+        #expect(updated?.sync.status == .dirty)
     }
 
     // MARK: - App Block Selection
@@ -546,7 +546,7 @@ struct TimelineViewModelTests {
         let entries = try await store.entries(forDate: today)
         #expect(entries.count == 1)
         let entry = entries[0]
-        #expect(entry.syncStatus == .pendingCreate)
+        #expect(entry.sync.status == .pendingCreate)
         #expect(entry.startTime == "09:30")
         #expect(entry.seconds == 2700)
         #expect(entry.hours == 0.75)

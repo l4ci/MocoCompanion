@@ -28,6 +28,12 @@ struct MocoFullProject: Codable, Identifiable, Sendable {
         tasks = try container.decodeIfPresent([MocoFullTask].self, forKey: .tasks) ?? []
     }
 
+    init(id: Int, name: String, identifier: String = "", active: Bool = true, billable: Bool = true, billingVariant: String = "", budget: Double? = nil, hourlyRate: Double = 0, tasks: [MocoFullTask] = []) {
+        self.id = id; self.name = name; self.identifier = identifier; self.active = active
+        self.billable = billable; self.billingVariant = billingVariant; self.budget = budget
+        self.hourlyRate = hourlyRate; self.tasks = tasks
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, identifier, active, billable, budget, tasks
         case billingVariant = "billing_variant"
@@ -104,6 +110,11 @@ struct MocoProjectContract: Codable, Identifiable, Sendable {
         case id, firstname, lastname, billable, active, budget
         case userId = "user_id"
         case hourlyRate = "hourly_rate"
+    }
+
+    init(id: Int, userId: Int, firstname: String = "", lastname: String = "", billable: Bool = false, active: Bool = true, budget: Double? = nil, hourlyRate: Double = 0) {
+        self.id = id; self.userId = userId; self.firstname = firstname; self.lastname = lastname
+        self.billable = billable; self.active = active; self.budget = budget; self.hourlyRate = hourlyRate
     }
 
     init(from decoder: Decoder) throws {

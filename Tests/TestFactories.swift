@@ -92,12 +92,13 @@ enum TestFactories {
             locked: locked,
             createdAt: "2025-01-01T00:00:00Z",
             updatedAt: "2025-01-01T00:00:00Z",
-            syncStatus: syncStatus,
-            localUpdatedAt: "2025-01-01T00:00:00Z",
-            serverUpdatedAt: "2025-01-01T00:00:00Z",
-            conflictFlag: false,
-            sourceAppBundleId: nil,
-            sourceRuleId: nil
+            sync: ShadowEntry.SyncMeta(
+                status: syncStatus,
+                localUpdatedAt: "2025-01-01T00:00:00Z",
+                serverUpdatedAt: "2025-01-01T00:00:00Z",
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin()
         )
     }
 

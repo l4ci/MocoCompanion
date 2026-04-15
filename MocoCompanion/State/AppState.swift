@@ -151,6 +151,10 @@ final class AppState {
 
         // --- Wire-ups that cross phase boundaries or capture self ---
 
+        // Wire session error reporting to SyncState and NotificationDispatcher
+        domain.session.syncState = storage.syncState
+        domain.session.notifications = dispatcher
+
         // When autotracker creates entries, refresh the Today panel so they appear
         self.autotracker.onEntryCreated = { [weak activitySvc = tracking.activityService] in
             await activitySvc?.refreshTodayStats()
@@ -340,6 +344,7 @@ final class AppState {
             userIdProvider: userIdProvider,
             todayActivitiesProvider: { [weak activitySvc] in activitySvc?.todayActivities ?? [] }
         )
+        planningSvc.notifications = dispatcher
 
         // Create DeleteUndoManager — owns delete lifecycle with undo support
         let deleteUndo = DeleteUndoManager(

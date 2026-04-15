@@ -216,7 +216,7 @@ import os
 
         do {
             let entries = try await shadowEntryStore.entries(forDate: dateString)
-            let filtered = entries.filter { $0.syncStatus != .pendingDelete }
+            let filtered = entries.filter { $0.sync.status != .pendingDelete }
             shadowEntries = filtered
             positionedEntries = filtered.filter { $0.startTime != nil }
             unpositionedEntries = filtered.filter { $0.startTime == nil }
@@ -330,13 +330,13 @@ import os
         guard !entry.isReadOnly else { return }
         var updated = entry
         updated.startTime = newStartTime
-        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+        updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
-                updated.syncStatus = .dirty
+                updated.sync.status = .dirty
                 try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
-                updated.syncStatus = .pendingCreate
+            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
+                updated.sync.status = .pendingCreate
                 try await shadowEntryStore.updateByLocalId(updated)
             } else {
                 return
@@ -379,13 +379,13 @@ import os
         updated.startTime = startTime
         updated.seconds = durationSeconds
         updated.hours = Double(durationSeconds) / 3600.0
-        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+        updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
-                updated.syncStatus = .dirty
+                updated.sync.status = .dirty
                 try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
-                updated.syncStatus = .pendingCreate
+            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
+                updated.sync.status = .pendingCreate
                 try await shadowEntryStore.updateByLocalId(updated)
             } else {
                 return
@@ -409,13 +409,13 @@ import os
         updated.startTime = newStartTime
         updated.seconds = newDurationSeconds
         updated.hours = Double(newDurationSeconds) / 3600.0
-        updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+        updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
             if entry.id != nil {
-                updated.syncStatus = .dirty
+                updated.sync.status = .dirty
                 try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.syncStatus == .pendingCreate {
-                updated.syncStatus = .pendingCreate
+            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
+                updated.sync.status = .pendingCreate
                 try await shadowEntryStore.updateByLocalId(updated)
             } else {
                 return
@@ -456,8 +456,8 @@ import os
                 try await shadowEntryStore.deleteByLocalId(localId)
             } else if entry.id != nil {
                 var updated = entry
-                updated.syncStatus = .pendingDelete
-                updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+                updated.sync.status = .pendingDelete
+                updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
                 try await shadowEntryStore.update(updated)
             }
             Self.logger.info("Deleted entry \(entry.id ?? 0)")
@@ -551,7 +551,7 @@ import os
     func isCalendarEventHighlighted(_ event: CalendarEvent) -> Bool {
         if selectedCalendarEventId == event.calendarItemIdentifier { return true }
         if let entry = selectedEntry,
-           let sid = entry.sourceCalendarEventId,
+           let sid = entry.origin.calendarEventId,
            sid == event.calendarItemIdentifier {
             return true
         }
@@ -578,11 +578,11 @@ import os
         // created from that event light up so the user can see which
         // tracked work the meeting produced.
         if let eventId = selectedCalendarEventId,
-           entry.sourceCalendarEventId == eventId {
+           entry.origin.calendarEventId == eventId {
             return true
         }
         guard !selectedAppBlockIds.isEmpty,
-              let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty
+              let bundleId = entry.origin.appBundleId, !bundleId.isEmpty
         else { return false }
         let selectedBundleIds = appUsageBlocks
             .filter { selectedAppBlockIds.contains($0.id) }
@@ -595,7 +595,7 @@ import os
     func isAppBlockHighlighted(_ block: AppUsageBlock) -> Bool {
         if selectedAppBlockIds.contains(block.id) { return true }
         guard let entry = selectedEntry,
-              let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty
+              let bundleId = entry.origin.appBundleId, !bundleId.isEmpty
         else { return false }
         return bundleId == block.appBundleId
     }
@@ -818,13 +818,17 @@ import os
             locked: false,
             createdAt: now,
             updatedAt: now,
-            syncStatus: .pendingCreate,
-            localUpdatedAt: now,
-            serverUpdatedAt: now,
-            conflictFlag: false,
-            sourceAppBundleId: sourceAppBundleId,
-            sourceRuleId: nil,
-            sourceCalendarEventId: sourceCalendarEventId
+            sync: ShadowEntry.SyncMeta(
+                status: .pendingCreate,
+                localUpdatedAt: now,
+                serverUpdatedAt: now,
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin(
+                appBundleId: sourceAppBundleId,
+                ruleId: nil,
+                calendarEventId: sourceCalendarEventId
+            )
         )
 
         do {
@@ -857,7 +861,7 @@ import os
     /// resolved via the stored `sourceAppBundleId`. Returns nil for
     /// manually-typed entries.
     func linkedAppName(for entry: ShadowEntry) -> String? {
-        guard let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty else {
+        guard let bundleId = entry.origin.appBundleId, !bundleId.isEmpty else {
             return nil
         }
         return appUsageBlocks.first(where: { $0.appBundleId == bundleId })?.appName
@@ -868,7 +872,7 @@ import os
     /// from a block, or a matching TrackingRule). Origin-based — two
     /// entries simply standing next to each other in time are NOT linked.
     func isLinkedToAppBlock(_ entry: ShadowEntry) -> Bool {
-        guard let bundleId = entry.sourceAppBundleId, !bundleId.isEmpty else {
+        guard let bundleId = entry.origin.appBundleId, !bundleId.isEmpty else {
             return false
         }
         // Only show the link badge when the originating app block is
@@ -880,11 +884,11 @@ import os
     // MARK: - Calendar Event Linkage
 
     /// True when there is a ShadowEntry on the current day whose
-    /// `sourceCalendarEventId` matches this event. Drives the
+    /// `origin.calendarEventId` matches this event. Drives the
     /// cross-highlight between the entry column and the calendar
     /// column.
     func isEventLinkedToEntry(_ event: CalendarEvent) -> Bool {
-        shadowEntries.contains { $0.sourceCalendarEventId == event.calendarItemIdentifier }
+        shadowEntries.contains { $0.origin.calendarEventId == event.calendarItemIdentifier }
     }
 
     /// Reverse lookup for the entry column — true when an entry has a
@@ -892,7 +896,7 @@ import os
     /// Used by EntryBlockView to render an alternate highlight when the
     /// event is visible to the right of it.
     func isEntryLinkedToCalendarEvent(_ entry: ShadowEntry) -> Bool {
-        guard let eid = entry.sourceCalendarEventId else { return false }
+        guard let eid = entry.origin.calendarEventId else { return false }
         return calendarEvents.contains { $0.calendarItemIdentifier == eid }
     }
 

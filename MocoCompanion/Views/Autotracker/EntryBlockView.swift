@@ -172,11 +172,11 @@ struct EntryBlockView: View {
 
     private var iconBadges: some View {
         EntryStatusIcons(
-            syncStatus: entry.syncStatus,
+            syncStatus: entry.sync.status,
             isLocked: entry.locked,
             isBilled: entry.billed,
             isLinkedToAppBlock: viewModel.isLinkedToAppBlock(entry),
-            isFromRule: entry.sourceRuleId != nil
+            isFromRule: entry.origin.ruleId != nil
         )
     }
 

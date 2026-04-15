@@ -20,7 +20,7 @@ struct Suggestion: Identifiable, Sendable, Equatable {
     let appBundleId: String?
     /// When this suggestion was created from a calendar event, the
     /// event's `calendarItemIdentifier`. Propagated to the resulting
-    /// ShadowEntry's `sourceCalendarEventId` when the suggestion is
+    /// ShadowEntry's `origin.calendarEventId` when the suggestion is
     /// approved.
     var sourceCalendarEventId: String? = nil
 }

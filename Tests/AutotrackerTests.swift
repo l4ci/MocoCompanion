@@ -91,7 +91,7 @@ struct AutotrackerTests {
         #expect(entries.count == 1)
         #expect(entries.first?.projectId == 100)
         #expect(entries.first?.taskId == 200)
-        #expect(entries.first?.syncStatus == .pendingCreate)
+        #expect(entries.first?.sync.status == .pendingCreate)
         #expect(entries.first?.startTime == "09:00")
     }
 
@@ -215,7 +215,7 @@ struct AutotrackerTests {
         let created = entries.first
         #expect(created?.projectId == 100)
         #expect(created?.taskId == 200)
-        #expect(created?.syncStatus == .pendingCreate)
+        #expect(created?.sync.status == .pendingCreate)
     }
 
     // MARK: - Calendar Rule Tests
@@ -262,8 +262,8 @@ struct AutotrackerTests {
         #expect(entries.count == 1)
         #expect(entries.first?.projectId == 100)
         #expect(entries.first?.taskId == 200)
-        #expect(entries.first?.syncStatus == .pendingCreate)
-        #expect(entries.first?.sourceCalendarEventId == expectedEventId)
+        #expect(entries.first?.sync.status == .pendingCreate)
+        #expect(entries.first?.origin.calendarEventId == expectedEventId)
         #expect(entries.first?.description == "Engineering Standup")
     }
 
@@ -410,12 +410,13 @@ struct AutotrackerTests {
             locked: false,
             createdAt: now,
             updatedAt: now,
-            syncStatus: .synced,
-            localUpdatedAt: now,
-            serverUpdatedAt: now,
-            conflictFlag: false,
-            sourceAppBundleId: nil,
-            sourceRuleId: nil
+            sync: ShadowEntry.SyncMeta(
+                status: .synced,
+                localUpdatedAt: now,
+                serverUpdatedAt: now,
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin()
         )
     }
 

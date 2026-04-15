@@ -125,8 +125,8 @@ final class DeleteUndoManager {
                 return nil
             }
             var updated = existing
-            updated.syncStatus = .pendingDelete
-            updated.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
+            updated.sync.status = .pendingDelete
+            updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
             try await shadowEntryStore.update(updated)
             return existing
         } catch {

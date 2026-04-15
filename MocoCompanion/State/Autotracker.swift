@@ -616,13 +616,17 @@ final class Autotracker {
             locked: false,
             createdAt: nowString,
             updatedAt: nowString,
-            syncStatus: .pendingCreate,
-            localUpdatedAt: nowString,
-            serverUpdatedAt: nowString,
-            conflictFlag: false,
-            sourceAppBundleId: suggestion.appBundleId,
-            sourceRuleId: suggestion.ruleId,
-            sourceCalendarEventId: suggestion.sourceCalendarEventId
+            sync: ShadowEntry.SyncMeta(
+                status: .pendingCreate,
+                localUpdatedAt: nowString,
+                serverUpdatedAt: nowString,
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin(
+                appBundleId: suggestion.appBundleId,
+                ruleId: suggestion.ruleId,
+                calendarEventId: suggestion.sourceCalendarEventId
+            )
         )
 
         do {
@@ -781,13 +785,17 @@ final class Autotracker {
             locked: false,
             createdAt: nowString,
             updatedAt: nowString,
-            syncStatus: .pendingCreate,
-            localUpdatedAt: nowString,
-            serverUpdatedAt: nowString,
-            conflictFlag: false,
-            sourceAppBundleId: sourceAppBundleId,
-            sourceRuleId: rule.id,
-            sourceCalendarEventId: sourceCalendarEventId
+            sync: ShadowEntry.SyncMeta(
+                status: .pendingCreate,
+                localUpdatedAt: nowString,
+                serverUpdatedAt: nowString,
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin(
+                appBundleId: sourceAppBundleId,
+                ruleId: rule.id,
+                calendarEventId: sourceCalendarEventId
+            )
         )
     }
 
