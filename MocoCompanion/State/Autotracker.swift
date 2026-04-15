@@ -458,6 +458,8 @@ final class Autotracker {
                             durationSeconds: blockDuration,
                             existingEntries: existingEntries,
                             sourceAppBundleId: block.appBundleId,
+                            appName: block.appName,
+                            windowTitle: block.windowTitle,
                             now: now
                         )
                         try await shadowEntryStore.insert(entry)
@@ -470,6 +472,7 @@ final class Autotracker {
                 case .suggest:
                     let suggestionId = "\(ruleId)-\(blockStartTime)"
                     if declinedSuggestionIds.contains(suggestionId) { continue }
+                    let resolvedDescription = Self.atResolveDescription(rule.description, appName: block.appName, windowTitle: block.windowTitle)
                     newSuggestions.append(Suggestion(
                         id: suggestionId,
                         ruleId: ruleId,
@@ -480,7 +483,7 @@ final class Autotracker {
                         projectName: rule.projectName,
                         taskId: rule.taskId,
                         taskName: rule.taskName,
-                        description: rule.description,
+                        description: resolvedDescription,
                         appName: block.appName,
                         appBundleId: block.appBundleId
                     ))
@@ -715,6 +718,23 @@ final class Autotracker {
         }
     }
 
+    // MARK: - Description Template
+
+    /// Replaces `{app}` and `{title}` placeholders in a rule's description
+    /// template with the actual app name and window title from the matched
+    /// usage block. Returns the original string unchanged when no placeholders
+    /// are present.
+    private static func atResolveDescription(
+        _ template: String,
+        appName: String? = nil,
+        windowTitle: String? = nil
+    ) -> String {
+        var result = template
+        if let appName { result = result.replacingOccurrences(of: "{app}", with: appName) }
+        if let windowTitle { result = result.replacingOccurrences(of: "{title}", with: windowTitle) }
+        return result
+    }
+
     // MARK: - Entry Factory
 
     private static func atMakeShadowEntry(
@@ -725,10 +745,13 @@ final class Autotracker {
         existingEntries: [ShadowEntry],
         sourceAppBundleId: String?,
         sourceCalendarEventId: String? = nil,
+        appName: String? = nil,
+        windowTitle: String? = nil,
         now: Date
     ) -> ShadowEntry {
         let nowString = Autotracker.isoFormatter.string(from: now)
         let userEntry = existingEntries.first
+        let resolvedDescription = atResolveDescription(rule.description, appName: appName, windowTitle: windowTitle)
 
         return ShadowEntry(
             id: nil,
@@ -737,7 +760,7 @@ final class Autotracker {
             hours: Double(durationSeconds) / 3600.0,
             seconds: durationSeconds,
             workedSeconds: durationSeconds,
-            description: rule.description,
+            description: resolvedDescription,
             billed: false,
             billable: true,
             tag: "",
