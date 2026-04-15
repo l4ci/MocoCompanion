@@ -157,6 +157,7 @@ final class MonitorEngine {
         }
 
         logger.info("\(monitor.monitorName): registered")
+        BreadcrumbTrail.shared.record("MonitorEngine", "\(monitor.monitorName): registered")
     }
 
     /// Unregister a specific monitor.
@@ -164,6 +165,7 @@ final class MonitorEngine {
         let id = ObjectIdentifier(monitor)
         scheduler.cancel(monitor)
         monitors.removeValue(forKey: id)
+        BreadcrumbTrail.shared.record("MonitorEngine", "\(monitor.monitorName): unregistered")
     }
 
     /// Reset dedup state for a specific monitor (e.g., new tracking session).
@@ -176,6 +178,7 @@ final class MonitorEngine {
     func stopAll() {
         scheduler.cancelAll()
         monitors.removeAll()
+        BreadcrumbTrail.shared.record("MonitorEngine", "All monitors stopped")
     }
 
     // MARK: - Private
@@ -188,6 +191,7 @@ final class MonitorEngine {
                 dispatcher.send(alert.type, message: alert.message)
                 dedupLedger.markFired(alert)
                 logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
+                BreadcrumbTrail.shared.record("MonitorEngine", "\(monitor.monitorName): fired \(alert.dedupKey)")
             }
         }
     }

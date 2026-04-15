@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         Task {
             await AppLogger.shared.updateLogLevels(api: appState.settings.apiLogLevel, app: appState.settings.appLogLevel)
             await AppLogger.shared.app("Application launched", level: .info, context: "Lifecycle")
+            BreadcrumbTrail.shared.record("App", "Application launched")
         }
 
         panelController.onShowAutotracker = { [weak self] in self?.showAutotrackerWindow() }
@@ -238,6 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        BreadcrumbTrail.shared.record("App", "Application terminating")
         statusItemController?.teardown()
         appState.monitorEngine.stopAll()
         appState.autotracker.stop()

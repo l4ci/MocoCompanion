@@ -81,6 +81,28 @@ struct DebugSettingsTab: View {
             }
 
             Section {
+                Toggle(String(localized: "debug.breadcrumbs"), isOn: $settings.breadcrumbsEnabled)
+
+                HStack {
+                    Button(String(localized: "debug.openLog")) {
+                        NSWorkspace.shared.open(BreadcrumbTrail.shared.logFileURL)
+                    }
+                    Button(String(localized: "debug.revealInFinder")) {
+                        NSWorkspace.shared.activateFileViewerSelecting([BreadcrumbTrail.shared.logFileURL])
+                    }
+                    Spacer()
+                    Button(String(localized: "debug.clear")) {
+                        BreadcrumbTrail.shared.clear()
+                    }
+                    .foregroundStyle(.red)
+                }
+            } header: {
+                Text(String(localized: "debug.breadcrumbsHeader"))
+            } footer: {
+                Text(String(localized: "debug.breadcrumbsDesc"))
+            }
+
+            Section {
                 HStack {
                     Text(String(localized: "debug.logDir"))
                     Spacer()

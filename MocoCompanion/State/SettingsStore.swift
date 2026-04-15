@@ -84,6 +84,7 @@ final class SettingsStore {
         static let descriptionRequired = "descriptionRequired"
         static let showKeyboardHints = "showKeyboardHints"
         static let demoMode = "demoMode"
+        static let breadcrumbsEnabled = "breadcrumbsEnabled"
     }
 
     // MARK: - Defaults Helper
@@ -355,6 +356,14 @@ final class SettingsStore {
         }
     }
 
+    /// Breadcrumb trail: record internal state transitions for crash investigation.
+    var breadcrumbsEnabled: Bool {
+        didSet {
+            Self.save(Key.breadcrumbsEnabled, breadcrumbsEnabled)
+            BreadcrumbTrail.shared.setEnabled(breadcrumbsEnabled)
+        }
+    }
+
     // MARK: - Init
 
     init() {
@@ -397,6 +406,7 @@ final class SettingsStore {
         self.demoMode = Self.read(Key.demoMode, default: false)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
         self.appLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.appLogLevel, default: 1)) ?? .info
+        self.breadcrumbsEnabled = Self.read(Key.breadcrumbsEnabled, default: false)
 
         // Working days: stored as [Int], default Mon-Fri
         if let daysArray = UserDefaults.standard.object(forKey: Key.workingDays) as? [Int] {
@@ -405,6 +415,8 @@ final class SettingsStore {
             self.workingDays = [2, 3, 4, 5, 6]
         }
 
+        // Wire initial breadcrumb state
+        BreadcrumbTrail.shared.setEnabled(breadcrumbsEnabled)
     }
 
     // MARK: - Reset

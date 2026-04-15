@@ -71,6 +71,7 @@ final class TodayViewModel {
 
     /// Refresh data for the currently selected day. Updates lastSyncedAt on completion.
     func refreshCurrentDay() async {
+        BreadcrumbTrail.shared.record("TodayViewModel", "Refresh: \(selectedDay)")
         isRefreshing = true
         switch selectedDay {
         case .today:
@@ -84,12 +85,14 @@ final class TodayViewModel {
         }
         lastSyncedAt = .now
         isRefreshing = false
+        BreadcrumbTrail.shared.record("TodayViewModel", "Refresh complete: \(selectedDay)")
     }
 
     // MARK: - Local-Only Load (instant, no API calls)
 
     /// Load entries from the local shadow store — instant, no network.
     func loadFromStore() async {
+        BreadcrumbTrail.shared.record("TodayViewModel", "Loading from local store")
         await activityService.loadTodayFromStore()
         await activityService.loadYesterdayFromStore()
         recomputeYesterdayStats()
