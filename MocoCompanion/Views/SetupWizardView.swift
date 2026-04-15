@@ -18,6 +18,8 @@ struct SetupWizardView: View {
     @State private var domainInput = ""
     @State private var apiKeyInput = ""
     @State private var iconAppeared = false
+    @State private var isConnecting = false
+    @State private var errorMessage: String?
 
     private enum WizardStep: Int, CaseIterable {
         case domain = 0
@@ -170,7 +172,16 @@ struct SetupWizardView: View {
         SecureField("API Key", text: $apiKeyInput)
             .textFieldStyle(.roundedBorder)
             .frame(width: 300)
-            .onSubmit { if canConnect { connect() } }
+            .onSubmit { if canConnect && !isConnecting { connect() } }
+            .disabled(isConnecting)
+
+        if let errorMessage {
+            Text(errorMessage)
+                .font(.system(size: Theme.FontSize.subhead))
+                .foregroundStyle(.red.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .frame(width: 300)
+        }
 
         Spacer().frame(height: 20)
 
@@ -185,15 +196,24 @@ struct SetupWizardView: View {
             .buttonStyle(.plain)
 
             Button(action: connect) {
-                Text(String(localized: "setup.connect"))
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 120, height: 34)
-                    .background(canConnect ? Color.accentColor : theme.buttonDisabled)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Group {
+                    if isConnecting {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else {
+                        Text(String(localized: "setup.connect"))
+                            .font(.system(size: Theme.FontSize.body, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(width: 120, height: 34)
+                .background(canConnect && !isConnecting ? Color.accentColor : theme.buttonDisabled)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(!canConnect)
+            .disabled(!canConnect || isConnecting)
         }
     }
 
@@ -205,9 +225,22 @@ struct SetupWizardView: View {
     }
 
     private func connect() {
-        guard canConnect else { return }
-        settings.subdomain = parsedSubdomain
-        settings.apiKey = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        onComplete()
+        guard canConnect, !isConnecting else { return }
+        isConnecting = true
+        errorMessage = nil
+        let subdomain = parsedSubdomain
+        let apiKey = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task {
+            let client = MocoClient(subdomain: subdomain, apiKey: apiKey)
+            do {
+                _ = try await client.fetchSession()
+                settings.subdomain = subdomain
+                settings.apiKey = apiKey
+                onComplete()
+            } catch {
+                errorMessage = String(localized: "setup.invalidCredentials")
+                isConnecting = false
+            }
+        }
     }
 }
