@@ -81,6 +81,6 @@ struct HowToUseSettingsTab: View {
             let desc = combo.description
             return desc.isEmpty ? "None" : desc
         }
-        return "⌘⌃⌥M"
+        return "⌘⌥⌃⇧M"
     }
 }

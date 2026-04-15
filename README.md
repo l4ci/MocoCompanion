@@ -9,7 +9,7 @@ A fast, keyboard-driven macOS menu bar companion for [MOCO](https://www.mocoapp.
 ## Features
 
 ### Quick Entry Panel
-- Global hotkey (`⌘⌃⌥M`) to start/stop timers without leaving your current app
+- Global hotkey (`⌘⌥⌃⇧M` — [Hyper key](https://manual.raycast.com/hotkey) + M) to start/stop timers without leaving your current app
 - Fuzzy search across all assigned projects and tasks
 - Favorites and recent entries for instant access
 - Manual time booking with flexible hour formats (`1.5`, `1h 30m`, `90m`)
@@ -54,7 +54,7 @@ Download the latest release from [GitHub Releases](https://github.com/l4ci/MocoC
 
 1. Open MocoCompanion — it appears as a menu bar icon
 2. Enter your MOCO subdomain and API key in Settings (Get it from [here](https://{MOCO Subdomain}.mocoapp.com/profile/integrations))
-3. Press `⌃⌥⌘M` (or your custom shortcut) to open the quick-entry panel or click on the menu bar icon
+3. Press `⌘⌥⌃⇧M` (Hyper+M, or your custom shortcut) to open the quick-entry panel or click on the menu bar icon
 
 Your API key is stored securely in the macOS Keychain.
 

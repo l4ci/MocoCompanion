@@ -4,7 +4,7 @@
 
 | Shortcut | Action |
 |----------|--------|
-| `⌘⌃⌥M` | Open/close panel *(customizable)* |
+| `⌘⌥⌃⇧M` | Open/close panel *(customizable)* |
 
 ## Track Tab
 

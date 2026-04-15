@@ -22,7 +22,7 @@ MocoCompanion sits in your menubar as a timer icon with a small colored dot:
 **Interactions:**
 - **Left-click** the menubar icon → opens the **panel** (Track or Log view)
 - **Right-click** → opens a context menu (New Timer, Open Moco in Browser, Settings, Quit)
-- **Global shortcut** `⌘⌃⌥M` → opens the panel from anywhere (customizable in Settings)
+- **Global shortcut** `⌘⌥⌃⇧M` → opens the panel from anywhere (customizable in Settings)
 
 ---
 

@@ -4,7 +4,7 @@
 
 ### 1. Open the Panel
 
-Press your **global shortcut** (`⌘⌃⌥M` by default) or **left-click** the menubar icon.
+Press your **global shortcut** (`⌘⌥⌃⇧M` by default) or **left-click** the menubar icon.
 
 The panel opens with two tabs: **TRACK** and **LOG**. Which tab appears first is configurable in Settings → General → Default Tab.
 
@@ -57,7 +57,7 @@ Switch to the **TRACK** tab. You'll see:
 
 ### Option A: Quick Switch via Search
 
-1. Press `⌘⌃⌥M` to open the panel
+1. Press `⌘⌥⌃⇧M` to open the panel
 2. Search for the new project/task → select → describe → `Enter`
 3. The **previous timer stops automatically** and the new one starts
 
@@ -80,14 +80,14 @@ In the **LOG** tab, each entry has a ⌘-number badge (⌘1, ⌘2, etc.):
 
 ### Pause
 
-1. Press `⌘⌃⌥M` to open the panel
+1. Press `⌘⌥⌃⇧M` to open the panel
 2. With the search field empty, press `Enter` → **timer pauses**
 3. The menubar dot changes to 🟠 orange, text disappears
 4. **Panel stays open** so you can see the paused state
 
 ### Resume
 
-1. Press `⌘⌃⌥M` again (or if panel is still open)
+1. Press `⌘⌥⌃⇧M` again (or if panel is still open)
 2. Press `Enter` with empty search → **timer resumes**
 3. Menubar dot returns to 🟢 green with live elapsed time
 
@@ -152,7 +152,7 @@ Yesterday's entries are fully editable (hours, description, project, task). Key 
 
 Forgot to track a meeting? Book it without starting a timer:
 
-1. `⌘⌃⌥M` → search → select project/task → `Enter`
+1. `⌘⌥⌃⇧M` → search → select project/task → `Enter`
 2. In the description phase, click **Timer / Manual** toggle (or press `Tab` to switch and focus hours)
 3. Enter hours: `2` or `2h` or `1h 30m` or `90m`
 4. Type description → `Enter` → entry booked, no timer started

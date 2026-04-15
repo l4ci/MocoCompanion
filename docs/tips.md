@@ -2,8 +2,8 @@
 
 | Tip | How |
 |-----|-----|
-| **Fastest timer start** | `⌘⌃⌥M` → type 3 chars → `Enter` → `Enter` — under 3 seconds |
-| **Fastest pause/resume** | `⌘⌃⌥M` → `Enter` — under 1 second |
+| **Fastest timer start** | `⌘⌥⌃⇧M` → type 3 chars → `Enter` → `Enter` — under 3 seconds |
+| **Fastest pause/resume** | `⌘⌥⌃⇧M` → `Enter` — under 1 second |
 | **Continue yesterday's work** | Log → Yesterday → `Enter` on entry — starts new timer with same details |
 | **Quick-start from Log** | `⌘1` in Log tab — instantly starts timer on first entry |
 | **Check your day** | Left-click menubar icon → panel opens with Log tab showing entries + stats |

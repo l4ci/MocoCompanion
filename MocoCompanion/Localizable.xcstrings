@@ -3041,13 +3041,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⌘⌃⌥M → 3 Buchstaben → Enter. So schnell."
+            "value" : "⌘⌥⌃⇧M → 3 Buchstaben → Enter. So schnell."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⌘⌃⌥M → 3 letters → Enter. That fast."
+            "value" : "⌘⌥⌃⇧M → 3 letters → Enter. That fast."
           }
         }
       }
@@ -3473,13 +3473,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⌘⌃⌥M. Du weißt, was zu tun ist."
+            "value" : "⌘⌥⌃⇧M. Du weißt, was zu tun ist."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "⌘⌃⌥M. You know what to do."
+            "value" : "⌘⌥⌃⇧M. You know what to do."
           }
         }
       }
