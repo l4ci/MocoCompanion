@@ -4079,6 +4079,22 @@
         }
       }
     },
+    "notifDesc.pausedTimerReplaced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn ein pausierter Timer von einem externen Gerät ersetzt wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a paused timer is replaced by a timer started on another device"
+          }
+        }
+      }
+    },
     "notifDesc.yesterdayUnderBooked" : {
       "localizations" : {
         "de" : {
@@ -4331,6 +4347,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timer stopped"
+          }
+        }
+      }
+    },
+    "notification.pausedTimerReplaced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausierter Timer wurde ersetzt:"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused timer was replaced:"
           }
         }
       }
@@ -4619,6 +4651,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Timer stopped"
+          }
+        }
+      }
+    },
+    "notifLabel.pausedTimerReplaced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausierter Timer ersetzt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused timer replaced"
           }
         }
       }

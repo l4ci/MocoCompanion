@@ -46,6 +46,7 @@ final class TimerService: TimerStopProvider {
         case stopped
         case continued(projectId: Int, taskId: Int, projectName: String)
         case externalTimerStopped
+        case pausedTimerReplaced(previousProjectName: String)
         case error(MocoError)
     }
 
@@ -316,6 +317,10 @@ final class TimerService: TimerStopProvider {
             if let runningApi = apiActivities.first(where: { $0.isTimerRunning }) {
                 let running = ShadowEntry.from(runningApi)
                 if case .running(let currentId, _) = timerState, currentId == runningApi.id { return entries }
+                if case .paused(let pausedId, let pausedProject) = timerState, pausedId != runningApi.id {
+                    BreadcrumbTrail.shared.record("TimerService", "Paused timer \(pausedId) (\(pausedProject)) replaced by external timer \(runningApi.id)")
+                    onEvent?(.pausedTimerReplaced(previousProjectName: pausedProject))
+                }
                 currentActivity = running
                 timerState = .running(activityId: runningApi.id, projectName: running.projectName)
                 logger.info("Synced running timer: activityId=\(runningApi.id) project=\(running.projectName)")

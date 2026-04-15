@@ -30,6 +30,7 @@ enum NotificationCatalog {
         case timerResumed
         case timerStopped
         case timerContinued
+        case pausedTimerReplaced
 
         // Activity management (in-app toasts)
         case manualEntry
@@ -61,6 +62,7 @@ enum NotificationCatalog {
             case .timerResumed: return String(localized: "notifLabel.timerResumed")
             case .timerStopped: return String(localized: "notifLabel.timerStopped")
             case .timerContinued: return String(localized: "notifLabel.timerContinued")
+            case .pausedTimerReplaced: return String(localized: "notifLabel.pausedTimerReplaced")
             case .manualEntry: return String(localized: "notifLabel.manualEntry")
             case .activityDuplicated: return String(localized: "notifLabel.activityDuplicated")
             case .activityDeleted: return String(localized: "notifLabel.activityDeleted")
@@ -84,6 +86,7 @@ enum NotificationCatalog {
             case .timerResumed: return String(localized: "notifDesc.timerResumed")
             case .timerStopped: return String(localized: "notifDesc.timerStopped")
             case .timerContinued: return String(localized: "notifDesc.timerContinued")
+            case .pausedTimerReplaced: return String(localized: "notifDesc.pausedTimerReplaced")
             case .manualEntry: return String(localized: "notifDesc.manualEntry")
             case .activityDuplicated: return String(localized: "notifDesc.activityDuplicated")
             case .activityDeleted: return String(localized: "notifDesc.activityDeleted")
@@ -108,6 +111,7 @@ enum NotificationCatalog {
             switch self {
             case .timerStarted, .timerResumed, .timerContinued: return .success
             case .timerStopped: return .info
+            case .pausedTimerReplaced: return .warning
             case .manualEntry, .activityDuplicated: return .success
             case .activityDeleted: return .warning
             case .descriptionUpdated, .projectsRefreshed: return .info
@@ -124,6 +128,7 @@ enum NotificationCatalog {
             switch self {
             case .timerStarted, .timerResumed, .timerContinued: return "play.circle.fill"
             case .timerStopped: return "stop.circle.fill"
+            case .pausedTimerReplaced: return "exclamationmark.arrow.triangle.2.circlepath"
             case .manualEntry: return "clock.badge.checkmark"
             case .activityDuplicated: return "doc.on.doc.fill"
             case .activityDeleted: return "trash.circle.fill"
@@ -159,7 +164,7 @@ enum NotificationCatalog {
         /// Grouping for settings UI.
         var settingsGroup: SettingsGroup {
             switch self {
-            case .timerStarted, .timerResumed, .timerStopped, .timerContinued:
+            case .timerStarted, .timerResumed, .timerStopped, .timerContinued, .pausedTimerReplaced:
                 return .timer
             case .activityDeleted, .descriptionUpdated, .projectsRefreshed, .manualEntry, .activityDuplicated, .favoritesLimitReached:
                 return .activity

@@ -67,6 +67,10 @@ final class YesterdayService: PollingMonitor {
             // Check for absences — filter to current user
             let schedules = try await client.fetchSchedules(from: yesterdayStr, to: yesterdayStr)
             let userId = userIdProvider()
+            guard let userId else {
+                logger.info("Yesterday check skipped — userId not available yet")
+                return []
+            }
             let userSchedules = schedules.filter { $0.user.id == userId }
             if userSchedules.contains(where: { $0.date == yesterdayStr }) {
                 logger.info("Yesterday had an absence — skipping check")
