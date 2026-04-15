@@ -128,6 +128,7 @@
 		A2EE040BD8DE6FEC171CED05 /* TimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */; };
 		A37C403B6686B228EB87F2DE /* QuickEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A3A92C13A43DF304A0254 /* QuickEntryView.swift */; };
 		A3BDDE0EF4F878359653C870 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407AA89A2C397D153A840B32 /* AppLogger.swift */; };
+		9BAFD496C6C643EFA7B4C348 /* BreadcrumbTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F7FBEB44894F18B6C64904 /* BreadcrumbTrail.swift */; };
 		A3CC383E4848A5A2927E573B /* AppRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166DAD49EA289AB8F58C1137 /* AppRecorderTests.swift */; };
 		A41228181FD57B065E7A0576 /* NotificationDispatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */; };
 		A47328DA18D0A76C02223FEC /* MockBudgetAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F15D68DA50B3EE0381EDCF /* MockBudgetAPI.swift */; };
@@ -266,6 +267,7 @@
 		3E711995E777F152C7FE6981 /* BudgetDepletionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetDepletionMonitor.swift; sourceTree = "<group>"; };
 		3FE72E53ADA34DC01D6CE143 /* ShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderView.swift; sourceTree = "<group>"; };
 		407AA89A2C397D153A840B32 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		43F7FBEB44894F18B6C64904 /* BreadcrumbTrail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreadcrumbTrail.swift; sourceTree = "<group>"; };
 		438422F3B01E22301B030204 /* ValueBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBox.swift; sourceTree = "<group>"; };
 		43F8BF656898DD3DD9BFD1D6 /* DateNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateNavigationView.swift; sourceTree = "<group>"; };
 		44E815248DC080BC27FDDDEA /* TimelinePaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePaneView.swift; sourceTree = "<group>"; };
@@ -484,6 +486,7 @@
 				092F9B8A6D0E00610FC53846 /* AccessibilityPermission.swift */,
 				9BA368B3F7194171B836A66B /* ActivityService.swift */,
 				407AA89A2C397D153A840B32 /* AppLogger.swift */,
+				43F7FBEB44894F18B6C64904 /* BreadcrumbTrail.swift */,
 				1244C6FC2B1082217D8F4E7F /* AppRecord.swift */,
 				14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */,
 				A0AA040396C6E5C43AF2FDB4 /* AppState.swift */,
@@ -855,6 +858,7 @@
 				D635542B1A289CF73F5C8F23 /* AllDayCalendarEventRow.swift in Sources */,
 				6FC1AE7ECDE2A59D195D829D /* AppDelegate.swift in Sources */,
 				A3BDDE0EF4F878359653C870 /* AppLogger.swift in Sources */,
+				9BAFD496C6C643EFA7B4C348 /* BreadcrumbTrail.swift in Sources */,
 				7C7BE8734AF946E95C228D49 /* AppRecord.swift in Sources */,
 				B0CF016F487AFC1F39D849B2 /* AppRecordStore.swift in Sources */,
 				C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */,
