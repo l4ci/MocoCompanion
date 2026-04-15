@@ -478,7 +478,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         } else if appState.settings.hasCustomShortcut {
             combo = KeyCombo(carbonKeyCode: appState.settings.customShortcutKeyCode, carbonModifiers: appState.settings.customShortcutModifiers)
         } else {
-            combo = KeyCombo(key: .m, modifiers: [.command, .control, .option])
+            combo = KeyCombo(key: .m, modifiers: [.command, .control, .option, .shift])
         }
 
         hotKey = HotKey(keyCombo: combo)
