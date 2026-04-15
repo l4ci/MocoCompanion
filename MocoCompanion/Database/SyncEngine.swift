@@ -31,6 +31,7 @@ actor SyncEngine {
 
     /// Run a complete pull+push sync for the given dates.
     func sync(dates: [String]) async {
+        BreadcrumbTrail.shared.record("SyncEngine", "Sync started for dates: \(dates.joined(separator: ", "))")
         await MainActor.run { syncState.setSyncing(true) }
         defer { Task { @MainActor in syncState.setSyncing(false) } }
 
@@ -44,6 +45,7 @@ actor SyncEngine {
                 syncState.setLastError(nil)
             }
             let pending = try await store.dirtyEntries().count
+            BreadcrumbTrail.shared.record("SyncEngine", "Sync completed: \(dates.count) dates, \(pending) pending")
             await MainActor.run { syncState.setPendingChanges(pending) }
         } catch {
             let mocoError = MocoError.from(error)
@@ -54,6 +56,7 @@ actor SyncEngine {
                 onDescriptionRequired?()
             }
             logger.error("Sync failed: \(error.localizedDescription)")
+            BreadcrumbTrail.shared.record("SyncEngine", "Sync failed: \(error.localizedDescription)")
         }
     }
 
@@ -105,6 +108,7 @@ actor SyncEngine {
         try await store.removeServerDeleted(keepingIds: remoteIds, forDate: date)
 
         logger.info("Pull \(date): \(pullCount) updated, \(conflictCount) conflicts")
+        BreadcrumbTrail.shared.record("SyncEngine", "Pull \(date): \(pullCount) updated, \(conflictCount) conflicts")
     }
 
     // MARK: - Push
@@ -193,6 +197,7 @@ actor SyncEngine {
         } else {
             logger.info("Push: \(pushCount) entries synced")
         }
+        BreadcrumbTrail.shared.record("SyncEngine", "Push: \(pushCount) synced, \(failedCount) failed")
     }
 
     // MARK: - Timer

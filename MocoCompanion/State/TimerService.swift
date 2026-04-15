@@ -106,6 +106,7 @@ final class TimerService: TimerStopProvider {
             let activity = ShadowEntry.from(apiActivity)
             currentActivity = activity
             timerState = .running(activityId: apiActivity.id, projectName: activity.projectName)
+            BreadcrumbTrail.shared.record("TimerService", "Timer started: projectId=\(projectId) taskId=\(taskId)")
             lastError = nil
 
             activitySync?.upsertActivity(activity)
@@ -143,6 +144,7 @@ final class TimerService: TimerStopProvider {
             let stopped = try await client.stopTimer(activityId: activityId)
             timerState = .paused(activityId: activityId, projectName: projectName)
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
+            BreadcrumbTrail.shared.record("TimerService", "Timer paused: activityId=\(activityId)")
             onEvent?(.paused(projectName: projectName))
             activitySync?.upsertActivity(ShadowEntry.from(stopped))
         } catch {
@@ -164,6 +166,7 @@ final class TimerService: TimerStopProvider {
             currentActivity = started
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
+            BreadcrumbTrail.shared.record("TimerService", "Timer resumed: activityId=\(activityId)")
             onEvent?(.resumed(projectName: projectName))
             activitySync?.upsertActivity(started)
         } catch {
@@ -191,6 +194,7 @@ final class TimerService: TimerStopProvider {
         do {
             _ = try await client.stopTimer(activityId: activityId)
             logger.info("Timer stopped: activityId=\(activityId) project=\(projectName)")
+            BreadcrumbTrail.shared.record("TimerService", "Timer stopped: activityId=\(activityId)")
             onEvent?(.stopped)
         } catch {
             handleError(error, label: "stopTimer")
@@ -201,6 +205,7 @@ final class TimerService: TimerStopProvider {
 
     /// Sync timer state from the server.
     func sync() async {
+        BreadcrumbTrail.shared.record("TimerService", "Sync requested")
         let activities = await syncCurrentTimer()
         // Push fetched activities to activity service
         if let activities {
@@ -254,6 +259,7 @@ final class TimerService: TimerStopProvider {
             timerState = .running(activityId: startedApi.id, projectName: projectName)
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
+            BreadcrumbTrail.shared.record("TimerService", "Timer continued: activityId=\(activityId)")
             onEvent?(.continued(projectId: started.projectId, taskId: started.taskId, projectName: projectName))
             activitySync?.upsertActivity(started)
         } catch {
@@ -325,6 +331,7 @@ final class TimerService: TimerStopProvider {
     }
 
     private func handleError(_ error: any Error, label: String) {
+        BreadcrumbTrail.shared.record("TimerService", "Error: \(label) — \(error.localizedDescription)")
         let mocoError = MocoError.from(error)
         lastError = mocoError
         onEvent?(.error(mocoError))
