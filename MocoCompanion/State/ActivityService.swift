@@ -26,6 +26,11 @@ final class ActivityService: ActivitySyncing {
     private(set) var todayBillablePercentage: Double = 0
     private(set) var yesterdayActivities: [ShadowEntry] = []
 
+    /// Monotonic counters bumped on every mutation — cheap alternative to
+    /// hashing the entire array for SwiftUI change detection.
+    private(set) var todayMutationVersion: Int = 0
+    private(set) var yesterdayMutationVersion: Int = 0
+
     /// Cached sorted arrays — invalidated when activities change.
     @ObservationIgnored private var _sortedToday: [ShadowEntry]?
     @ObservationIgnored private var _sortedYesterday: [ShadowEntry]?
@@ -117,6 +122,7 @@ final class ActivityService: ActivitySyncing {
         let activities = await syncEngine.entries(forDate: yesterday)
         yesterdayActivities = activities
         _sortedYesterday = nil
+        yesterdayMutationVersion &+= 1
         yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
     }
 
@@ -135,6 +141,7 @@ final class ActivityService: ActivitySyncing {
             let activities = await syncEngine.entries(forDate: yesterday)
             yesterdayActivities = activities
             _sortedYesterday = nil
+            yesterdayMutationVersion &+= 1
             yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
             logger.info("Yesterday sync: \(activities.count) entries")
             return
@@ -151,6 +158,7 @@ final class ActivityService: ActivitySyncing {
             let activities = try await client.fetchActivities(from: yesterday, to: yesterday, userId: userId)
             yesterdayActivities = activities.map { ShadowEntry.from($0) }
             _sortedYesterday = nil
+            yesterdayMutationVersion &+= 1
             yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
             logger.info("Yesterday sync: \(activities.count) entries")
         } catch {
@@ -310,7 +318,10 @@ final class ActivityService: ActivitySyncing {
         recomputeTodayStats()
         invalidateSortedCaches()
         _sortedYesterday = nil
-        if hadYesterday { yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities) }
+        if hadYesterday {
+            yesterdayMutationVersion &+= 1
+            yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
+        }
     }
 
     /// Restore a today activity after undo. Called by DeleteUndoManager.
@@ -324,6 +335,7 @@ final class ActivityService: ActivitySyncing {
     func restoreYesterday(_ activity: ShadowEntry) {
         yesterdayActivities.append(activity)
         _sortedYesterday = nil
+        yesterdayMutationVersion &+= 1
         yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
     }
 
@@ -345,6 +357,7 @@ final class ActivityService: ActivitySyncing {
         if let idx = yesterdayActivities.firstIndex(where: { $0.id == activity.id }) {
             yesterdayActivities[idx] = activity
             _sortedYesterday = nil
+            yesterdayMutationVersion &+= 1
             yesterdayService?.recheckLocally(yesterdayActivities: yesterdayActivities)
         }
     }
@@ -360,6 +373,7 @@ final class ActivityService: ActivitySyncing {
     private func recomputeTodayStats() {
         todayTotalHours = todayActivities.totalHours
         todayBillablePercentage = todayActivities.billablePercentage
+        todayMutationVersion &+= 1
     }
 
     /// Invalidate cached sorted arrays so they recompute on next access.

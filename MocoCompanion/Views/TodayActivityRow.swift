@@ -15,10 +15,10 @@ struct TodayActivityRow: View {
     var isYesterday: Bool = false
     /// Planned hours for this activity's project+task (nil if not planned).
     var plannedHours: Double? = nil
+    /// Pre-computed budget badge for this row's project+task.
+    var budgetBadge: BudgetBadge = .none
     /// Available projects for reassignment.
     var projects: [MocoProject] = []
-    /// Budget service for badge lookups (nil if unavailable).
-    var budgetService: BudgetService? = nil
 
     @Binding var editingActivityId: Int?
     @Binding var deletingActivityId: Int?
@@ -63,7 +63,6 @@ struct TodayActivityRow: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             } else {
-                let badge = budgetService?.status(projectId: activity.projectId, taskId: activity.taskId).effectiveBadge ?? .none
                 EntryRow(
                     projectName: activity.projectName,
                     customerName: activity.customerName,
@@ -77,7 +76,7 @@ struct TodayActivityRow: View {
                     isFavorite: favoritesManager?.isFavorite(projectId: activity.projectId, taskId: activity.taskId),
                     onToggleFavorite: favoritesManager != nil ? { toggleFavorite() } : nil,
                     hints: rowHints,
-                    budgetBadge: badge
+                    budgetBadge: budgetBadge
                 ) {
                     HStack(spacing: 6) {
                         ActivityDurationText(
