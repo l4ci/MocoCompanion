@@ -275,7 +275,8 @@ final class TimerService: TimerStopProvider {
     private func stopRunningTimerQuietly(client: any TimerAPI) async {
         if case .running(let activityId, _) = timerState {
             do {
-                _ = try await client.stopTimer(activityId: activityId)
+                let stopped = try await client.stopTimer(activityId: activityId)
+                activitySync?.upsertActivity(ShadowEntry.from(stopped))
                 logger.info("Quietly stopped running timer: activityId=\(activityId)")
             } catch {
                 logger.error("stopRunningTimerQuietly failed: \(error.localizedDescription)")
