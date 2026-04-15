@@ -77,11 +77,13 @@ final class TodayViewModel {
         case .today:
             await activityService.refreshTodayStats()
             await planningStore.refreshAllPlanning()
+            _plannedHoursMap = nil
         case .yesterday:
             await activityService.refreshYesterdayActivities()
             recomputeYesterdayStats()
         case .tomorrow:
             await planningStore.refreshAllPlanning()
+            _plannedHoursMap = nil
         }
         lastSyncedAt = .now
         isRefreshing = false
@@ -111,6 +113,7 @@ final class TodayViewModel {
 
     func refreshAllPlanning() async {
         await planningStore.refreshAllPlanning()
+        _plannedHoursMap = nil
     }
 
     func refreshAbsences() async {
@@ -119,29 +122,12 @@ final class TodayViewModel {
 
     // MARK: - Forwarded State (ActivityService)
 
-    /// Opaque version token — changes whenever todayActivities changes.
-    /// Lets the view observe activity list changes through the ViewModel boundary
-    /// without exposing activityService directly.
-    var todayActivitiesVersion: Int {
-        var hasher = Hasher()
-        for a in activityService.todayActivities {
-            hasher.combine(a.id)
-            hasher.combine(a.seconds)
-            hasher.combine(a.description)
-        }
-        return hasher.finalize()
-    }
+    /// Monotonic version — bumped by ActivityService on every today mutation.
+    /// O(1) instead of O(n) hashing the entire activities array.
+    var todayActivitiesVersion: Int { activityService.todayMutationVersion }
 
-    /// Opaque version token for yesterdayActivities.
-    var yesterdayActivitiesVersion: Int {
-        var hasher = Hasher()
-        for a in activityService.yesterdayActivities {
-            hasher.combine(a.id)
-            hasher.combine(a.seconds)
-            hasher.combine(a.description)
-        }
-        return hasher.finalize()
-    }
+    /// Monotonic version — bumped by ActivityService on every yesterday mutation.
+    var yesterdayActivitiesVersion: Int { activityService.yesterdayMutationVersion }
 
     /// Today's total tracked hours.
     var todayTotalHours: Double { activityService.todayTotalHours }
@@ -179,17 +165,20 @@ final class TodayViewModel {
         planningStore.plannedHours(projectId: projectId, taskId: taskId)
     }
 
-    /// Build a `[projectKey: plannedHours]` lookup in one pass over the
-    /// planning entries. Callers that render many rows should use this
-    /// once per render instead of calling `plannedHours(projectId:taskId:)`
-    /// per row — that method does an O(n) filter each time.
+    /// Cached planned-hours lookup. Invalidated when planning data refreshes.
+    @ObservationIgnored private var _plannedHoursMap: [String: Double]?
+
+    /// `[projectKey: plannedHours]` lookup built once per planning refresh.
+    /// Cached so re-renders triggered by non-planning state don't rebuild it.
     func buildPlannedHoursMap() -> [String: Double] {
+        if let cached = _plannedHoursMap { return cached }
         var map: [String: Double] = [:]
         for entry in planningStore.todayPlanningEntries {
             guard let project = entry.project, let task = entry.task else { continue }
             let key = "\(project.id)-\(task.id)"
             map[key, default: 0] += entry.hoursPerDay
         }
+        _plannedHoursMap = map
         return map
     }
 

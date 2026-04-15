@@ -390,6 +390,19 @@ struct TodayView: View {
         // row did an O(n) filter over planningStore entries, yielding
         // quadratic cost over the whole list. See audit P2-3.
         let plannedMap: [String: Double] = vm.isYesterday ? [:] : vm.buildPlannedHoursMap()
+        // Pre-compute budget badges once per render so rows don't each read
+        // from BudgetService (which tracks the whole projectCaches dict and
+        // would fan-out invalidation to every row on any budget update). P3.
+        let budgetBadgeMap: [String: BudgetBadge] = {
+            var map: [String: BudgetBadge] = [:]
+            for activity in vm.sortedActivities {
+                let key = "\(activity.projectId)-\(activity.taskId)"
+                if map[key] == nil {
+                    map[key] = appState.budgetService.status(projectId: activity.projectId, taskId: activity.taskId).effectiveBadge
+                }
+            }
+            return map
+        }()
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
@@ -404,8 +417,8 @@ struct TodayView: View {
                             shortcutIndex: vm.shortcutIndex(for: index),
                             isYesterday: vm.isYesterday,
                             plannedHours: plannedMap["\(activity.projectId)-\(activity.taskId)"],
+                            budgetBadge: budgetBadgeMap["\(activity.projectId)-\(activity.taskId)"] ?? .none,
                             projects: appState.catalog.projects,
-                            budgetService: appState.budgetService,
                             editingActivityId: $vm.editingActivityId,
                             deletingActivityId: $vm.deletingActivityId,
                             descriptionDraft: $descriptionDraft,
