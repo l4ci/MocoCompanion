@@ -21,7 +21,9 @@ final class BudgetService {
 
     /// Cached budget data per project ID. `accessOrder` tracks LRU recency.
     private var projectCaches: [Int: ProjectBudgetCache] = [:]
-    private var accessOrder: [Int] = []
+    /// LRU access order — excluded from observation to prevent infinite
+    /// view-graph updates when status() is called during SwiftUI body evaluation.
+    @ObservationIgnored private var accessOrder: [Int] = []
 
     /// Internal cache entry for a single project's budget data.
     private struct ProjectBudgetCache {
