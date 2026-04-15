@@ -64,7 +64,7 @@ struct TimelineWindow: View {
             // (drag-drop, sync, resize) and the user snaps back to the
             // top. The full-screen "Loading…" branch is reserved for the
             // very first load before any data has arrived.
-            if viewModel.isLoading && viewModel.shadowEntries.isEmpty && viewModel.appUsageBlocks.isEmpty {
+            if viewModel.isLoading && viewModel.shadowEntries.isEmpty && viewModel.timeSlots.isEmpty {
                 Spacer()
                 ProgressView()
                     .controlSize(.small)
@@ -76,7 +76,6 @@ struct TimelineWindow: View {
                 TimelinePaneView(
                     positionedEntries: viewModel.positionedEntries,
                     unpositionedEntries: viewModel.unpositionedEntries,
-                    appUsageBlocks: viewModel.appUsageBlocks,
                     selectedDate: viewModel.selectedDate,
                     isToday: viewModel.isToday,
                     viewModel: viewModel,

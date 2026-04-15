@@ -71,7 +71,7 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
 
             // Time-boxed off-main AX capture. The main actor is released
             // immediately — the handler fires when the title arrives or
-            // after the 30 ms budget elapses, whichever is first.
+            // after the 200 ms budget elapses, whichever is first.
             Task { [weak self] in
                 let title = await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
                 await MainActor.run {

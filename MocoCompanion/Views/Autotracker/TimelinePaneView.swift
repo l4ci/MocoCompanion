@@ -8,7 +8,6 @@ struct TimelinePaneView: View {
 
     let positionedEntries: [ShadowEntry]
     let unpositionedEntries: [ShadowEntry]
-    let appUsageBlocks: [AppUsageBlock]
     let selectedDate: Date
     let isToday: Bool
     let viewModel: TimelineViewModel
@@ -514,26 +513,28 @@ struct TimelinePaneView: View {
     private var appUsageColumn: some View {
         ZStack(alignment: .top) {
             ZStack(alignment: .topLeading) {
-                ForEach(appUsageBlocks) { block in
-                    AppUsageBlockView(
-                        block: block,
-                        isSelected: viewModel.isAppBlockHighlighted(block),
+                ForEach(viewModel.timeSlots) { slot in
+                    TimeSlotView(
+                        slot: slot,
+                        isSelected: viewModel.isTimeSlotHighlighted(slot),
                         rulesEnabled: viewModel.settings?.rulesEnabled ?? false,
                         columnWidth: appUsagePaneWidth,
                         onSelect: { shiftHeld in
-                            viewModel.toggleAppBlockSelection(id: block.id, shiftHeld: shiftHeld)
+                            viewModel.toggleAppBlockSelection(id: slot.id, shiftHeld: shiftHeld)
                         },
                         onCreateRule: { bundleId, appName in
                             ruleEditorConfig = RuleEditorConfig(prefillBundleId: bundleId, prefillAppName: appName)
                         },
-                        onCreateEntry: { block in
-                            let comps = Self.calendar.dateComponents([.hour, .minute], from: block.startTime)
-                            let startMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
-                            let durationMinutes = max(Int(block.durationSeconds) / 60, TimelineLayout.snapMinutes)
-                            pendingCreation = PendingCreation(startMinutes: startMinutes, durationMinutes: durationMinutes, appName: block.appName, sourceBundleId: block.appBundleId)
+                        onCreateEntry: { slot in
+                            pendingCreation = PendingCreation(
+                                startMinutes: slot.startMinutes,
+                                durationMinutes: TimeSlot.slotDurationMinutes,
+                                appName: slot.dominantAppName,
+                                sourceBundleId: slot.dominantBundleId
+                            )
                         },
                         onDragStarted: {
-                            viewModel.startDragCreation(blockId: block.id)
+                            viewModel.startDragCreation(slot: slot)
                         },
                         onDragUpdated: { globalY in
                             let localY = globalY - entryColumnGlobalOrigin
@@ -547,7 +548,7 @@ struct TimelinePaneView: View {
                             }
                         }
                     )
-                    .offset(y: yOffset(for: block.startTime))
+                    .offset(y: CGFloat(slot.startMinutes) * TimelineLayout.pixelsPerMinute)
                 }
             }
 
@@ -839,7 +840,7 @@ struct TimelinePaneView: View {
 
             // App usage column
             if viewModel.settings?.appRecordingEnabled == true {
-                if appUsageBlocks.isEmpty && accessibilityPlaceholderState == nil {
+                if viewModel.timeSlots.isEmpty && accessibilityPlaceholderState == nil {
                     columnEmptyLabel(String(localized: "timeline.noAppActivity"))
                         .frame(width: appUsagePaneWidth)
                 } else {

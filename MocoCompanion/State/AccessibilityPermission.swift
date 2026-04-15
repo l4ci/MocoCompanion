@@ -69,13 +69,25 @@ enum AccessibilityPermission {
     /// returns nil and the AX call continues in the background (harmless).
     /// Use this everywhere user-visible latency matters — i.e. every
     /// `NSWorkspace.didActivateApplicationNotification` handler.
+    ///
+    /// The work task tries the AX read immediately. If the first attempt
+    /// returns nil (common right after `didActivateApplication` — the app
+    /// is active but its accessibility tree may lag), it waits briefly and
+    /// retries once within the budget window.
     nonisolated static func capturefocusedWindowTitle(
         forProcess pid: pid_t,
-        budget: Duration = .milliseconds(30)
+        budget: Duration = .milliseconds(200)
     ) async -> String? {
         await withTaskGroup(of: String?.self) { group in
             group.addTask(priority: .userInitiated) {
-                Self.focusedWindowTitle(forProcess: pid)
+                // First try — the app may already expose a focused window.
+                if let title = Self.focusedWindowTitle(forProcess: pid) {
+                    return title
+                }
+                // The app was just activated — its focused window may not
+                // be queryable yet. Wait briefly and retry once.
+                try? await Task.sleep(for: .milliseconds(50))
+                return Self.focusedWindowTitle(forProcess: pid)
             }
             group.addTask {
                 try? await Task.sleep(for: budget)

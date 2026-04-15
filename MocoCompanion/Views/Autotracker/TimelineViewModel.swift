@@ -83,6 +83,7 @@ import os
     private(set) var shadowEntries: [ShadowEntry] = []
     private(set) var appRecords: [AppRecord] = []
     /* internal for test */ var appUsageBlocks: [AppUsageBlock] = []
+    private(set) var timeSlots: [TimeSlot] = []
     private(set) var positionedEntries: [ShadowEntry] = []
     private(set) var unpositionedEntries: [ShadowEntry] = []
     private(set) var calendarEvents: [CalendarEvent] = []
@@ -230,6 +231,7 @@ import os
         let records = autotracker.records(for: selectedDate)
         appRecords = records
         appUsageBlocks = AppUsageBlock.merge(records)
+        timeSlots = TimeSlot.aggregate(records)
 
         // Calendar events — only fetched when the feature is enabled and
         // a calendar is picked. `requestAccessIfNeeded` is idempotent and
@@ -246,7 +248,7 @@ import os
         }
         recomputeCalendarLayouts()
 
-        Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.appUsageBlocks.count) usage blocks, \(self.calendarEvents.count) calendar events for \(dateString)")
+        Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.timeSlots.count) time slots, \(self.calendarEvents.count) calendar events for \(dateString)")
 
         // Evaluate rules against loaded data
         let isTimerRunning = shadowEntries.contains { $0.timerStartedAt != nil }
@@ -577,9 +579,24 @@ import os
         return bundleId == block.appBundleId
     }
 
+    /// Returns true when the given time slot is selected OR an entry
+    /// originating from this slot's dominant app is currently selected.
+    func isTimeSlotHighlighted(_ slot: TimeSlot) -> Bool {
+        if selectedAppBlockIds.contains(slot.id) { return true }
+        guard let entry = selectedEntry,
+              let bundleId = entry.origin.appBundleId, !bundleId.isEmpty
+        else { return false }
+        return bundleId == slot.dominantBundleId
+    }
+
     /// The subset of appUsageBlocks whose ids are in the selection set.
     var selectedAppBlocks: [AppUsageBlock] {
         appUsageBlocks.filter { selectedAppBlockIds.contains($0.id) }
+    }
+
+    /// The subset of timeSlots whose ids are in the selection set.
+    var selectedTimeSlots: [TimeSlot] {
+        timeSlots.filter { selectedAppBlockIds.contains($0.id) }
     }
 
     /// Combined time range of selected blocks as minutes-since-midnight.
@@ -610,6 +627,12 @@ import os
     /// the current multi-selection, uses the combined range; otherwise uses
     /// the single block's time range.
     func startDragCreation(blockId: String) {
+        // Try time slots first, fall back to legacy app usage blocks.
+        if let slot = timeSlots.first(where: { $0.id == blockId }) {
+            startDragCreation(slot: slot)
+            return
+        }
+
         let ids: [String]
         let blocks: [AppUsageBlock]
 
@@ -648,6 +671,37 @@ import os
             isOverlapping: overlaps
         )
         Self.logger.debug("Drag creation started: \(ids.count) blocks, \(duration)min")
+    }
+
+    /// Begin a creation drag from a time slot.
+    func startDragCreation(slot: TimeSlot) {
+        let ids: [String]
+        let slots: [TimeSlot]
+
+        if selectedAppBlockIds.contains(slot.id), selectedAppBlockIds.count > 1 {
+            ids = Array(selectedAppBlockIds)
+            slots = selectedTimeSlots
+        } else {
+            ids = [slot.id]
+            slots = [slot]
+        }
+
+        guard !slots.isEmpty else { return }
+
+        let minMin = slots.map(\.startMinutes).min() ?? slot.startMinutes
+        let maxMin = slots.map(\.endMinutes).max() ?? slot.endMinutes
+        let duration = max(maxMin - minMin, TimelineLayout.snapMinutes)
+
+        let overlaps = !overlappingEntries(startMinutes: minMin, durationMinutes: duration).isEmpty
+        dragCreationState = DragCreationState(
+            sourceBlockIds: ids,
+            appName: slot.dominantAppName,
+            appBundleId: slot.dominantBundleId,
+            startMinutes: minMin,
+            durationMinutes: duration,
+            isOverlapping: overlaps
+        )
+        Self.logger.debug("Drag creation started from time slot: \(ids.count) slots, \(duration)min")
     }
 
     /// Update the ghost block position during drag based on the cursor's y in
