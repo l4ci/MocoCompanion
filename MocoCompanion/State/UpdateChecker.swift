@@ -13,6 +13,7 @@ actor UpdateChecker {
 
     private let repoOwner = "l4ci"
     private let repoName = "MocoCompanion"
+    private let updateGuideURL = URL(string: "https://github.com/l4ci/MocoCompanion/blob/main/docs/updating.md")!
 
     /// Compare tag_name (stripped of "v" prefix) with current CFBundleShortVersionString.
     /// Returns Release if a newer version is available, nil if current or on error.
@@ -38,9 +39,7 @@ actor UpdateChecker {
             }
 
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tagName = json["tag_name"] as? String,
-                  let htmlUrl = json["html_url"] as? String,
-                  let releaseUrl = URL(string: htmlUrl) else {
+                  let tagName = json["tag_name"] as? String else {
                 logger.warning("Could not parse GitHub release response")
                 return nil
             }
@@ -49,7 +48,7 @@ actor UpdateChecker {
 
             if remoteVersion != currentVersion, remoteVersion > currentVersion {
                 logger.info("Update available: \(remoteVersion) (current: \(currentVersion))")
-                return Release(version: remoteVersion, url: releaseUrl)
+                return Release(version: remoteVersion, url: updateGuideURL)
             } else {
                 logger.info("App is up to date (\(currentVersion))")
                 return nil

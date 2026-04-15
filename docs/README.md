@@ -14,6 +14,7 @@
 4. **[Settings](settings.md)** — All configuration options across 9 tabs
 5. **[Keyboard Shortcuts](keyboard-shortcuts.md)** — Complete shortcut reference for every view
 6. **[Tips & Tricks](tips.md)** — Power-user workflows and quick wins
+7. **[Updating](updating.md)** — How to update to the latest version
 
 ---
 
