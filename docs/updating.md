@@ -1,5 +1,7 @@
 # Updating MocoCompanion
 
+Quit MocoCompanion before updating — the app must be closed so the new version can replace it. After updating, relaunch from your Applications folder or Spotlight.
+
 ## Homebrew (recommended)
 
 If you installed MocoCompanion via Homebrew, run:
