@@ -89,6 +89,7 @@ final class PanelController {
 
     /// Toggle the panel: show if hidden, hide if visible.
     func toggle() {
+        BreadcrumbTrail.shared.record("Panel", isVisible ? "Toggle → hide" : "Toggle → show")
         if isVisible {
             hide()
         } else {
@@ -100,6 +101,7 @@ final class PanelController {
     /// Used by "New Timer" menu action and other entry points that shouldn't
     /// restore a previous session.
     func showFresh() {
+        BreadcrumbTrail.shared.record("Panel", "Show fresh (reset state)")
         resetTask?.cancel()
         resetTask = nil
 
@@ -145,6 +147,7 @@ final class PanelController {
         isVisible = true
         PanelVisibility.shared.set(true)
         Self.logger.debug("Panel shown")
+        BreadcrumbTrail.shared.record("Panel", "Panel shown")
     }
 
     func hide() {
@@ -153,6 +156,7 @@ final class PanelController {
         PanelVisibility.shared.set(false)
         scheduleStateReset()
         Self.logger.debug("Panel hidden")
+        BreadcrumbTrail.shared.record("Panel", "Panel hidden")
     }
 
     // MARK: - State Reset
@@ -175,6 +179,7 @@ final class PanelController {
         guard let panel else { return }
         installHostingView(makePanelContentView(), in: panel)
         Self.logger.info("Panel state reset after timeout")
+        BreadcrumbTrail.shared.record("Panel", "Panel state reset after timeout")
     }
 
     // MARK: - Private
