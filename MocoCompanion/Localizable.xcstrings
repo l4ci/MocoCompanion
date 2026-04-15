@@ -29,7 +29,14 @@
 
     },
     "(no project selected)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Projekt ausgewählt"
+          }
+        }
+      }
     },
     "*" : {
 
@@ -98,7 +105,14 @@
       }
     },
     "%@ tab" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-Tab"
+          }
+        }
+      }
     },
     "%@, %@" : {
       "localizations" : {
@@ -845,7 +859,14 @@
       }
     },
     "Action" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktion"
+          }
+        }
+      }
     },
     "action.cancel" : {
       "localizations" : {
@@ -961,19 +982,54 @@
       }
     },
     "Add Rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel hinzufügen"
+          }
+        }
+      }
     },
     "API Key" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API-Schlüssel"
+          }
+        }
+      }
     },
     "Approve" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genehmigen"
+          }
+        }
+      }
     },
     "Approve all (%lld)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle genehmigen (%lld)"
+          }
+        }
+      }
     },
     "Automatically creates the time entry — no confirmation needed." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellt den Zeiteintrag automatisch — keine Bestätigung nötig."
+          }
+        }
+      }
     },
     "autotracker.currentApp" : {
       "localizations" : {
@@ -1188,7 +1244,14 @@
       }
     },
     "Billed — read-only" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abgerechnet — schreibgeschützt"
+          }
+        }
+      }
     },
     "Booked Entries" : {
       "extractionState" : "stale",
@@ -1400,10 +1463,24 @@
       }
     },
     "Cancel" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        }
+      }
     },
     "Change" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändern"
+          }
+        }
+      }
     },
     "columnHeader.appActivity" : {
       "localizations" : {
@@ -1454,25 +1531,74 @@
       }
     },
     "Create" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellen"
+          }
+        }
+      }
     },
     "Create Entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag erstellen"
+          }
+        }
+      }
     },
     "Create entry from this block…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag aus diesem Block erstellen…"
+          }
+        }
+      }
     },
     "Create Rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel erstellen"
+          }
+        }
+      }
     },
     "Create rule for \"%@\"…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel für \"%@\" erstellen…"
+          }
+        }
+      }
     },
     "Created by an autotracker rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellt durch eine Autotracker-Regel"
+          }
+        }
+      }
     },
     "Date" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum"
+          }
+        }
+      }
     },
     "date.today" : {
       "localizations" : {
@@ -1763,37 +1889,114 @@
       }
     },
     "Decline" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ablehnen"
+          }
+        }
+      }
     },
     "Delete" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        }
+      }
     },
     "Delete \"%@\"? This cannot be undone." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" löschen? Dies kann nicht rückgängig gemacht werden."
+          }
+        }
+      }
     },
     "Delete entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag löschen"
+          }
+        }
+      }
     },
     "Delete Entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag löschen"
+          }
+        }
+      }
     },
     "Delete entry?" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag löschen?"
+          }
+        }
+      }
     },
     "Delete Rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel löschen"
+          }
+        }
+      }
     },
     "Delete this entry?" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesen Eintrag löschen?"
+          }
+        }
+      }
     },
     "Description" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibung"
+          }
+        }
+      }
     },
     "Description (required)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibung (erforderlich)"
+          }
+        }
+      }
     },
     "Description template" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibungsvorlage"
+          }
+        }
+      }
     },
     "description.acceptSuggestion" : {
       "localizations" : {
@@ -1879,25 +2082,74 @@
 
     },
     "Done" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        }
+      }
     },
     "Drag onto the timeline to set a start time, or right-click to edit" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf die Zeitleiste ziehen, um eine Startzeit festzulegen, oder Rechtsklick zum Bearbeiten"
+          }
+        }
+      }
     },
     "Duration" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dauer"
+          }
+        }
+      }
     },
     "Edit description" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibung bearbeiten"
+          }
+        }
+      }
     },
     "Edit Entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag bearbeiten"
+          }
+        }
+      }
     },
     "Edit entry…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag bearbeiten…"
+          }
+        }
+      }
     },
     "Edit Rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel bearbeiten"
+          }
+        }
+      }
     },
     "edit.description" : {
       "localizations" : {
@@ -1980,13 +2232,34 @@
       }
     },
     "Enabled" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiviert"
+          }
+        }
+      }
     },
     "English" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Englisch"
+          }
+        }
+      }
     },
     "Entry deleted" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag gelöscht"
+          }
+        }
+      }
     },
     "eod.fullDay %@" : {
       "localizations" : {
@@ -2053,7 +2326,14 @@
       }
     },
     "Examples:  •  \"Pull request\"   •  \"#\\d+\" (regex)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiele:  •  \"Pull request\"   •  \"#\\d+\" (Regex)"
+          }
+        }
+      }
     },
     "forgotten.message %@ %@" : {
       "localizations" : {
@@ -2072,7 +2352,14 @@
       }
     },
     "Go to: Today" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gehe zu: Heute"
+          }
+        }
+      }
     },
     "hint.delete" : {
       "localizations" : {
@@ -3147,25 +3434,74 @@
       }
     },
     "Jump to today" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu heute springen"
+          }
+        }
+      }
     },
     "Linked to recorded activity" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit aufgezeichneter Aktivität verknüpft"
+          }
+        }
+      }
     },
     "Linked to recorded activity: %@" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit aufgezeichneter Aktivität verknüpft: %@"
+          }
+        }
+      }
     },
     "Loading projects…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projekte laden…"
+          }
+        }
+      }
     },
     "Loading..." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laden..."
+          }
+        }
+      }
     },
     "Manage Rules" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regeln verwalten"
+          }
+        }
+      }
     },
     "Match Criteria" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übereinstimmungskriterien"
+          }
+        }
+      }
     },
     "menu.autotracker" : {
       "extractionState" : "stale",
@@ -3265,13 +3601,27 @@
       }
     },
     "min" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        }
+      }
     },
     "MocoCompanion" : {
 
     },
     "Mode" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modus"
+          }
+        }
+      }
     },
     "mode.manual" : {
       "localizations" : {
@@ -3306,10 +3656,24 @@
       }
     },
     "New Rule" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Regel"
+          }
+        }
+      }
     },
     "Next Day" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Tag"
+          }
+        }
+      }
     },
     "No activity for this day" : {
       "extractionState" : "stale",
@@ -3329,16 +3693,44 @@
       }
     },
     "No matches" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Treffer"
+          }
+        }
+      }
     },
     "No projects loaded" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Projekte geladen"
+          }
+        }
+      }
     },
     "No rules configured" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Regeln konfiguriert"
+          }
+        }
+      }
     },
     "No running apps detected" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine laufenden Apps erkannt"
+          }
+        }
+      }
     },
     "No timed entries for this day" : {
       "extractionState" : "stale",
@@ -3374,7 +3766,14 @@
       }
     },
     "Not yet synced to Moco" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch nicht mit Moco synchronisiert"
+          }
+        }
+      }
     },
     "notifDesc.activityDeleted" : {
       "localizations" : {
@@ -4193,7 +4592,14 @@
       }
     },
     "of %@h" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "von %@h"
+          }
+        }
+      }
     },
     "offline.banner" : {
       "localizations" : {
@@ -4260,13 +4666,34 @@
       }
     },
     "Open Timeline" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitleiste öffnen"
+          }
+        }
+      }
     },
     "Pending deletion" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen ausstehend"
+          }
+        }
+      }
     },
     "Pending sync" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisierung ausstehend"
+          }
+        }
+      }
     },
     "planned.header" : {
       "localizations" : {
@@ -4365,10 +4792,24 @@
       }
     },
     "Previous Day" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorheriger Tag"
+          }
+        }
+      }
     },
     "Project" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projekt"
+          }
+        }
+      }
     },
     "projects.noProjects" : {
       "localizations" : {
@@ -4436,10 +4877,24 @@
       }
     },
     "Refresh list" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste aktualisieren"
+          }
+        }
+      }
     },
     "Rule name" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regelname"
+          }
+        }
+      }
     },
     "rule.field.eventTitle" : {
       "localizations" : {
@@ -4588,10 +5043,24 @@
       }
     },
     "Save" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichern"
+          }
+        }
+      }
     },
     "Search projects…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projekte suchen…"
+          }
+        }
+      }
     },
     "search.configureApi" : {
       "localizations" : {
@@ -4754,7 +5223,14 @@
       }
     },
     "Select date" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum auswählen"
+          }
+        }
+      }
     },
     "settings.about" : {
       "localizations" : {
@@ -5878,13 +6354,34 @@
       }
     },
     "Shows a suggestion on the timeline that you can accept or dismiss." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeigt einen Vorschlag auf der Zeitleiste, den Sie akzeptieren oder ablehnen können."
+          }
+        }
+      }
     },
     "Start" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        }
+      }
     },
     "Start timer" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timer starten"
+          }
+        }
+      }
     },
     "stats.billable" : {
       "localizations" : {
@@ -5968,19 +6465,54 @@
       }
     },
     "Suggest" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorschlagen"
+          }
+        }
+      }
     },
     "Switch to manual hours entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zur manuellen Stundeneingabe wechseln"
+          }
+        }
+      }
     },
     "Switch to timer mode" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Timer-Modus wechseln"
+          }
+        }
+      }
     },
     "Sync with Moco" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Moco synchronisieren"
+          }
+        }
+      }
     },
     "Sync with Moco (⌘R)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Moco synchronisieren (⌘R)"
+          }
+        }
+      }
     },
     "sync.now" : {
       "localizations" : {
@@ -6015,7 +6547,14 @@
       }
     },
     "Synced to Moco" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Moco synchronisiert"
+          }
+        }
+      }
     },
     "TAB" : {
 
@@ -6053,10 +6592,24 @@
       }
     },
     "Target Entry" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zieleintrag"
+          }
+        }
+      }
     },
     "Timeline (⌘T)" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitleiste (⌘T)"
+          }
+        }
+      }
     },
     "timeline.calendar.none" : {
       "localizations" : {
@@ -6395,7 +6948,14 @@
       }
     },
     "Tracking Rules" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracking-Regeln"
+          }
+        }
+      }
     },
     "Unassigned" : {
       "extractionState" : "stale",
@@ -6415,7 +6975,14 @@
       }
     },
     "Undo" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rückgängig"
+          }
+        }
+      }
     },
     "undo.action" : {
       "localizations" : {
@@ -6501,7 +7068,14 @@
 
     },
     "When" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn"
+          }
+        }
+      }
     },
     "yesterday.hoursIncomplete" : {
       "localizations" : {
@@ -6568,16 +7142,44 @@
       }
     },
     "You can undo this for 5 seconds before it is pushed to Moco." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie können dies 5 Sekunden lang rückgängig machen, bevor es an Moco übertragen wird."
+          }
+        }
+      }
     },
     "You can undo this for 5 seconds." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie können dies 5 Sekunden lang rückgängig machen."
+          }
+        }
+      }
     },
     "Your Moco subdomain, e.g. 'mycompany' for mycompany.mocoapp.com" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ihre Moco-Subdomain, z. B. 'meinunternehmen' für meinunternehmen.mocoapp.com"
+          }
+        }
+      }
     },
     "Your personal Moco API key from Profile → Integrations" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ihr persönlicher Moco-API-Schlüssel aus Profil → Integrationen"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
