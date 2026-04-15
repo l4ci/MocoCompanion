@@ -972,6 +972,9 @@
     "Approve all (%lld)" : {
 
     },
+    "Automatically creates the time entry — no confirmation needed." : {
+
+    },
     "autotracker.currentApp" : {
       "localizations" : {
         "de" : {
@@ -2048,9 +2051,6 @@
           }
         }
       }
-    },
-    "Example: \"Code review — {app}\" — the text is used as-is when the rule fires." : {
-
     },
     "Examples:  •  \"Pull request\"   •  \"#\\d+\" (regex)" : {
 
@@ -5828,6 +5828,9 @@
           }
         }
       }
+    },
+    "Shows a suggestion on the timeline that you can accept or dismiss." : {
+
     },
     "Start" : {
 

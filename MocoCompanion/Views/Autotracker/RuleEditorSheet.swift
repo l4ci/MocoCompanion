@@ -57,6 +57,7 @@ struct RuleEditorSheet: View {
     @State private var descriptionText: String = ""
     @State private var enabled: Bool = true
     @State private var searchText: String = ""
+    @State private var isProjectPickerExpanded: Bool = false
     @State private var errorMessage: String?
     @State private var runningApps: [RunningAppOption] = []
 
@@ -171,9 +172,14 @@ struct RuleEditorSheet: View {
                 .font(.system(size: Theme.FontSize.caption, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
 
-            TextField("Rule name", text: $name)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rule name")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                TextField("Rule name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: Theme.FontSize.body))
+            }
 
             switch matchCriteria {
             case .app:
@@ -244,6 +250,9 @@ struct RuleEditorSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "rule.field.windowTitlePattern"))
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
                 TextField(
                     String(localized: "rule.field.windowTitlePattern"),
                     text: windowTitlePatternBinding
@@ -265,6 +274,9 @@ struct RuleEditorSheet: View {
 
     private var calendarMatchFields: some View {
         VStack(alignment: .leading, spacing: 2) {
+            Text(String(localized: "rule.field.eventTitle"))
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(theme.textTertiary)
             TextField(
                 String(localized: "rule.field.eventTitle"),
                 text: eventTitleBinding
@@ -341,16 +353,98 @@ struct RuleEditorSheet: View {
                 Text("Create").tag(RuleMode.create)
             }
             .pickerStyle(.segmented)
+
+            Text(mode == .suggest
+                 ? "Shows a suggestion on the timeline that you can accept or dismiss."
+                 : "Automatically creates the time entry — no confirmation needed.")
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(theme.textTertiary)
         }
     }
 
     // MARK: - Target Entry
 
+    @ViewBuilder
     private var targetEntrySection: some View {
+        if selectedEntry != nil && !isProjectPickerExpanded {
+            targetEntryCollapsed
+        } else {
+            targetEntryExpanded
+        }
+
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Description template")
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(theme.textTertiary)
+            TextField("Description template", text: $descriptionText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
+            Text("{app} inserts the app name" + (settings?.windowTitleTrackingEnabled == true ? ", {title} inserts the window title." : "."))
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(theme.textTertiary)
+        }
+    }
+
+    private var targetEntryCollapsed: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Target Entry")
                 .font(.system(size: Theme.FontSize.caption, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let selected = selectedEntry {
+                        HStack(spacing: 4) {
+                            Text(selected.projectName)
+                                .font(.system(size: Theme.FontSize.callout, weight: .medium))
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
+                            Text("›")
+                                .foregroundStyle(theme.textTertiary)
+                            Text(selected.taskName)
+                                .font(.system(size: Theme.FontSize.callout))
+                                .foregroundStyle(theme.textSecondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+                Button {
+                    isProjectPickerExpanded = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                        Text("Change")
+                    }
+                    .font(.system(size: Theme.FontSize.caption))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+            }
+            .padding(8)
+            .background(
+                theme.surface,
+                in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
+            )
+        }
+    }
+
+    private var targetEntryExpanded: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Target Entry")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                Spacer()
+                if selectedEntry != nil {
+                    Button("Done") {
+                        isProjectPickerExpanded = false
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(Color.accentColor)
+                }
+            }
 
             TextField("Search projects…", text: $searchText)
                 .textFieldStyle(.roundedBorder)
@@ -370,21 +464,15 @@ struct RuleEditorSheet: View {
                                 entry: entry,
                                 isSelected: selectedEntry?.projectId == entry.projectId
                                     && selectedEntry?.taskId == entry.taskId,
-                                onTap: { selectedEntry = entry }
+                                onTap: {
+                                    selectedEntry = entry
+                                    isProjectPickerExpanded = false
+                                }
                             )
                         }
                     }
                 }
                 .frame(maxHeight: 150)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                TextField("Description template", text: $descriptionText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: Theme.FontSize.body))
-                Text("Example: \"Code review — {app}\" — the text is used as-is when the rule fires.")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
             }
         }
     }
