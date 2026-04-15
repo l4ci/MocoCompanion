@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectPickerRow: View {
     let entry: SearchEntry
     let isSelected: Bool
+    var isHighlighted: Bool = false
     let onTap: () -> Void
 
     @Environment(\.theme) private var theme
@@ -38,7 +39,8 @@ struct ProjectPickerRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            isSelected ? Color.accentColor.opacity(0.1) : Color.clear,
+            isSelected ? Color.accentColor.opacity(0.1) :
+            isHighlighted ? Color.accentColor.opacity(0.06) : Color.clear,
             in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
         )
         .contentShape(Rectangle())
