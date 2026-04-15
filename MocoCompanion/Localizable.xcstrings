@@ -1712,6 +1712,54 @@
         }
       }
     },
+    "debug.breadcrumbs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breadcrumbs aufzeichnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record breadcrumbs"
+          }
+        }
+      }
+    },
+    "debug.breadcrumbsDesc" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeichnet interne Zustandsübergänge auf. Bei einem Absturz zeigen die letzten 200 Einträge den Verlauf vor dem Absturz."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records internal state transitions. On crash, the last 200 entries show the pre-crash sequence."
+          }
+        }
+      }
+    },
+    "debug.breadcrumbsHeader" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breadcrumbs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breadcrumbs"
+          }
+        }
+      }
+    },
     "debug.clear" : {
       "localizations" : {
         "de" : {
