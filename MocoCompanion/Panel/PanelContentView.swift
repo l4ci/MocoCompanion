@@ -63,6 +63,7 @@ struct PanelContentView: View {
         .preferredColorScheme(Theme.colorScheme(from: appState.settings.appearance))
         .withTheme(colorScheme: effectiveColorScheme)
         .environment(\.entryFontSizeBoost, CGFloat(appState.settings.entryFontSizeBoost))
+        .environment(\.timelineActive, PanelVisibility.shared.isVisible)
     }
 }
 

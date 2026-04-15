@@ -235,6 +235,13 @@ private struct EntryFontSizeBoostKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
 }
 
+/// Whether TimelineView-based live ticking should be active.
+/// Set to `false` when the hosting window is hidden to prevent
+/// infinite SwiftUI view-graph updates in the background.
+private struct TimelineActiveKey: EnvironmentKey {
+    static let defaultValue: Bool = true
+}
+
 extension EnvironmentValues {
     var theme: Theme {
         get { self[ThemeKey.self] }
@@ -244,6 +251,11 @@ extension EnvironmentValues {
     var entryFontSizeBoost: CGFloat {
         get { self[EntryFontSizeBoostKey.self] }
         set { self[EntryFontSizeBoostKey.self] = newValue }
+    }
+
+    var timelineActive: Bool {
+        get { self[TimelineActiveKey.self] }
+        set { self[TimelineActiveKey.self] = newValue }
     }
 }
 

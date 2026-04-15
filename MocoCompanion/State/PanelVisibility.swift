@@ -9,6 +9,7 @@ import Foundation
 ///
 /// There is only ever one panel, so this is exposed as `shared`, but the
 /// `init()` is internal to allow tests to construct their own instance.
+@Observable
 @MainActor
 final class PanelVisibility {
     static let shared = PanelVisibility()

@@ -13,6 +13,7 @@ struct ActivityDurationText: View {
 
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @Environment(\.theme) private var theme
+    @Environment(\.timelineActive) private var timelineActive
 
     /// Resolved font — uses the explicit font if provided, otherwise scales with the entry boost.
     private var resolvedFont: Font {
@@ -23,13 +24,21 @@ struct ActivityDurationText: View {
         if activity.isTimerRunning,
            let startedAt = activity.timerStartedAt,
            let startDate = DateUtilities.parseISO8601(startedAt) {
-            let baseSecs = Double(activity.seconds)
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
-                Text(DateUtilities.formatElapsedCompact(liveSecs))
+            if timelineActive {
+                let baseSecs = Double(activity.seconds)
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
+                    Text(DateUtilities.formatElapsedCompact(liveSecs))
+                        .font(resolvedFont)
+                        .foregroundStyle(isSelected ? theme.selectedTextPrimary : runningColor)
+                        .accessibilityLabel(String(localized: "a11y.timerRunningDuration \(DateUtilities.formatElapsedCompact(liveSecs))"))
+                }
+            } else {
+                // Static fallback when host window is hidden — prevents TimelineView
+                // from driving infinite view-graph updates in the background.
+                Text(DateUtilities.formatElapsedCompact(Double(activity.seconds)))
                     .font(resolvedFont)
                     .foregroundStyle(isSelected ? theme.selectedTextPrimary : runningColor)
-                    .accessibilityLabel(String(localized: "a11y.timerRunningDuration \(DateUtilities.formatElapsedCompact(liveSecs))"))
             }
         } else {
             Text(DateUtilities.formatHoursCompact(activity.hours))
@@ -44,13 +53,21 @@ struct ActivityDurationText: View {
 struct ElapsedTimeText: View {
     let activity: ShadowEntry?
 
+    @Environment(\.timelineActive) private var timelineActive
+
     var body: some View {
         if let activity,
            let startedAt = activity.timerStartedAt,
            let startDate = DateUtilities.parseISO8601(startedAt) {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let elapsed = context.date.timeIntervalSince(startDate)
-                Text(DateUtilities.formatElapsedPadded(elapsed))
+            if timelineActive {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let elapsed = context.date.timeIntervalSince(startDate)
+                    Text(DateUtilities.formatElapsedPadded(elapsed))
+                        .font(.system(size: 18, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.primary)
+                }
+            } else {
+                Text(DateUtilities.formatElapsedPadded(Double(activity.seconds)))
                     .font(.system(size: 18, weight: .medium, design: .monospaced))
                     .foregroundStyle(.primary)
             }
