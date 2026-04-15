@@ -46,7 +46,7 @@ actor UpdateChecker {
 
             let remoteVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
 
-            if remoteVersion != currentVersion, remoteVersion > currentVersion {
+            if isNewerVersion(remote: remoteVersion, current: currentVersion) {
                 logger.info("Update available: \(remoteVersion) (current: \(currentVersion))")
                 return Release(version: remoteVersion, url: updateGuideURL)
             } else {
@@ -57,5 +57,17 @@ actor UpdateChecker {
             logger.error("Update check failed: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    private func isNewerVersion(remote: String, current: String) -> Bool {
+        let remoteParts = remote.split(separator: ".").compactMap { Int($0) }
+        let currentParts = current.split(separator: ".").compactMap { Int($0) }
+        let count = max(remoteParts.count, currentParts.count)
+        for i in 0..<count {
+            let r = i < remoteParts.count ? remoteParts[i] : 0
+            let c = i < currentParts.count ? currentParts[i] : 0
+            if r != c { return r > c }
+        }
+        return false
     }
 }

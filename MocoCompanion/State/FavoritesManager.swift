@@ -10,12 +10,14 @@ final class FavoritesManager {
     static let maxFavorites = 5
 
     private let state: PersistedState<[FavoriteEntry]>
+    private let notifications: NotificationDispatcher?
 
     /// Persisted favorite entries.
     var favorites: [FavoriteEntry] { state.value }
 
-    init(backend: StorageBackend = DefaultsBackend()) {
+    init(backend: StorageBackend = DefaultsBackend(), notifications: NotificationDispatcher? = nil) {
         self.state = PersistedState(key: "favoriteEntries", default: [], backend: backend)
+        self.notifications = notifications
     }
 
     // MARK: - Model
@@ -46,6 +48,7 @@ final class FavoritesManager {
             } else {
                 guard favorites.count < FavoritesManager.maxFavorites else {
                     FavoritesManager.logger.info("Cannot add favorite — max \(FavoritesManager.maxFavorites) reached")
+                    notifications?.favoritesLimitReached()
                     return
                 }
                 let fav = FavoriteEntry(

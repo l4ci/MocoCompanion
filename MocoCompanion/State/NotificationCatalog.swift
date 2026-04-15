@@ -37,6 +37,7 @@ enum NotificationCatalog {
         case activityDeleted
         case descriptionUpdated
         case projectsRefreshed
+        case favoritesLimitReached
 
         // Background alerts (system notifications)
         case idleReminder
@@ -65,6 +66,7 @@ enum NotificationCatalog {
             case .activityDeleted: return String(localized: "notifLabel.activityDeleted")
             case .descriptionUpdated: return String(localized: "notifLabel.descriptionUpdated")
             case .projectsRefreshed: return String(localized: "notifLabel.projectsRefreshed")
+            case .favoritesLimitReached: return String(localized: "notifLabel.favoritesLimitReached")
             case .idleReminder: return String(localized: "notifLabel.idleReminder")
             case .forgottenTimer: return String(localized: "notifLabel.forgottenTimer")
             case .endOfDaySummary: return String(localized: "notifLabel.endOfDaySummary")
@@ -87,6 +89,7 @@ enum NotificationCatalog {
             case .activityDeleted: return String(localized: "notifDesc.activityDeleted")
             case .descriptionUpdated: return String(localized: "notifDesc.descriptionUpdated")
             case .projectsRefreshed: return String(localized: "notifDesc.projectsRefreshed")
+            case .favoritesLimitReached: return String(localized: "notifDesc.favoritesLimitReached")
             case .idleReminder: return String(localized: "notifDesc.idleReminder")
             case .forgottenTimer: return String(localized: "notifDesc.forgottenTimer")
             case .endOfDaySummary: return String(localized: "notifDesc.endOfDaySummary")
@@ -108,6 +111,7 @@ enum NotificationCatalog {
             case .manualEntry, .activityDuplicated: return .success
             case .activityDeleted: return .warning
             case .descriptionUpdated, .projectsRefreshed: return .info
+            case .favoritesLimitReached: return .warning
             case .idleReminder, .forgottenTimer, .endOfDaySummary: return .info
             case .budgetProjectWarning, .budgetTaskWarning: return .warning
             case .yesterdayUnderBooked: return .warning
@@ -125,6 +129,7 @@ enum NotificationCatalog {
             case .activityDeleted: return "trash.circle.fill"
             case .descriptionUpdated: return "pencil.circle.fill"
             case .projectsRefreshed: return "arrow.clockwise.circle.fill"
+            case .favoritesLimitReached: return "star.slash.fill"
             case .idleReminder: return "clock.badge.exclamationmark"
             case .forgottenTimer: return "timer"
             case .endOfDaySummary: return "chart.bar.fill"
@@ -156,7 +161,7 @@ enum NotificationCatalog {
             switch self {
             case .timerStarted, .timerResumed, .timerStopped, .timerContinued:
                 return .timer
-            case .activityDeleted, .descriptionUpdated, .projectsRefreshed, .manualEntry, .activityDuplicated:
+            case .activityDeleted, .descriptionUpdated, .projectsRefreshed, .manualEntry, .activityDuplicated, .favoritesLimitReached:
                 return .activity
             case .idleReminder, .forgottenTimer, .endOfDaySummary:
                 return .reminders

@@ -109,27 +109,6 @@ final class BudgetService {
         await refreshSingleProject(projectId: projectId, client: client, userId: userId)
     }
 
-    // MARK: - Rate Resolution
-
-    // MARK: - Rate Resolution (delegated to BudgetCalculator)
-
-    /// Convenience — delegates to BudgetCalculator for backward compatibility.
-    static func resolveHourlyRate(
-        billingVariant: String,
-        projectRate: Double,
-        task: MocoFullTask?,
-        contracts: [MocoProjectContract],
-        userId: Int?
-    ) -> Double? {
-        BudgetCalculator.resolveHourlyRate(
-            billingVariant: billingVariant,
-            projectRate: projectRate,
-            task: task,
-            contracts: contracts,
-            userId: userId
-        )
-    }
-
     // MARK: - Private: Fetch & Cache
 
     /// Returns `true` if the API returned a rate limit error (caller should stop the batch).

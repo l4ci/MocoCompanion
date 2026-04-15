@@ -3488,6 +3488,22 @@
         }
       }
     },
+    "notifDesc.favoritesLimitReached" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn das Favoriten-Limit (5) erreicht ist"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the favorites limit (5) is reached"
+          }
+        }
+      }
+    },
     "notifDesc.forgottenTimer" : {
       "localizations" : {
         "de" : {
@@ -3792,6 +3808,22 @@
         }
       }
     },
+    "notification.favoritesLimitReached" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximal 5 Favoriten möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can save up to 5 favorites"
+          }
+        }
+      }
+    },
     "notification.timerContinued" : {
       "localizations" : {
         "de" : {
@@ -3996,6 +4028,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "End of day summary"
+          }
+        }
+      }
+    },
+    "notifLabel.favoritesLimitReached" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriten-Limit erreicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites limit reached"
           }
         }
       }

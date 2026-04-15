@@ -28,6 +28,7 @@ final class OfflineSyncService {
 
         logger.info("Syncing \(queue.count) queued entries for userId=\(userId)")
         var syncedCount = 0
+        var failedCount = 0
 
         // Coalesce the duplicate check by fetching each distinct date
         // exactly once. Previously an N-entry queue with all-same-date did
@@ -72,10 +73,14 @@ final class OfflineSyncService {
                 logger.info("Synced queued entry for \(entry.projectName)")
             } catch {
                 logger.error("Failed to sync queued entry: \(error.localizedDescription)")
-                break
+                failedCount += 1
+                continue
             }
         }
 
+        if failedCount > 0 {
+            logger.warning("Sync complete: \(syncedCount) succeeded, \(failedCount) failed (kept in queue for retry)")
+        }
         if syncedCount > 0 {
             await onSynced(syncedCount)
         }

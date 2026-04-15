@@ -78,13 +78,11 @@ final class AppState {
 
     init(
         settings: SettingsStore = SettingsStore(),
-        favoritesManager: FavoritesManager = FavoritesManager(),
         recencyTracker: RecencyTracker = RecencyTracker(),
         recentEntriesTracker: RecentEntriesTracker = RecentEntriesTracker(),
         descriptionStore: DescriptionStore = DescriptionStore()
     ) {
         self.settings = settings
-        self.favoritesManager = favoritesManager
         self.recencyTracker = recencyTracker
         self.recentEntriesTracker = recentEntriesTracker
         self.descriptionStore = descriptionStore
@@ -93,6 +91,7 @@ final class AppState {
             isEnabledCheck: { type in settings.isNotificationEnabled(type) }
         )
         self.notificationDispatcher = dispatcher
+        self.favoritesManager = FavoritesManager(notifications: dispatcher)
 
         // --- Phase 1: Storage ---
         let storage = Self.buildStorage(settings: settings)

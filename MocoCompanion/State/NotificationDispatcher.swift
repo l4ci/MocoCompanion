@@ -162,6 +162,10 @@ extension NotificationDispatcher {
         send(.activityDuplicated, message: "Duplicated \(formatted) for \(projectName)")
     }
 
+    func favoritesLimitReached() {
+        send(.favoritesLimitReached, message: String(localized: "notification.favoritesLimitReached"))
+    }
+
     func apiError(_ error: MocoError) {
         send(.apiError, message: error.errorDescription ?? "Unknown error")
     }

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0029DEM0CL1ENT0000000001 /* DemoMocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0029DEM0CL1ENT0000000002 /* DemoMocoClient.swift */; };
 		003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17A964FC46F794226D7EF94 /* View+Helpers.swift */; };
 		0046EA285DD92D7A9E7745D4 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C187B2025BF397B94B0F8B72 /* MenuBarIconRenderer.swift */; };
 		0187C4FB77154F5FCD841007 /* GreetingHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E9FA5327A5BD4CE60268F /* GreetingHelperTests.swift */; };
@@ -102,24 +101,23 @@
 		7D3C41AAA4948CEE74F50A29 /* ActivityEditOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */; };
 		7F3F53A76F22D7C4C7092433 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */; };
 		8031ACA863899456340F6371 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F5FEA3B2CCB6B815D8C914 /* Theme.swift */; };
-		80CD674437C21211370C525B /* TomorrowPlanningRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */; };
 		82C82D0F4DAF8A4BFFFF946E /* QuickEntryContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259B61E27F0D689549B9F1E8 /* QuickEntryContracts.swift */; };
 		8346AB40F0FA5721FEBA4D2C /* ValueBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 438422F3B01E22301B030204 /* ValueBox.swift */; };
 		8498015E58D696514349E1F6 /* LaunchAtLoginHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */; };
 		855F05C4769B8D5C0FDE21B1 /* MockMocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */; };
 		85FF9F731D2B2889647F8E40 /* PlanningStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */; };
 		8983F0A31CEA8A6A8BE1BCFC /* DateNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F8BF656898DD3DD9BFD1D6 /* DateNavigationView.swift */; };
+		8A107B3DD858609FFE6F1D9D /* TomorrowPlanningRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 697385DCAD65C5ACEF09A822 /* TomorrowPlanningRowView.swift */; };
 		8CC9B1A620F6577ADDDF4682 /* ProjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9230F5232E57326E6B57713F /* ProjectCatalog.swift */; };
 		8E3133D5EE791C5BFD376DF7 /* TimelineGesturePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE7D952BF1995D141415F91 /* TimelineGesturePreview.swift */; };
+		8EBB1C72D82AC2D84A5BA22C /* DemoMocoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5495A26BD186E5668A49CAD4 /* DemoMocoClient.swift */; };
 		907F693566D37220983C0CC0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADD519E64051033A0F06C83 /* SettingsView.swift */; };
-		9102951654F8E57866C4EE75 /* AbsenceStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */; };
 		939938CB4E5F5C976BCD0CB0 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */; };
 		9431BDDC2C4708214FEE803B /* ActivityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */; };
 		944023A464965603EFD6E625 /* BudgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2A0A29840D8E4016EC8727 /* BudgetService.swift */; };
 		95162FD161C5CD76A550CD9A /* NotificationCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */; };
 		967D11BA9BF5164E96EB85B5 /* StatusActivityRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2317D195286BC0C46C9741 /* StatusActivityRow.swift */; };
 		9889216F868781BDA8775BC7 /* TimelinePaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44E815248DC080BC27FDDDEA /* TimelinePaneView.swift */; };
-		9911AB76B69B019E2E4F05E8 /* JSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */; };
 		99B818C878F5A3B6BBE4C533 /* MocoWorkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7D73E3B102615000B10B5 /* MocoWorkModels.swift */; };
 		99DA72D0C90207BB51C92A30 /* QuickEntryStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */; };
 		9B9964032CCB385C6FA594E3 /* TimelineWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE23E7BB04E6B5E42EE1E3E /* TimelineWindow.swift */; };
@@ -199,6 +197,7 @@
 		F86776B2F41AAE54D1121EBF /* MonitorEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */; };
 		F8CA65F8458F1BBA51C8D296 /* GeneralSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB90CC24EA6613103E7BF038 /* GeneralSettingsTab.swift */; };
 		F9CEA892429B87DB7E14F171 /* PanelDismissPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB18FCF8315AA2D9B0CB29B /* PanelDismissPolicy.swift */; };
+		FBA2BE4E76A42783C67D9534 /* AbsenceStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569A62F9AF8E4E9AEE8A8ACA /* AbsenceStyle.swift */; };
 		FBD51B48A7B040A332953187 /* MockYesterdayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */; };
 		FD6B58393AD52B2989AF6402 /* ManualMonitorScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 870AD2BE762A2FFB94F30A96 /* ManualMonitorScheduler.swift */; };
 		FEDA0FB7F7ACE340F0D1C674 /* FavoritesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB002755FB7E5D87B00CA2C /* FavoritesSettingsTab.swift */; };
@@ -217,7 +216,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0029DEM0CL1ENT0000000002 /* DemoMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMocoClient.swift; sourceTree = "<group>"; };
 		011B6721B43C2268A3D0C31E /* EntryQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryQueue.swift; sourceTree = "<group>"; };
 		013BC31FD68DE0BE154BE283 /* MockTimerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimerAPI.swift; sourceTree = "<group>"; };
 		01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedgerTests.swift; sourceTree = "<group>"; };
@@ -280,13 +278,14 @@
 		4D5A3A92C13A43DF304A0254 /* QuickEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickEntryView.swift; sourceTree = "<group>"; };
 		4E9640BA4177989BECE15EB0 /* DescriptionFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionFieldView.swift; sourceTree = "<group>"; };
 		51111D02AECDD4C2DA07A52C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONStore.swift; sourceTree = "<group>"; };
 		52BDDE0ACEE37AEBF21F6F66 /* TimerStopProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerStopProvider.swift; sourceTree = "<group>"; };
 		53712E974F5F6D7CFA756E1F /* TimerHintSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerHintSection.swift; sourceTree = "<group>"; };
 		53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockActivityAPI.swift; sourceTree = "<group>"; };
 		542F69EC4669870DF22A52B3 /* NowLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowLineView.swift; sourceTree = "<group>"; };
 		546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncServiceTests.swift; sourceTree = "<group>"; };
+		5495A26BD186E5668A49CAD4 /* DemoMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMocoClient.swift; sourceTree = "<group>"; };
 		54CA7B6B62279BC2D5F0B2A7 /* ProjectColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColorPalette.swift; sourceTree = "<group>"; };
+		569A62F9AF8E4E9AEE8A8ACA /* AbsenceStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsenceStyle.swift; sourceTree = "<group>"; };
 		5973648FAF93E8A684598A9F /* PanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelController.swift; sourceTree = "<group>"; };
 		5B1C24EE54DC09B10BC61F26 /* TimeAxisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeAxisView.swift; sourceTree = "<group>"; };
 		5DC92CE67BD12A7846E9B0B9 /* KeyCombo+System.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyCombo+System.swift"; sourceTree = "<group>"; };
@@ -296,6 +295,7 @@
 		64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPopoverView.swift; sourceTree = "<group>"; };
 		66B6801173E7E7D7BAADADEC /* CalendarEventBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventBlockView.swift; sourceTree = "<group>"; };
 		68735F0E6B189FF28DBED588 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
+		697385DCAD65C5ACEF09A822 /* TomorrowPlanningRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomorrowPlanningRowView.swift; sourceTree = "<group>"; };
 		69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		6B77E3B2313109505065ACB2 /* MockYesterdayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockYesterdayAPI.swift; sourceTree = "<group>"; };
 		6BDA623C8255F7398F2DA5CE /* SQLiteDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDatabase.swift; sourceTree = "<group>"; };
@@ -362,7 +362,6 @@
 		B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEditOverlay.swift; sourceTree = "<group>"; };
 		B448296216A68B6333D8C91C /* RuleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleStore.swift; sourceTree = "<group>"; };
 		B595ED16D90966C380B930F4 /* ActivityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityServiceTests.swift; sourceTree = "<group>"; };
-		B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TomorrowPlanningRowView.swift; sourceTree = "<group>"; };
 		B7CF2C37E2A1814C38C62627 /* AllDayCalendarEventRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllDayCalendarEventRow.swift; sourceTree = "<group>"; };
 		B8DB224AA85BA778055E2DEF /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
 		B9DA9CCA27BC6EBC1EA79046 /* AutotrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutotrackerTests.swift; sourceTree = "<group>"; };
@@ -385,7 +384,6 @@
 		CEC0065706C321F573697AB9 /* DescriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionStore.swift; sourceTree = "<group>"; };
 		D0C9E45023E7B1C20CA62763 /* RecentEntriesTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEntriesTracker.swift; sourceTree = "<group>"; };
 		D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStoreTests.swift; sourceTree = "<group>"; };
-		D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AbsenceStyle.swift; sourceTree = "<group>"; };
 		D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningStore.swift; sourceTree = "<group>"; };
 		D4C00B25A720395AC0EBEDD7 /* MockMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMocoClient.swift; sourceTree = "<group>"; };
 		D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerState.swift; sourceTree = "<group>"; };
@@ -427,7 +425,6 @@
 				F87D31C4E3E916D8D980BF5A /* ClusterColumns.swift */,
 				9DDD7C8821ABC8FAC8394F1D /* DateUtilities.swift */,
 				5F8EFAA035EAC6D2C02D8056 /* GreetingHelper.swift */,
-				5118FB4CC0E5C3D17BC44CC5 /* JSONStore.swift */,
 				325DC61DDE0963EEA6E42D58 /* KeychainHelper.swift */,
 				C8F5F17A8E28B915B1C6B92E /* LaunchAtLoginHelper.swift */,
 				BBE9B210348D16F543330D40 /* Logger+App.swift */,
@@ -643,7 +640,7 @@
 			isa = PBXGroup;
 			children = (
 				9F91C17CFE7CFBDE03D894B1 /* APIRateGate.swift */,
-				0029DEM0CL1ENT0000000002 /* DemoMocoClient.swift */,
+				5495A26BD186E5668A49CAD4 /* DemoMocoClient.swift */,
 				F6181F86BFE3D1C108365BF3 /* MocoClient.swift */,
 				E111008031FAA091F892FAD2 /* MocoClientProtocol.swift */,
 				A1E0D39E480AA80553F9EFC9 /* MocoError.swift */,
@@ -694,6 +691,7 @@
 			isa = PBXGroup;
 			children = (
 				8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */,
+				569A62F9AF8E4E9AEE8A8ACA /* AbsenceStyle.swift */,
 				03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */,
 				C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */,
 				B412D51A761C4BD212F740FF /* ActivityEditOverlay.swift */,
@@ -722,13 +720,12 @@
 				A56CE3EE0D21EB33F2A9E833 /* TodayStatsFooter.swift */,
 				69EF11F8FBAEB704BE1BBBBB /* TodayView.swift */,
 				3979770CB8E227ADC0BEF7E5 /* TodayViewModel.swift */,
+				697385DCAD65C5ACEF09A822 /* TomorrowPlanningRowView.swift */,
 				72295BCC7A05744D102D54C5 /* UndoToastView.swift */,
 				F24BDAB19C48AA4D154CDD90 /* UnplannedTasksSection.swift */,
 				8872DD563E357D116A4606B7 /* YesterdayBannerView.swift */,
 				F50C1858D767F7B2CEA82A37 /* Autotracker */,
 				5CA49B8B4E058BE0941F33EA /* Shared */,
-				B5F2DF3A369AB7D86A1C5683 /* TomorrowPlanningRowView.swift */,
-				D3D5CF372EDF0D8E303C8CAB /* AbsenceStyle.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -771,6 +768,8 @@
 			dependencies = (
 			);
 			name = MocoCompanion;
+			packageProductDependencies = (
+			);
 			productName = MocoCompanion;
 			productReference = 2D280BBA036682BB1D8A44F0 /* MocoCompanion.app */;
 			productType = "com.apple.product-type.application";
@@ -787,6 +786,8 @@
 				5874CF48A12B69C2869D51BE /* PBXTargetDependency */,
 			);
 			name = MocoCompanionTests;
+			packageProductDependencies = (
+			);
 			productName = MocoCompanionTests;
 			productReference = A159FD00265A87EC39A66E1D /* MocoCompanionTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -844,8 +845,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0823CF78EC092753534D4779 /* APIRateGate.swift in Sources */,
-				0029DEM0CL1ENT0000000001 /* DemoMocoClient.swift in Sources */,
 				A49550582285D68A6E703CC7 /* AboutSettingsTab.swift in Sources */,
+				FBA2BE4E76A42783C67D9534 /* AbsenceStyle.swift in Sources */,
 				405C4406C6B463772E858F6E /* AccessibilityPermission.swift in Sources */,
 				55BFCCE8A8F6D2773356887C /* AccountSettingsTab.swift in Sources */,
 				AF05B1ABCD10E9756A49D72F /* ActivityDurationText.swift in Sources */,
@@ -875,6 +876,7 @@
 				355C0A7D00610A5E467527E1 /* DebugSettingsTab.swift in Sources */,
 				78AC96CCF33BF54D054A8BB3 /* DedupLedger.swift in Sources */,
 				109BE65F64B17168422C11BD /* DeleteUndoManager.swift in Sources */,
+				8EBB1C72D82AC2D84A5BA22C /* DemoMocoClient.swift in Sources */,
 				C3CE3CB6721A57A72FA83671 /* DescriptionFieldView.swift in Sources */,
 				35A84AB923D02624568F7C8A /* DescriptionMatcher.swift in Sources */,
 				ED34548F2AFA3BBEFDC097FC /* DescriptionStore.swift in Sources */,
@@ -893,7 +895,6 @@
 				DCB20DC8FE63342998B36876 /* HotKeysController.swift in Sources */,
 				40305FA7C55911367698611C /* HowToUseSettingsTab.swift in Sources */,
 				166449E65014D689EF8978D0 /* IdleReminderMonitor.swift in Sources */,
-				9911AB76B69B019E2E4F05E8 /* JSONStore.swift in Sources */,
 				18D3B37B9D51AF9DA77B0CB3 /* Key.swift in Sources */,
 				AD81C4D9CFCEF08DC91800B5 /* KeyCombo+System.swift in Sources */,
 				D869DB32B7DC7B34FC469399 /* KeyCombo.swift in Sources */,
@@ -988,6 +989,7 @@
 				431F1AE5B1C92CEB1E74C3F6 /* TodayStatsFooter.swift in Sources */,
 				57A488D95CF124D65F67A159 /* TodayView.swift in Sources */,
 				7F3F53A76F22D7C4C7092433 /* TodayViewModel.swift in Sources */,
+				8A107B3DD858609FFE6F1D9D /* TomorrowPlanningRowView.swift in Sources */,
 				4D6F431BF2E9ACA82F0C5083 /* TrackingRule.swift in Sources */,
 				5C84E168B69BB67963553E2E /* UndoToastView.swift in Sources */,
 				7A2070E4D6F30DCF671805F4 /* UnplannedTasksSection.swift in Sources */,
@@ -996,8 +998,6 @@
 				003D1BBB5255B287A3535531 /* View+Helpers.swift in Sources */,
 				129BCB84138D649D7723A2FC /* YesterdayBannerView.swift in Sources */,
 				C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */,
-				80CD674437C21211370C525B /* TomorrowPlanningRowView.swift in Sources */,
-				9102951654F8E57866C4EE75 /* AbsenceStyle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1075,7 +1075,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.4;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1099,7 +1099,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.4;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
