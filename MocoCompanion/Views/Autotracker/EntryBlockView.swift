@@ -14,6 +14,7 @@ struct EntryBlockView: View {
     var columnCount: Int = 1
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.timelineActive) private var timelineActive
 
     /// Height threshold below which the three-line layout is collapsed
     /// into a single compact row (project — task — description).
@@ -335,7 +336,7 @@ struct EntryBlockView: View {
             Text("You can undo this for 5 seconds.")
         }
 
-        if isRunning {
+        if isRunning && timelineActive {
             TimelineView(.periodic(from: .now, by: 60)) { _ in
                 content
             }

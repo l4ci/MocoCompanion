@@ -80,8 +80,8 @@ final class QuickEntryStateMachine {
     private var debounceTask: Task<Void, Never>?
 
     /// Cached display items — invalidated on searchText change.
-    private var _cachedDisplayItems: [(entry: SearchEntry, section: ResultSection, description: String?)]?
-    private var _cachedSearchResults: [FuzzyMatcher.Match]?
+    @ObservationIgnored private var _cachedDisplayItems: [(entry: SearchEntry, section: ResultSection, description: String?)]?
+    @ObservationIgnored private var _cachedSearchResults: [FuzzyMatcher.Match]?
 
     // MARK: - Dependencies
 

@@ -3,22 +3,33 @@ import SwiftUI
 /// A horizontal red line indicating the current time on the timeline.
 /// Only rendered when the selected date is today. Updates position every 60 seconds.
 struct NowLineView: View {
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
-            let minuteOfDay = Self.currentMinuteOfDay(at: context.date)
-            let y = CGFloat(minuteOfDay) * TimelineLayout.pixelsPerMinute
+    @Environment(\.timelineActive) private var timelineActive
 
-            HStack(spacing: 0) {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 6, height: 6)
-                Rectangle()
-                    .fill(Color.red)
-                    .frame(height: 1)
+    var body: some View {
+        if timelineActive {
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                nowLine(at: context.date)
             }
-            .offset(y: y - 3) // center the 6pt circle on the line
+            .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
+        } else {
+            nowLine(at: Date())
+                .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
         }
-        .frame(height: TimelineLayout.totalHeight, alignment: .topLeading)
+    }
+
+    private func nowLine(at date: Date) -> some View {
+        let minuteOfDay = Self.currentMinuteOfDay(at: date)
+        let y = CGFloat(minuteOfDay) * TimelineLayout.pixelsPerMinute
+
+        return HStack(spacing: 0) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 6, height: 6)
+            Rectangle()
+                .fill(Color.red)
+                .frame(height: 1)
+        }
+        .offset(y: y - 3) // center the 6pt circle on the line
     }
 
     private static func currentMinuteOfDay(at date: Date) -> Int {

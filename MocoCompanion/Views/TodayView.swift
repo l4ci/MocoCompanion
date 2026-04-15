@@ -18,6 +18,7 @@ struct TodayView: View {
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.timelineActive) private var timelineActive
 
     private var bodySize: CGFloat { 14 + fontBoost }
     private var captionSize: CGFloat { 12 + fontBoost }
@@ -248,8 +249,14 @@ struct TodayView: View {
             if let lastSync = vm.lastSyncedAt {
                 // Isolate the per-second tick to this one label. SwiftUI
                 // re-renders only the TimelineView closure, not any parent.
-                TimelineView(.periodic(from: lastSync, by: 1)) { context in
-                    Text(relativeTimeString(from: lastSync, to: context.date))
+                if timelineActive {
+                    TimelineView(.periodic(from: lastSync, by: 1)) { context in
+                        Text(relativeTimeString(from: lastSync, to: context.date))
+                            .font(.system(size: 10 + fontBoost))
+                            .foregroundStyle(theme.textTertiary)
+                    }
+                } else {
+                    Text(relativeTimeString(from: lastSync, to: Date()))
                         .font(.system(size: 10 + fontBoost))
                         .foregroundStyle(theme.textTertiary)
                 }

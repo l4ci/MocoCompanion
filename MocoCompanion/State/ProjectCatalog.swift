@@ -17,11 +17,11 @@ final class ProjectCatalog {
     }
     var isLoading = false
 
-    private var _searchEntries: [SearchEntry]?
+    @ObservationIgnored private var _searchEntries: [SearchEntry]?
     /// Lazy lookup table for project colors. Rebuilt whenever `projects`
     /// changes. Avoids the O(n) linear scan in `color(for:)` that was
     /// called per row in list views.
-    private var _colorCache: [Int: Color]?
+    @ObservationIgnored private var _colorCache: [Int: Color]?
 
     var searchEntries: [SearchEntry] {
         if let cached = _searchEntries { return cached }

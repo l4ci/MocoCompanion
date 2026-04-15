@@ -27,8 +27,8 @@ final class ActivityService: ActivitySyncing {
     private(set) var yesterdayActivities: [ShadowEntry] = []
 
     /// Cached sorted arrays — invalidated when activities change.
-    private var _sortedToday: [ShadowEntry]?
-    private var _sortedYesterday: [ShadowEntry]?
+    @ObservationIgnored private var _sortedToday: [ShadowEntry]?
+    @ObservationIgnored private var _sortedYesterday: [ShadowEntry]?
 
     // MARK: - Dependencies
 

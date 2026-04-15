@@ -9,6 +9,7 @@ struct TimerHintSection: View {
 
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.timelineActive) private var timelineActive
 
     var body: some View {
         switch timerState {
@@ -63,8 +64,15 @@ struct TimerHintSection: View {
            let startedAt = activity.timerStartedAt,
            let startDate = DateUtilities.parseISO8601(startedAt) {
             let baseSecs = Double(activity.seconds)
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
+            if timelineActive {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
+                    Text(DateUtilities.formatElapsedCompact(liveSecs))
+                        .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
+                        .foregroundStyle(isFocused ? theme.selectedTextTertiary : .green)
+                }
+            } else {
+                let liveSecs = baseSecs + Date().timeIntervalSince(startDate)
                 Text(DateUtilities.formatElapsedCompact(liveSecs))
                     .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
                     .foregroundStyle(isFocused ? theme.selectedTextTertiary : .green)
