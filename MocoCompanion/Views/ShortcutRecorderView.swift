@@ -36,6 +36,7 @@ final class ShortcutRecorderNSView: NSView {
     var onShortcutChanged: ((UInt32, UInt32) -> Void)?
 
     private var isRecording = false
+    private var eventMonitor: Any?
     private let label = NSTextField(labelWithString: "")
     private let recordButton = NSButton(title: "Record", target: nil, action: nil)
 
@@ -97,9 +98,55 @@ final class ShortcutRecorderNSView: NSView {
         if isRecording {
             label.stringValue = "Press shortcut…"
             window?.makeFirstResponder(self)
+            installEventMonitor()
         } else {
+            removeEventMonitor()
             updateDisplay()
         }
+    }
+
+    private func installEventMonitor() {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.isRecording else { return event }
+
+            // ESC cancels recording
+            if event.keyCode == UInt16(kVK_Escape) {
+                self.isRecording = false
+                self.removeEventMonitor()
+                self.updateDisplay()
+                return nil // consume the event
+            }
+
+            // Require at least one modifier (Cmd, Ctrl, Option)
+            let requiredModifiers: NSEvent.ModifierFlags = [.command, .control, .option]
+            guard !event.modifierFlags.intersection(requiredModifiers).isEmpty else {
+                return nil // consume but ignore (no modifier)
+            }
+
+            let carbonMods = event.modifierFlags.intersection([.command, .control, .option, .shift]).carbonFlags
+            let carbonKey = UInt32(event.keyCode)
+
+            self.keyCode = carbonKey
+            self.modifiers = carbonMods
+            self.isRecording = false
+            self.removeEventMonitor()
+            self.updateDisplay()
+            self.onShortcutChanged?(carbonKey, carbonMods)
+
+            return nil // consume the event
+        }
+    }
+
+    private func removeEventMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+    }
+
+    override func removeFromSuperview() {
+        removeEventMonitor()
+        super.removeFromSuperview()
     }
 
     // MARK: - Key Capture
