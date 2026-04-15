@@ -11,6 +11,7 @@ struct EntryBlockView: View {
     var onEdit: ((ShadowEntry) -> Void)? = nil
     var onDelete: ((ShadowEntry) -> Void)? = nil
     var onSelect: (() -> Void)? = nil
+    var columnCount: Int = 1
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
 
@@ -20,6 +21,13 @@ struct EntryBlockView: View {
 
     private var isCompact: Bool {
         displayHeight < Self.compactThreshold
+    }
+
+    /// True when the block is too narrow to read comfortably — either
+    /// because it's short (compact) or because overlapping entries split
+    /// the column into two or more side-by-side slots.
+    private var needsPopover: Bool {
+        isCompact || columnCount > 1
     }
 
     /// Full info string used for the hover tooltip — always shown, both
@@ -256,15 +264,15 @@ struct EntryBlockView: View {
             if hovering {
                 // Select to trigger cross-highlighting of linked entries
                 onSelect?()
-                // Show popover on hover only for compact entries
-                if isCompact && !isGestureActive {
+                // Show popover on hover for compact or multi-column entries
+                if needsPopover && !isGestureActive {
                     showPopover = true
                 }
             } else {
                 // Clear selection when leaving — outline disappears
                 viewModel.clearEntrySelection()
                 viewModel.clearAppBlockSelection()
-                if isCompact { showPopover = false }
+                if needsPopover { showPopover = false }
             }
         }
         .popover(isPresented: $showPopover, arrowEdge: .trailing) {

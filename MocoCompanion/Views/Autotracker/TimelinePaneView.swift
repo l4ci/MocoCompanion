@@ -729,7 +729,8 @@ struct TimelinePaneView: View {
                     isHighlighted: viewModel.isEntryHighlighted(entry),
                     onEdit: { e in editingEntry = EditingEntryWrapper(entry: e) },
                     onDelete: { e in Task { await viewModel.deleteEntry(e) } },
-                    onSelect: { viewModel.toggleEntrySelection(entry) }
+                    onSelect: { viewModel.toggleEntrySelection(entry) },
+                    columnCount: layout.columnCount
                 )
                     .frame(width: max(columnWidth - gap, 14), alignment: .topLeading)
                     .offset(
