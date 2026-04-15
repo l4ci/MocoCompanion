@@ -122,8 +122,12 @@ struct EntryRow<Duration: View>: View {
                 }
                 .lineLimit(1)
 
-                // Line 3: Hints (shown when selected or hovered)
-                if !hints.isEmpty && (isSelected || isHovered) {
+                // Line 3: Hints (shown when selected or hovered).
+                // Always reserve space to prevent layout oscillation —
+                // hover toggling the hints would change row height,
+                // which can push the cursor out, triggering an infinite
+                // hover/unhover loop that hangs the main thread.
+                if !hints.isEmpty {
                     HStack(spacing: 8) {
                         ForEach(hints, id: \.self) { hint in
                             Text(hint)
@@ -132,6 +136,7 @@ struct EntryRow<Duration: View>: View {
                     }
                     .foregroundStyle(isSelected ? theme.selectedTextTertiary : theme.textTertiary)
                     .padding(.top, 2)
+                    .opacity(isSelected || isHovered ? 1 : 0)
                 }
             }
 
