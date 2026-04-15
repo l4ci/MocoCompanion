@@ -170,10 +170,10 @@ final class ActivityService: ActivitySyncing {
                 let activities = await syncEngine.entries(forDate: DateUtilities.todayString())
                 applyFetchedTodayActivities(activities)
                 await onStoreChanged?()
+                notificationDispatcher.descriptionUpdated()
             } catch {
                 handleError(error, label: "updateDescription")
             }
-            notificationDispatcher.descriptionUpdated()
             return
         }
 
@@ -196,10 +196,10 @@ final class ActivityService: ActivitySyncing {
                 applyFetchedTodayActivities(activities)
                 await refreshYesterdayActivities()
                 await onStoreChanged?()
+                notificationDispatcher.entryUpdated()
             } catch {
                 handleError(error, label: "editActivity")
             }
-            notificationDispatcher.entryUpdated()
             return
         }
 
@@ -226,10 +226,10 @@ final class ActivityService: ActivitySyncing {
                 applyFetchedTodayActivities(activities)
                 await refreshYesterdayActivities()
                 await onStoreChanged?()
+                notificationDispatcher.entryUpdated()
             } catch {
                 handleError(error, label: "reassignActivity")
             }
-            notificationDispatcher.entryUpdated()
             return
         }
 

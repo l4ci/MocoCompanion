@@ -112,68 +112,84 @@ actor SyncEngine {
 
         let dirtyEntries = try await store.dirtyEntries()
         var pushCount = 0
+        var failedCount = 0
+        var lastError: Error?
 
         for entry in dirtyEntries {
-            switch entry.sync.status {
-            case .pendingCreate:
-                let created = try await client.createActivity(
-                    date: entry.date,
-                    projectId: entry.projectId,
-                    taskId: entry.taskId,
-                    description: entry.description,
-                    seconds: entry.seconds,
-                    tag: entry.tag.isEmpty ? nil : entry.tag
-                )
-                // Remove the local-only entry, insert with server ID
-                if let localId = entry.localId {
-                    try await store.deleteByLocalId(localId)
-                }
-                // Preserve local-only metadata across the API round-trip.
-                // `ShadowEntry.from(MocoActivity)` zeroes these fields
-                // because Moco doesn't know about them; we copy them back
-                // from the dirty local row via copyLocalOnlyFields(from:).
-                var serverShadow = ShadowEntry.from(created)
-                serverShadow.copyLocalOnlyFields(from: entry)
-                try await store.insert(serverShadow)
-                pushCount += 1
-
-            case .dirty:
-                guard let id = entry.id else { continue }
-                let updated = try await client.updateActivity(
-                    activityId: id,
-                    projectId: entry.projectId,
-                    taskId: entry.taskId,
-                    description: entry.description,
-                    tag: entry.tag.isEmpty ? nil : entry.tag,
-                    seconds: entry.seconds
-                )
-                try await store.markSynced(id: id, serverUpdatedAt: updated.updatedAt)
-                pushCount += 1
-
-            case .pendingDelete:
-                guard let id = entry.id else { continue }
-                do {
-                    try await client.deleteActivity(activityId: id)
-                    try await store.delete(id: id)
+            do {
+                switch entry.sync.status {
+                case .pendingCreate:
+                    let created = try await client.createActivity(
+                        date: entry.date,
+                        projectId: entry.projectId,
+                        taskId: entry.taskId,
+                        description: entry.description,
+                        seconds: entry.seconds,
+                        tag: entry.tag.isEmpty ? nil : entry.tag
+                    )
+                    // Remove the local-only entry, insert with server ID
+                    if let localId = entry.localId {
+                        try await store.deleteByLocalId(localId)
+                    }
+                    // Preserve local-only metadata across the API round-trip.
+                    // `ShadowEntry.from(MocoActivity)` zeroes these fields
+                    // because Moco doesn't know about them; we copy them back
+                    // from the dirty local row via copyLocalOnlyFields(from:).
+                    var serverShadow = ShadowEntry.from(created)
+                    serverShadow.copyLocalOnlyFields(from: entry)
+                    try await store.insert(serverShadow)
                     pushCount += 1
-                } catch let error as MocoError where error.isNotFound {
-                    // 404 — already deleted on server, clean up locally.
-                    logger.info("Delete \(id): not found on server — removing local row")
-                    try await store.delete(id: id)
-                    pushCount += 1
-                } catch let error as MocoError where error.isForbidden {
-                    // 403 — locked/billed, can't delete. Revert to synced
-                    // so the entry stays visible as read-only.
-                    logger.info("Delete \(id): forbidden (locked/billed) — reverting to synced")
-                    try await store.markSynced(id: id, serverUpdatedAt: entry.updatedAt)
-                }
 
-            case .synced:
-                break
+                case .dirty:
+                    guard let id = entry.id else { continue }
+                    let updated = try await client.updateActivity(
+                        activityId: id,
+                        projectId: entry.projectId,
+                        taskId: entry.taskId,
+                        description: entry.description,
+                        tag: entry.tag.isEmpty ? nil : entry.tag,
+                        seconds: entry.seconds
+                    )
+                    try await store.markSynced(id: id, serverUpdatedAt: updated.updatedAt)
+                    pushCount += 1
+
+                case .pendingDelete:
+                    guard let id = entry.id else { continue }
+                    do {
+                        try await client.deleteActivity(activityId: id)
+                        try await store.delete(id: id)
+                        pushCount += 1
+                    } catch let error as MocoError where error.isNotFound {
+                        // 404 — already deleted on server, clean up locally.
+                        logger.info("Delete \(id): not found on server — removing local row")
+                        try await store.delete(id: id)
+                        pushCount += 1
+                    } catch let error as MocoError where error.isForbidden {
+                        // 403 — locked/billed, can't delete. Revert to synced
+                        // so the entry stays visible as read-only.
+                        logger.info("Delete \(id): forbidden (locked/billed) — reverting to synced")
+                        try await store.markSynced(id: id, serverUpdatedAt: entry.updatedAt)
+                    }
+
+                case .synced:
+                    break
+                }
+            } catch {
+                logger.warning("Push failed for entry (status=\(String(describing: entry.sync.status))): \(error.localizedDescription)")
+                lastError = error
+                failedCount += 1
+                continue
             }
         }
 
-        logger.info("Push: \(pushCount) entries synced")
+        if failedCount > 0 && pushCount == 0 && !dirtyEntries.isEmpty, let lastError {
+            logger.error("Push: all \(failedCount) entries failed")
+            throw lastError
+        } else if failedCount > 0 {
+            logger.warning("Push: \(pushCount) synced, \(failedCount) failed (will retry on next sync)")
+        } else {
+            logger.info("Push: \(pushCount) entries synced")
+        }
     }
 
     // MARK: - Timer

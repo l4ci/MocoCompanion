@@ -45,7 +45,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetTaskWarning,
                 message: String(localized: "notification.budgetTaskWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:task-critical",
+                dedupKey: "BudgetDepletion:\(projectId):task-critical",
                 dedupStrategy: .once
             ))
         }
@@ -54,7 +54,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetProjectWarning,
                 message: String(localized: "notification.budgetProjectWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:project-critical",
+                dedupKey: "BudgetDepletion:\(projectId):project-critical",
                 dedupStrategy: .once
             ))
         }
@@ -63,7 +63,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetProjectWarning,
                 message: String(localized: "notification.budgetProjectWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:project-warning",
+                dedupKey: "BudgetDepletion:\(projectId):project-warning",
                 dedupStrategy: .once
             ))
         }

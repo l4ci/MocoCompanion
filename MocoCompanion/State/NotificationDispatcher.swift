@@ -26,6 +26,12 @@ final class NotificationDispatcher: NotificationSending {
         return f
     }()
 
+    // MARK: - Authorization State
+
+    /// Reflects the OS authorization grant result from `requestAuthorization()`.
+    /// Updated once at launch; false until authorization completes.
+    private(set) static var isAuthorized: Bool = false
+
     // MARK: - Dependencies
 
     private let isEnabledCheck: (NotificationCatalog.NotificationType) -> Bool
@@ -42,6 +48,10 @@ final class NotificationDispatcher: NotificationSending {
         guard isEnabledCheck(type) else {
             logger.debug("Notification disabled: \(type.rawValue)")
             return
+        }
+
+        if !Self.isAuthorized {
+            logger.warning("Sending notification '\(type.rawValue)' but OS authorization not granted — notification will be silently dropped by the system.")
         }
 
         postSystemNotification(type: type, message: message, userInfo: userInfo)
@@ -63,6 +73,7 @@ final class NotificationDispatcher: NotificationSending {
             if let error {
                 Logger(category: "Notifications").error("Notification authorization failed: \(error.localizedDescription)")
             }
+            NotificationDispatcher.isAuthorized = granted
         }
 
         // Register category with "Open Autotracker" action

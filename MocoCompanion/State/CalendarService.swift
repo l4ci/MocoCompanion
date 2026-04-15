@@ -189,10 +189,12 @@ final class CalendarService {
     }
 
     private static func hexString(from cg: CGColor?) -> String {
-        guard let cg, let comps = cg.components else { return "#808080" }
+        guard let cg,
+              let rgb = cg.converted(to: CGColorSpaceCreateDeviceRGB(), intent: .defaultIntent, options: nil),
+              let comps = rgb.components, comps.count >= 3 else { return "#888888" }
         let r = Int((comps[0] * 255).rounded())
-        let g = Int((comps.count > 1 ? comps[1] * 255 : comps[0] * 255).rounded())
-        let b = Int((comps.count > 2 ? comps[2] * 255 : comps[0] * 255).rounded())
+        let g = Int((comps[1] * 255).rounded())
+        let b = Int((comps[2] * 255).rounded())
         return String(format: "#%02X%02X%02X", r, g, b)
     }
 }

@@ -19,11 +19,12 @@ enum DateUtilities {
         return f
     }()
 
-    /// Date-only formatter: "yyyy-MM-dd" with POSIX locale.
+    /// Date-only formatter: "yyyy-MM-dd" with POSIX locale and explicit current timezone.
     private static let dateOnly: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
         return f
     }()
 
