@@ -84,6 +84,11 @@ final class TimerSideEffects {
         playSound(.stop)
     }
 
+    /// A paused timer was silently replaced by an externally started timer on a different activity.
+    func onPausedTimerReplaced(previousProjectName: String) {
+        notificationDispatcher.pausedTimerReplaced(previousProjectName: previousProjectName)
+    }
+
     /// An API error occurred. Dispatches error notification.
     func onError(_ error: MocoError) {
         notificationDispatcher.apiError(error)
@@ -106,6 +111,8 @@ final class TimerSideEffects {
             onTimerContinued(projectId: projectId, taskId: taskId, projectName: projectName)
         case .externalTimerStopped:
             onExternalTimerStopped()
+        case .pausedTimerReplaced(let previousProjectName):
+            onPausedTimerReplaced(previousProjectName: previousProjectName)
         case .error(let mocoError):
             onError(mocoError)
         }

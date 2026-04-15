@@ -139,6 +139,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 let calendarId = await self.appState.settings.selectedCalendarId
                 let todayDate = Calendar.current.startOfDay(for: .now)
                 let todayStr = DateUtilities.dateString(todayDate)
+                let timerRunning: Bool
+                if case .running = await self.appState.timerService.timerState {
+                    timerRunning = true
+                } else {
+                    timerRunning = false
+                }
 
                 // Today
                 let todayEvents = await self.appState.calendarService.fetchEvents(for: todayDate, selectedCalendarId: calendarId)
@@ -148,7 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                         for: todayDate,
                         existingEntries: todayExisting,
                         events: todayEvents,
-                        timerRunning: false
+                        timerRunning: timerRunning
                     )
                 } catch {
                     logger.error("Background rule pass skipped today (\(todayStr)): entries fetch failed: \(error.localizedDescription)")
@@ -165,7 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                             for: yesterdayDate,
                             existingEntries: yExisting,
                             events: yEvents,
-                            timerRunning: false
+                            timerRunning: timerRunning
                         )
                     } catch {
                         logger.error("Background rule pass skipped yesterday (\(yesterdayStr)): entries fetch failed: \(error.localizedDescription)")
@@ -312,11 +318,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         window.title = String(localized: "setup.welcome")
         window.styleMask = [.titled, .closable]
         window.setContentSize(NSSize(width: 450, height: 440))
-        switch appState.settings.appearance {
-        case "dark": window.appearance = NSAppearance(named: .darkAqua)
-        case "light": window.appearance = NSAppearance(named: .aqua)
-        default: window.appearance = nil
-        }
+        window.appearance = Theme.nsAppearance(from: appState.settings.appearance)
         window.center()
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)
@@ -354,11 +356,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         window.title = String(localized: "settings.windowTitle")
         window.styleMask = [.titled, .closable]
         window.setContentSize(NSSize(width: 780, height: 580))
-        switch appState.settings.appearance {
-        case "dark": window.appearance = NSAppearance(named: .darkAqua)
-        case "light": window.appearance = NSAppearance(named: .aqua)
-        default: window.appearance = nil
-        }
+        window.appearance = Theme.nsAppearance(from: appState.settings.appearance)
         window.center()
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)
@@ -442,11 +440,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         window.setContentSize(NSSize(width: 900, height: 700))
         // Sync AppKit appearance with the user's appearance setting
         // (mirrors PanelController.updatePanelAppearance).
-        switch appState.settings.appearance {
-        case "dark": window.appearance = NSAppearance(named: .darkAqua)
-        case "light": window.appearance = NSAppearance(named: .aqua)
-        default: window.appearance = nil
-        }
+        window.appearance = Theme.nsAppearance(from: appState.settings.appearance)
         window.center()
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)

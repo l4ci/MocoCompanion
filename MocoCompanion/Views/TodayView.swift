@@ -22,19 +22,11 @@ struct TodayView: View {
     private var bodySize: CGFloat { 14 + fontBoost }
     private var captionSize: CGFloat { 12 + fontBoost }
 
-    init(appState: AppState, onTabSwitch: @escaping () -> Void = {}, onTypeToSearch: ((String) -> Void)? = nil, onStartEntry: ((SearchEntry) -> Void)? = nil) {
+    init(appState: AppState, viewModel: TodayViewModel, onTabSwitch: @escaping () -> Void = {}, onTypeToSearch: ((String) -> Void)? = nil, onStartEntry: ((SearchEntry) -> Void)? = nil) {
         self.appState = appState
         self.onTabSwitch = onTabSwitch
         self.onTypeToSearch = onTypeToSearch
         self.onStartEntry = onStartEntry
-        let viewModel = TodayViewModel(
-            timerService: appState.timerService,
-            activityService: appState.activityService,
-            planningStore: appState.planningStore,
-            deleteUndoManager: appState.deleteUndoManager,
-            favoritesManager: appState.favoritesManager
-        )
-        viewModel.syncState = appState.syncState
         self._vm = State(initialValue: viewModel)
     }
 

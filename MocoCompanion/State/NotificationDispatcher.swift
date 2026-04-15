@@ -153,6 +153,10 @@ extension NotificationDispatcher {
         send(.timerContinued, message: String(localized: "notification.timerContinued") + " " + projectName)
     }
 
+    func pausedTimerReplaced(previousProjectName: String) {
+        send(.pausedTimerReplaced, message: String(localized: "notification.pausedTimerReplaced") + " " + previousProjectName)
+    }
+
     func entryUpdated() {
         send(.descriptionUpdated, message: String(localized: "notification.entryUpdated"))
     }

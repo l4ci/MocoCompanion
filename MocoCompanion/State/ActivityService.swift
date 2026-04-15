@@ -262,6 +262,7 @@ final class ActivityService: ActivitySyncing {
                 description: apiDescription, seconds: seconds, tag: tag
             )
             let entry = ShadowEntry.from(created)
+            try? await syncEngine?.insertSynced(entry)
             appendToday(entry)
             usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)
             notificationDispatcher.manualEntry(projectName: entry.projectName, hours: Double(seconds) / 3600.0)
@@ -283,6 +284,7 @@ final class ActivityService: ActivitySyncing {
                 tag: source.tag.isEmpty ? nil : source.tag
             )
             let entry = ShadowEntry.from(created)
+            try? await syncEngine?.insertSynced(entry)
             appendToday(entry)
             notificationDispatcher.entryDuplicated(projectName: entry.projectName, hours: entry.hours)
             return .success(entry)

@@ -325,6 +325,27 @@ import os
 
     // MARK: - Entry Mutation (Gestures)
 
+    /// Persist a mutated entry to the store, reload data, and push to Moco.
+    /// Handles both synced entries (mark dirty) and local-only pendingCreate entries.
+    private func persistMutation(_ original: ShadowEntry, _ updated: ShadowEntry, label: String) async throws {
+        if original.id != nil {
+            var entry = updated
+            entry.sync.status = .dirty
+            try await shadowEntryStore.update(entry)
+        } else if original.localId != nil, original.sync.status == .pendingCreate {
+            var entry = updated
+            entry.sync.status = .pendingCreate
+            try await shadowEntryStore.updateByLocalId(entry)
+        } else {
+            return
+        }
+        Self.logger.info("\(label)")
+        await loadData()
+        await onEntryChanged?()
+        await syncEngine?.sync(dates: [updated.date])
+        await loadData()
+    }
+
     /// Move an entry to a new start time. Locked entries are rejected.
     func moveEntry(_ entry: ShadowEntry, toStartTime newStartTime: String) async {
         guard !entry.isReadOnly else { return }
@@ -332,21 +353,7 @@ import os
         updated.startTime = newStartTime
         updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
-            if entry.id != nil {
-                updated.sync.status = .dirty
-                try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
-                updated.sync.status = .pendingCreate
-                try await shadowEntryStore.updateByLocalId(updated)
-            } else {
-                return
-            }
-            Self.logger.info("Moved entry \(entry.id ?? 0) to \(newStartTime)")
-            await loadData()
-            await onEntryChanged?()
-            // Push to Moco immediately so the move persists.
-            await syncEngine?.sync(dates: [entry.date])
-            await loadData()
+            try await persistMutation(entry, updated, label: "Moved entry \(entry.id ?? 0) to \(newStartTime)")
         } catch {
             Self.logger.error("Failed to move entry \(entry.id ?? 0): \(error)")
         }
@@ -381,22 +388,7 @@ import os
         updated.hours = Double(durationSeconds) / 3600.0
         updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
-            if entry.id != nil {
-                updated.sync.status = .dirty
-                try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
-                updated.sync.status = .pendingCreate
-                try await shadowEntryStore.updateByLocalId(updated)
-            } else {
-                return
-            }
-            Self.logger.info("Updated entry \(entry.id ?? 0): project=\(projectId) task=\(taskId) startTime=\(startTime ?? "nil") duration=\(durationSeconds)s")
-            await loadData()
-            await onEntryChanged?()
-            // Push to Moco immediately so the edit doesn't sit as a
-            // pending-dirty row waiting for the next periodic sync.
-            await syncEngine?.sync(dates: [date])
-            await loadData()
+            try await persistMutation(entry, updated, label: "Updated entry \(entry.id ?? 0): project=\(projectId) task=\(taskId) startTime=\(startTime ?? "nil") duration=\(durationSeconds)s")
         } catch {
             Self.logger.error("Failed to update entry \(entry.id ?? 0): \(error)")
         }
@@ -411,22 +403,7 @@ import os
         updated.hours = Double(newDurationSeconds) / 3600.0
         updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
         do {
-            if entry.id != nil {
-                updated.sync.status = .dirty
-                try await shadowEntryStore.update(updated)
-            } else if entry.localId != nil, entry.sync.status == .pendingCreate {
-                updated.sync.status = .pendingCreate
-                try await shadowEntryStore.updateByLocalId(updated)
-            } else {
-                return
-            }
-            Self.logger.info("Resized entry \(entry.id ?? 0) to \(newStartTime), \(newDurationSeconds)s")
-            await loadData()
-            await onEntryChanged?()
-            // Push to Moco immediately so the resize persists without
-            // waiting for the next periodic sync.
-            await syncEngine?.sync(dates: [entry.date])
-            await loadData()
+            try await persistMutation(entry, updated, label: "Resized entry \(entry.id ?? 0) to \(newStartTime), \(newDurationSeconds)s")
         } catch {
             Self.logger.error("Failed to resize entry \(entry.id ?? 0): \(error)")
         }

@@ -12,6 +12,7 @@ struct PanelContentView: View {
     @State private var initialSearchText: String = ""
     /// Pre-selected entry from Today view's planned task — triggers description phase in Track tab.
     @State private var preSelectedEntry: SearchEntry? = nil
+    @State private var todayViewModel: TodayViewModel
     @Environment(\.colorScheme) private var colorScheme
 
     init(appState: AppState, favoritesManager: FavoritesManager, onShowAutotracker: (() -> Void)? = nil) {
@@ -19,6 +20,15 @@ struct PanelContentView: View {
         self.favoritesManager = favoritesManager
         self.onShowAutotracker = onShowAutotracker
         self._activeTab = State(initialValue: appState.settings.defaultTab == .today ? .today : .search)
+        let vm = TodayViewModel(
+            timerService: appState.timerService,
+            activityService: appState.activityService,
+            planningStore: appState.planningStore,
+            deleteUndoManager: appState.deleteUndoManager,
+            favoritesManager: appState.favoritesManager
+        )
+        vm.syncState = appState.syncState
+        self._todayViewModel = State(initialValue: vm)
     }
 
     enum PanelTab: CaseIterable {
@@ -45,6 +55,7 @@ struct PanelContentView: View {
             activeTab: $activeTab,
             initialSearchText: $initialSearchText,
             preSelectedEntry: $preSelectedEntry,
+            todayViewModel: todayViewModel,
             onShowAutotracker: onShowAutotracker
         )
         .frame(width: appState.settings.panelWidth)
@@ -63,6 +74,7 @@ private struct PanelContentInner: View {
     @Binding var activeTab: PanelContentView.PanelTab
     @Binding var initialSearchText: String
     @Binding var preSelectedEntry: SearchEntry?
+    var todayViewModel: TodayViewModel
     var onShowAutotracker: (() -> Void)? = nil
 
     @Environment(\.theme) private var theme
@@ -74,12 +86,13 @@ private struct PanelContentInner: View {
 
     private var avatarSize: CGFloat { 38 + fontBoost }
 
-    init(appState: AppState, favoritesManager: FavoritesManager, activeTab: Binding<PanelContentView.PanelTab>, initialSearchText: Binding<String>, preSelectedEntry: Binding<SearchEntry?>, onShowAutotracker: (() -> Void)? = nil) {
+    init(appState: AppState, favoritesManager: FavoritesManager, activeTab: Binding<PanelContentView.PanelTab>, initialSearchText: Binding<String>, preSelectedEntry: Binding<SearchEntry?>, todayViewModel: TodayViewModel, onShowAutotracker: (() -> Void)? = nil) {
         self.appState = appState
         self.favoritesManager = favoritesManager
         self._activeTab = activeTab
         self._initialSearchText = initialSearchText
         self._preSelectedEntry = preSelectedEntry
+        self.todayViewModel = todayViewModel
         self.onShowAutotracker = onShowAutotracker
         self._showFirstUseHint = State(initialValue: !appState.settings.hasSeenFirstUseHint)
     }
@@ -109,6 +122,7 @@ private struct PanelContentInner: View {
 
                 TodayView(
                     appState: appState,
+                    viewModel: todayViewModel,
                     onTabSwitch: { activeTab = .search },
                     onTypeToSearch: { chars in
                         initialSearchText = chars

@@ -251,15 +251,7 @@ final class PanelController {
     /// `.preferredColorScheme(.dark)` ineffective for the window chrome and
     /// underlying AppKit rendering context.
     private func updatePanelAppearance(_ panel: FloatingPanel) {
-        let setting = appState.settings.appearance
-        switch setting {
-        case "dark":
-            panel.appearance = NSAppearance(named: .darkAqua)
-        case "light":
-            panel.appearance = NSAppearance(named: .aqua)
-        default:
-            panel.appearance = nil  // follow system
-        }
+        panel.appearance = Theme.nsAppearance(from: appState.settings.appearance)
     }
 
     private func positionPanel(_ panel: FloatingPanel) {

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Centralized adaptive color system for the app.
@@ -208,6 +209,16 @@ struct Theme {
         switch setting {
         case "light": .light
         case "dark": .dark
+        default: nil
+        }
+    }
+
+    /// Resolve an `NSAppearance?` from the user's appearance setting.
+    /// Returns nil for "system" (follow system), darkAqua for "dark", aqua for "light".
+    static func nsAppearance(from setting: String) -> NSAppearance? {
+        switch setting {
+        case "dark": NSAppearance(named: .darkAqua)
+        case "light": NSAppearance(named: .aqua)
         default: nil
         }
     }

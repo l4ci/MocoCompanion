@@ -240,6 +240,7 @@ actor SyncEngine {
         if let tag { entry.tag = tag }
         if let seconds {
             entry.seconds = seconds
+            entry.workedSeconds = seconds
             entry.hours = Double(seconds) / 3600.0
         }
         entry.sync.status = .dirty
@@ -249,6 +250,12 @@ actor SyncEngine {
     }
 
     // MARK: - Read Helpers
+
+    /// Insert an already-synced entry (created via API elsewhere) into the local store
+    /// so the autotracker timeline reflects it without waiting for the next periodic sync.
+    func insertSynced(_ entry: ShadowEntry) async throws {
+        try await store.insert(entry)
+    }
 
     /// Sync the given date and return entries mapped to MocoActivity.
     /// Sync the given date and return entries from the local store.
