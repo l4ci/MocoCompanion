@@ -328,6 +328,7 @@ final class Autotracker {
     func cleanup(olderThanDays days: Int) {
         appRecordStore.cleanup(olderThan: days)
         recordCount = appRecordStore.recordCount()
+        BreadcrumbTrail.shared.record("Autotracker", "Cleanup: records older than \(days) days removed")
     }
 
     // MARK: - Rule Evaluation
@@ -338,6 +339,7 @@ final class Autotracker {
         events: [CalendarEvent] = [],
         timerRunning: Bool
     ) async {
+        BreadcrumbTrail.shared.record("Autotracker", "Rule evaluation started")
         guard settings?.rulesEnabled == true else {
             Self.atLogger.debug("evaluate skipped — rulesEnabled is false")
             suggestions = []
@@ -371,6 +373,7 @@ final class Autotracker {
             return
         }
 
+        BreadcrumbTrail.shared.record("Autotracker", "Evaluating \(rules.count) rules")
         let windowTitlesEnabled = settings?.windowTitleTrackingEnabled == true
 
         let records = appRecordStore.records(for: date)
@@ -406,6 +409,7 @@ final class Autotracker {
         }
 
         suggestions = newSuggestions
+        BreadcrumbTrail.shared.record("Autotracker", "Evaluation done: \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
         Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
 
         if entriesCreated > 0 {
