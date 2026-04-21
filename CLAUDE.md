@@ -44,3 +44,12 @@ Professionals who track their hours in Moco daily — developers, designers, con
 4. **Keyboard-first, mouse-welcome.** Every action is reachable via keyboard. Mouse/trackpad works everywhere but is never required. Focus states are always visible. The keyboard user and the mouse user see the same UI.
 
 5. **Density with clarity.** Pack information tight — this is a utility panel, not a canvas app. But never sacrifice readability. Three-tier text hierarchy, consistent spacing, and selective bold weight keep dense layouts scannable.
+
+<!-- hv-knowledge-start -->
+## Project Knowledge
+
+Durable learnings live in `.hv/KNOWLEDGE.md`. Consult it when work touches these topics:
+
+- _(no topics yet — run `/hv-learn` to capture learnings)_
+
+<!-- hv-knowledge-end -->
