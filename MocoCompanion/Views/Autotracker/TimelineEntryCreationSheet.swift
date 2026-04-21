@@ -24,7 +24,7 @@ struct TimelineEntryCreationSheet: View {
     @State private var errorMessage: String?
     @State private var hasInteracted: Bool = false
     @FocusState private var isSearchFocused: Bool
-    @State private var highlightedIndex: Int = 0
+    @State private var highlightedIndex: Int = -1
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -75,12 +75,31 @@ struct TimelineEntryCreationSheet: View {
 
     private var projectPicker: some View {
         let entries = projectCatalog.filter(query: searchText, favorites: favorites)
+        let visibleCount = min(entries.count, 20)
         return VStack(alignment: .leading, spacing: 6) {
             TextField("Search projects…", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
                 .focused($isSearchFocused)
-                .onChange(of: searchText) { _, _ in highlightedIndex = 0 }
+                .onChange(of: searchText) { _, newValue in
+                    highlightedIndex = newValue.isEmpty ? -1 : 0
+                }
+                .onKeyPress(.downArrow) {
+                    let next = max(highlightedIndex + 1, 0)
+                    if next < visibleCount { highlightedIndex = next }
+                    return .handled
+                }
+                .onKeyPress(.upArrow) {
+                    if highlightedIndex > 0 { highlightedIndex -= 1 }
+                    return .handled
+                }
+                .onSubmit {
+                    let limited = Array(entries.prefix(20))
+                    let idx = highlightedIndex < 0 ? 0 : highlightedIndex
+                    if idx < limited.count {
+                        selectedEntry = limited[idx]
+                    }
+                }
 
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
@@ -105,29 +124,13 @@ struct TimelineEntryCreationSheet: View {
                     }
                     .frame(maxHeight: 180)
                     .onChange(of: highlightedIndex) { _, newIndex in
+                        guard newIndex >= 0 else { return }
                         withAnimation(.easeOut(duration: 0.12)) {
                             proxy.scrollTo(newIndex, anchor: .center)
                         }
                     }
                 }
             }
-        }
-        .onKeyPress(.downArrow) {
-            let count = min(entries.count, 20)
-            if highlightedIndex < count - 1 { highlightedIndex += 1 }
-            return .handled
-        }
-        .onKeyPress(.upArrow) {
-            if highlightedIndex > 0 { highlightedIndex -= 1 }
-            return .handled
-        }
-        .onKeyPress(.return) {
-            guard isSearchFocused else { return .ignored }
-            let limited = Array(entries.prefix(20))
-            if highlightedIndex < limited.count {
-                selectedEntry = limited[highlightedIndex]
-            }
-            return .handled
         }
     }
 
@@ -270,7 +273,7 @@ struct TimelineEntryEditSheet: View {
     @State private var isProjectPickerExpanded: Bool = false
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
-    @State private var highlightedIndex: Int = 0
+    @State private var highlightedIndex: Int = -1
 
     init(
         entry: ShadowEntry,
@@ -369,7 +372,7 @@ struct TimelineEntryEditSheet: View {
         }
         .onChange(of: isProjectPickerExpanded) { _, expanded in
             if expanded {
-                highlightedIndex = 0
+                highlightedIndex = searchText.isEmpty ? -1 : 0
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     isSearchFocused = true
@@ -514,6 +517,7 @@ struct TimelineEntryEditSheet: View {
 
     private var projectPickerExpanded: some View {
         let entries = projectCatalog.filter(query: searchText, favorites: favorites)
+        let visibleCount = min(entries.count, 20)
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Project")
@@ -532,7 +536,26 @@ struct TimelineEntryEditSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: Theme.FontSize.body))
                 .focused($isSearchFocused)
-                .onChange(of: searchText) { _, _ in highlightedIndex = 0 }
+                .onChange(of: searchText) { _, newValue in
+                    highlightedIndex = newValue.isEmpty ? -1 : 0
+                }
+                .onKeyPress(.downArrow) {
+                    let next = max(highlightedIndex + 1, 0)
+                    if next < visibleCount { highlightedIndex = next }
+                    return .handled
+                }
+                .onKeyPress(.upArrow) {
+                    if highlightedIndex > 0 { highlightedIndex -= 1 }
+                    return .handled
+                }
+                .onSubmit {
+                    let limited = Array(entries.prefix(20))
+                    let idx = highlightedIndex < 0 ? 0 : highlightedIndex
+                    if idx < limited.count {
+                        selectedEntry = limited[idx]
+                        isProjectPickerExpanded = false
+                    }
+                }
 
             if entries.isEmpty {
                 Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
@@ -560,30 +583,13 @@ struct TimelineEntryEditSheet: View {
                     }
                     .frame(maxHeight: 180)
                     .onChange(of: highlightedIndex) { _, newIndex in
+                        guard newIndex >= 0 else { return }
                         withAnimation(.easeOut(duration: 0.12)) {
                             proxy.scrollTo(newIndex, anchor: .center)
                         }
                     }
                 }
             }
-        }
-        .onKeyPress(.downArrow) {
-            let count = min(entries.count, 20)
-            if highlightedIndex < count - 1 { highlightedIndex += 1 }
-            return .handled
-        }
-        .onKeyPress(.upArrow) {
-            if highlightedIndex > 0 { highlightedIndex -= 1 }
-            return .handled
-        }
-        .onKeyPress(.return) {
-            guard isSearchFocused else { return .ignored }
-            let limited = Array(entries.prefix(20))
-            if highlightedIndex < limited.count {
-                selectedEntry = limited[highlightedIndex]
-                isProjectPickerExpanded = false
-            }
-            return .handled
         }
     }
 
