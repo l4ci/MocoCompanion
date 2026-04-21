@@ -34,6 +34,7 @@ extension KeyCombo {
     /// All key combos in the application’s main window
     ///
     /// - returns: array of key combos
+    @MainActor
     public static func mainMenuKeyCombos() -> [KeyCombo] {
         guard let menu = NSApp.mainMenu else {
             return []
