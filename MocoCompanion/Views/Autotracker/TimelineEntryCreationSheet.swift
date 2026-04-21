@@ -24,7 +24,6 @@ struct TimelineEntryCreationSheet: View {
     @State private var errorMessage: String?
     @State private var hasInteracted: Bool = false
     @FocusState private var isSearchFocused: Bool
-    @State private var highlightedIndex: Int = -1
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -74,71 +73,32 @@ struct TimelineEntryCreationSheet: View {
     // MARK: - Project Picker
 
     private var projectPicker: some View {
-        let entries = projectCatalog.filter(query: searchText, favorites: favorites)
-        let visibleCount = min(entries.count, 20)
-        return ScrollViewReader { proxy in
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("Search projects…", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: Theme.FontSize.body))
-                    .focused($isSearchFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        highlightedIndex = newValue.isEmpty ? -1 : 0
-                    }
-                    .onKeyPress(.downArrow) {
-                        let next = max(highlightedIndex + 1, 0)
-                        guard next < visibleCount else { return .handled }
-                        highlightedIndex = next
-                        scrollRow(proxy: proxy, to: next)
-                        return .handled
-                    }
-                    .onKeyPress(.upArrow) {
-                        guard highlightedIndex > 0 else { return .handled }
-                        let next = highlightedIndex - 1
-                        highlightedIndex = next
-                        scrollRow(proxy: proxy, to: next)
-                        return .handled
-                    }
-                    .onSubmit {
-                        let limited = Array(entries.prefix(20))
-                        let idx = highlightedIndex < 0 ? 0 : highlightedIndex
-                        if idx < limited.count {
-                            selectedEntry = limited[idx]
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Search projects…", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
+                .focused($isSearchFocused)
 
-                if entries.isEmpty {
-                    Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                        .padding(.vertical, 4)
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(entries.prefix(20).enumerated()), id: \.element.id) { index, entry in
-                                ProjectPickerRow(
-                                    entry: entry,
-                                    isSelected: selectedEntry?.projectId == entry.projectId
-                                        && selectedEntry?.taskId == entry.taskId,
-                                    isHighlighted: index == highlightedIndex,
-                                    onTap: { selectedEntry = entry }
-                                )
-                                .id(index)
-                            }
+            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
+            if entries.isEmpty {
+                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.vertical, 4)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(entries.prefix(20)) { entry in
+                            ProjectPickerRow(
+                                entry: entry,
+                                isSelected: selectedEntry?.projectId == entry.projectId
+                                    && selectedEntry?.taskId == entry.taskId,
+                                onTap: { selectedEntry = entry }
+                            )
                         }
                     }
-                    .frame(maxHeight: 180)
                 }
-            }
-        }
-    }
-
-    /// Defer scroll to the next runloop tick so it doesn't re-enter an
-    /// in-progress layout pass (AppKit logs _NSDetectedLayoutRecursion).
-    private func scrollRow(proxy: ScrollViewProxy, to index: Int) {
-        Task { @MainActor in
-            withAnimation(.easeOut(duration: 0.12)) {
-                proxy.scrollTo(index, anchor: .center)
+                .frame(maxHeight: 180)
             }
         }
     }
@@ -282,7 +242,6 @@ struct TimelineEntryEditSheet: View {
     @State private var isProjectPickerExpanded: Bool = false
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
-    @State private var highlightedIndex: Int = -1
 
     init(
         entry: ShadowEntry,
@@ -381,7 +340,6 @@ struct TimelineEntryEditSheet: View {
         }
         .onChange(of: isProjectPickerExpanded) { _, expanded in
             if expanded {
-                highlightedIndex = searchText.isEmpty ? -1 : 0
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     isSearchFocused = true
@@ -525,86 +483,48 @@ struct TimelineEntryEditSheet: View {
     }
 
     private var projectPickerExpanded: some View {
-        let entries = projectCatalog.filter(query: searchText, favorites: favorites)
-        let visibleCount = min(entries.count, 20)
-        return ScrollViewReader { proxy in
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Project")
-                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                        .foregroundStyle(theme.textSecondary)
-                    Spacer()
-                    Button("Done") {
-                        isProjectPickerExpanded = false
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(Color.accentColor)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Project")
+                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                Spacer()
+                Button("Done") {
+                    isProjectPickerExpanded = false
                 }
-
-                TextField("Search projects…", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: Theme.FontSize.body))
-                    .focused($isSearchFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        highlightedIndex = newValue.isEmpty ? -1 : 0
-                    }
-                    .onKeyPress(.downArrow) {
-                        let next = max(highlightedIndex + 1, 0)
-                        guard next < visibleCount else { return .handled }
-                        highlightedIndex = next
-                        scrollRow(proxy: proxy, to: next)
-                        return .handled
-                    }
-                    .onKeyPress(.upArrow) {
-                        guard highlightedIndex > 0 else { return .handled }
-                        let next = highlightedIndex - 1
-                        highlightedIndex = next
-                        scrollRow(proxy: proxy, to: next)
-                        return .handled
-                    }
-                    .onSubmit {
-                        let limited = Array(entries.prefix(20))
-                        let idx = highlightedIndex < 0 ? 0 : highlightedIndex
-                        if idx < limited.count {
-                            selectedEntry = limited[idx]
-                            isProjectPickerExpanded = false
-                        }
-                    }
-
-                if entries.isEmpty {
-                    Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                        .padding(.vertical, 4)
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(entries.prefix(20).enumerated()), id: \.element.id) { index, row in
-                                ProjectPickerRow(
-                                    entry: row,
-                                    isSelected: selectedEntry?.projectId == row.projectId
-                                        && selectedEntry?.taskId == row.taskId,
-                                    isHighlighted: index == highlightedIndex,
-                                    onTap: {
-                                        selectedEntry = row
-                                        isProjectPickerExpanded = false
-                                    }
-                                )
-                                .id(index)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 180)
-                }
+                .buttonStyle(.plain)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundStyle(Color.accentColor)
             }
-        }
-    }
 
-    private func scrollRow(proxy: ScrollViewProxy, to index: Int) {
-        Task { @MainActor in
-            withAnimation(.easeOut(duration: 0.12)) {
-                proxy.scrollTo(index, anchor: .center)
+            TextField("Search projects…", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: Theme.FontSize.body))
+                .focused($isSearchFocused)
+
+            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
+            if entries.isEmpty {
+                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.vertical, 4)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(entries.prefix(20)) { row in
+                            ProjectPickerRow(
+                                entry: row,
+                                isSelected: selectedEntry?.projectId == row.projectId
+                                    && selectedEntry?.taskId == row.taskId,
+                                onTap: {
+                                    selectedEntry = row
+                                    isProjectPickerExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                .frame(maxHeight: 180)
             }
         }
     }
