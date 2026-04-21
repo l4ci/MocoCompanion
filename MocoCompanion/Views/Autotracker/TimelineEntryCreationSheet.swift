@@ -76,38 +76,43 @@ struct TimelineEntryCreationSheet: View {
     private var projectPicker: some View {
         let entries = projectCatalog.filter(query: searchText, favorites: favorites)
         let visibleCount = min(entries.count, 20)
-        return VStack(alignment: .leading, spacing: 6) {
-            TextField("Search projects…", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-                .focused($isSearchFocused)
-                .onChange(of: searchText) { _, newValue in
-                    highlightedIndex = newValue.isEmpty ? -1 : 0
-                }
-                .onKeyPress(.downArrow) {
-                    let next = max(highlightedIndex + 1, 0)
-                    if next < visibleCount { highlightedIndex = next }
-                    return .handled
-                }
-                .onKeyPress(.upArrow) {
-                    if highlightedIndex > 0 { highlightedIndex -= 1 }
-                    return .handled
-                }
-                .onSubmit {
-                    let limited = Array(entries.prefix(20))
-                    let idx = highlightedIndex < 0 ? 0 : highlightedIndex
-                    if idx < limited.count {
-                        selectedEntry = limited[idx]
+        return ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("Search projects…", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: Theme.FontSize.body))
+                    .focused($isSearchFocused)
+                    .onChange(of: searchText) { _, newValue in
+                        highlightedIndex = newValue.isEmpty ? -1 : 0
                     }
-                }
+                    .onKeyPress(.downArrow) {
+                        let next = max(highlightedIndex + 1, 0)
+                        guard next < visibleCount else { return .handled }
+                        highlightedIndex = next
+                        scrollRow(proxy: proxy, to: next)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        guard highlightedIndex > 0 else { return .handled }
+                        let next = highlightedIndex - 1
+                        highlightedIndex = next
+                        scrollRow(proxy: proxy, to: next)
+                        return .handled
+                    }
+                    .onSubmit {
+                        let limited = Array(entries.prefix(20))
+                        let idx = highlightedIndex < 0 ? 0 : highlightedIndex
+                        if idx < limited.count {
+                            selectedEntry = limited[idx]
+                        }
+                    }
 
-            if entries.isEmpty {
-                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.vertical, 4)
-            } else {
-                ScrollViewReader { proxy in
+                if entries.isEmpty {
+                    Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(.vertical, 4)
+                } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 2) {
                             ForEach(Array(entries.prefix(20).enumerated()), id: \.element.id) { index, entry in
@@ -123,13 +128,17 @@ struct TimelineEntryCreationSheet: View {
                         }
                     }
                     .frame(maxHeight: 180)
-                    .onChange(of: highlightedIndex) { _, newIndex in
-                        guard newIndex >= 0 else { return }
-                        withAnimation(.easeOut(duration: 0.12)) {
-                            proxy.scrollTo(newIndex, anchor: .center)
-                        }
-                    }
                 }
+            }
+        }
+    }
+
+    /// Defer scroll to the next runloop tick so it doesn't re-enter an
+    /// in-progress layout pass (AppKit logs _NSDetectedLayoutRecursion).
+    private func scrollRow(proxy: ScrollViewProxy, to index: Int) {
+        Task { @MainActor in
+            withAnimation(.easeOut(duration: 0.12)) {
+                proxy.scrollTo(index, anchor: .center)
             }
         }
     }
@@ -518,52 +527,57 @@ struct TimelineEntryEditSheet: View {
     private var projectPickerExpanded: some View {
         let entries = projectCatalog.filter(query: searchText, favorites: favorites)
         let visibleCount = min(entries.count, 20)
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Project")
-                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                Spacer()
-                Button("Done") {
-                    isProjectPickerExpanded = false
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: Theme.FontSize.caption))
-                .foregroundStyle(Color.accentColor)
-            }
-
-            TextField("Search projects…", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-                .focused($isSearchFocused)
-                .onChange(of: searchText) { _, newValue in
-                    highlightedIndex = newValue.isEmpty ? -1 : 0
-                }
-                .onKeyPress(.downArrow) {
-                    let next = max(highlightedIndex + 1, 0)
-                    if next < visibleCount { highlightedIndex = next }
-                    return .handled
-                }
-                .onKeyPress(.upArrow) {
-                    if highlightedIndex > 0 { highlightedIndex -= 1 }
-                    return .handled
-                }
-                .onSubmit {
-                    let limited = Array(entries.prefix(20))
-                    let idx = highlightedIndex < 0 ? 0 : highlightedIndex
-                    if idx < limited.count {
-                        selectedEntry = limited[idx]
+        return ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Project")
+                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                    Spacer()
+                    Button("Done") {
                         isProjectPickerExpanded = false
                     }
+                    .buttonStyle(.plain)
+                    .font(.system(size: Theme.FontSize.caption))
+                    .foregroundStyle(Color.accentColor)
                 }
 
-            if entries.isEmpty {
-                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.vertical, 4)
-            } else {
-                ScrollViewReader { proxy in
+                TextField("Search projects…", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: Theme.FontSize.body))
+                    .focused($isSearchFocused)
+                    .onChange(of: searchText) { _, newValue in
+                        highlightedIndex = newValue.isEmpty ? -1 : 0
+                    }
+                    .onKeyPress(.downArrow) {
+                        let next = max(highlightedIndex + 1, 0)
+                        guard next < visibleCount else { return .handled }
+                        highlightedIndex = next
+                        scrollRow(proxy: proxy, to: next)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        guard highlightedIndex > 0 else { return .handled }
+                        let next = highlightedIndex - 1
+                        highlightedIndex = next
+                        scrollRow(proxy: proxy, to: next)
+                        return .handled
+                    }
+                    .onSubmit {
+                        let limited = Array(entries.prefix(20))
+                        let idx = highlightedIndex < 0 ? 0 : highlightedIndex
+                        if idx < limited.count {
+                            selectedEntry = limited[idx]
+                            isProjectPickerExpanded = false
+                        }
+                    }
+
+                if entries.isEmpty {
+                    Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(.vertical, 4)
+                } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 2) {
                             ForEach(Array(entries.prefix(20).enumerated()), id: \.element.id) { index, row in
@@ -582,13 +596,15 @@ struct TimelineEntryEditSheet: View {
                         }
                     }
                     .frame(maxHeight: 180)
-                    .onChange(of: highlightedIndex) { _, newIndex in
-                        guard newIndex >= 0 else { return }
-                        withAnimation(.easeOut(duration: 0.12)) {
-                            proxy.scrollTo(newIndex, anchor: .center)
-                        }
-                    }
                 }
+            }
+        }
+    }
+
+    private func scrollRow(proxy: ScrollViewProxy, to index: Int) {
+        Task { @MainActor in
+            withAnimation(.easeOut(duration: 0.12)) {
+                proxy.scrollTo(index, anchor: .center)
             }
         }
     }
