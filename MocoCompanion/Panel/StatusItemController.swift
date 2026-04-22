@@ -125,7 +125,15 @@ final class StatusItemController {
     // MARK: - Click Handling
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
-        guard let event = NSApp.currentEvent else { return }
+        // NSApp.currentEvent is usually populated when a status-item button fires.
+        // Some menubar managers (Bartender, Ice) can re-parent the item and clear
+        // the event chain — in that case we still want a left-click to open the
+        // panel rather than silently no-op.
+        guard let event = NSApp.currentEvent else {
+            Self.logger.warning("statusItemClicked: NSApp.currentEvent was nil — treating as left-click")
+            onShowPanel()
+            return
+        }
 
         if event.type == .rightMouseUp {
             showContextMenu()
