@@ -38,6 +38,10 @@ struct AppUsageBlockView: View {
 
     private var helpLabel: String {
         var lines = ["\(block.appName) — \(block.durationLabel) (\(block.startTimeLabel) – \(block.endTimeLabel))"]
+        if let title = block.windowTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !title.isEmpty {
+            lines.append(title)
+        }
         if !block.contributingApps.isEmpty {
             lines.append("")
             lines.append("Also in this window:")
@@ -147,6 +151,15 @@ struct AppUsageBlockView: View {
                 Text("\(block.startTimeLabel) – \(block.endTimeLabel)")
                     .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
                     .foregroundStyle(theme.textSecondary)
+                if let title = block.windowTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !title.isEmpty {
+                    Text(title)
+                        .font(.system(size: Theme.FontSize.caption + fontBoost))
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if !block.contributingApps.isEmpty {
                     ForEach(Array(block.contributingApps), id: \.bundleId) { contrib in
                         Text("• \(contrib.appName): \(contrib.durationLabel)")
