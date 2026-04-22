@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import SwiftUI
 import UserNotifications
 import os
@@ -49,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             await AppLogger.shared.updateLogLevels(api: appState.settings.apiLogLevel, app: appState.settings.appLogLevel)
             await AppLogger.shared.app("Application launched", level: .info, context: "Lifecycle")
             BreadcrumbTrail.shared.record("App", "Application launched")
+            await self.captureEnvironmentSnapshot()
         }
 
         panelController.onShowAutotracker = { [weak self] in self?.showAutotrackerWindow() }
@@ -499,5 +501,66 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 await action()
             }
         }
+    }
+
+    // MARK: - Environment Snapshot
+
+    /// Logs app version, OS, hardware, and peer processes at launch so post-mortem
+    /// debugging has the full context of where the app was running.
+    private func captureEnvironmentSnapshot() async {
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+
+        let pi = ProcessInfo.processInfo
+        let os = pi.operatingSystemVersionString
+        let memoryMB = pi.physicalMemory / (1024 * 1024)
+        let cores = pi.processorCount
+        let locale = Locale.current.identifier
+        let timeZone = TimeZone.current.identifier
+        let model = Self.sysctlString("hw.model") ?? "?"
+
+        #if arch(arm64)
+        let architecture = "arm64"
+        #elseif arch(x86_64)
+        let architecture = "x86_64"
+        #else
+        let architecture = "unknown"
+        #endif
+
+        await AppLogger.shared.app(
+            "MocoCompanion \(version) (\(build)) — macOS \(os) — \(model), \(architecture), \(cores) cores, \(memoryMB) MB RAM — locale \(locale), tz \(timeZone)",
+            level: .info,
+            context: "Environment"
+        )
+
+        let ownBundleId = bundle.bundleIdentifier
+        let peers = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != ownBundleId }
+            .compactMap { app -> String? in
+                guard let name = app.localizedName else { return nil }
+                let bid = app.bundleIdentifier ?? "?"
+                return "\(name) (\(bid))"
+            }
+            .sorted()
+
+        if peers.isEmpty {
+            await AppLogger.shared.app("Peer apps: none", level: .info, context: "Environment")
+        } else {
+            await AppLogger.shared.app(
+                "Peer apps (\(peers.count)): \(peers.joined(separator: ", "))",
+                level: .info,
+                context: "Environment"
+            )
+        }
+    }
+
+    /// Read a sysctl string value by name — used for hardware model detection.
+    private static func sysctlString(_ name: String) -> String? {
+        var size = 0
+        guard sysctlbyname(name, nil, &size, nil, 0) == 0, size > 0 else { return nil }
+        var buffer = [CChar](repeating: 0, count: size)
+        guard sysctlbyname(name, &buffer, &size, nil, 0) == 0 else { return nil }
+        return String(cString: buffer)
     }
 }
