@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "entries": {
+    "Menubar::NSApp.currentEvent can be nil when a third-party menubar manager (Bartender, Ice) re-parents the NSStatusItem.": {
+      "tier": "provisional",
+      "hits": 1,
+      "lastSeen": "2026-05-20"
+    }
+  }
+}

@@ -10,7 +10,10 @@ final class StatusItemController {
 
     private let timerService: TimerService
     private let appState: AppState
-    private let onShowPanel: () -> Void
+    /// Routed by AppDelegate to honour `SettingsStore.defaultWindow` — panel
+    /// toggle or Timeline window. The controller is intentionally unaware of
+    /// which window is opened.
+    private let onLeftClick: () -> Void
     private let onNewTimer: () -> Void
     private let onShowSettings: () -> Void
     private let onShowAutotracker: () -> Void
@@ -20,10 +23,10 @@ final class StatusItemController {
     private var statusMenu: NSMenu?
     private var elapsedTimerTask: Task<Void, Never>?
 
-    init(timerService: TimerService, appState: AppState, onShowPanel: @escaping () -> Void, onNewTimer: @escaping () -> Void, onShowSettings: @escaping () -> Void, onShowAutotracker: @escaping () -> Void) {
+    init(timerService: TimerService, appState: AppState, onLeftClick: @escaping () -> Void, onNewTimer: @escaping () -> Void, onShowSettings: @escaping () -> Void, onShowAutotracker: @escaping () -> Void) {
         self.timerService = timerService
         self.appState = appState
-        self.onShowPanel = onShowPanel
+        self.onLeftClick = onLeftClick
         self.onNewTimer = onNewTimer
         self.onShowSettings = onShowSettings
         self.onShowAutotracker = onShowAutotracker
@@ -131,14 +134,14 @@ final class StatusItemController {
         // panel rather than silently no-op.
         guard let event = NSApp.currentEvent else {
             Self.logger.warning("statusItemClicked: NSApp.currentEvent was nil — treating as left-click")
-            onShowPanel()
+            onLeftClick()
             return
         }
 
         if event.type == .rightMouseUp {
             showContextMenu()
         } else {
-            onShowPanel()
+            onLeftClick()
         }
     }
 

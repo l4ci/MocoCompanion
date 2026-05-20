@@ -4,7 +4,7 @@
   "tasks": 0,
   "milestones": 0,
   "since_refactor": {
-    "features": 0,
+    "features": 1,
     "bugs": 0
   }
 }
