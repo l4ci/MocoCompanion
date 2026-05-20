@@ -97,4 +97,37 @@ struct AppRecorderTests {
         // The important invariant: no crash, and currentAppName is B.
         #expect(tracker.currentAppName == "AppB")
     }
+
+    /// Same bundle, different window title — the FocusedWindowObserver path
+    /// re-emits `appActivated` for the same app with a fresh title. The
+    /// existing coalescing logic must flush the prior segment and start a
+    /// new one tagged with the new title.
+    @Test func intraAppTitleChangeFlushesSegment() throws {
+        let tracker = try makeTracker()
+        tracker.processAppChange(bundleId: "com.google.Chrome", appName: "Chrome", windowTitle: "Inbox — Gmail")
+
+        Thread.sleep(forTimeInterval: 0.05)
+
+        tracker.processAppChange(bundleId: "com.google.Chrome", appName: "Chrome", windowTitle: "GitHub — Pull Request #42")
+
+        // First Chrome segment flushed when title changed
+        #expect(tracker.recordCount == 1)
+
+        let records = tracker.records(for: Date())
+        #expect(records.first?.appBundleId == "com.google.Chrome")
+        #expect(records.first?.windowTitle == "Inbox — Gmail")
+    }
+
+    /// Same bundle, identical window title — repeated events extend the
+    /// segment rather than create a new one. Critical so AX-observer
+    /// re-fires (which can happen for purely cosmetic focus events) don't
+    /// produce duplicate records.
+    @Test func intraAppIdenticalTitleCoalesces() throws {
+        let tracker = try makeTracker()
+        tracker.processAppChange(bundleId: "com.google.Chrome", appName: "Chrome", windowTitle: "Inbox — Gmail")
+        tracker.processAppChange(bundleId: "com.google.Chrome", appName: "Chrome", windowTitle: "Inbox — Gmail")
+
+        #expect(tracker.recordCount == 0)
+        #expect(tracker.currentAppName == "Chrome")
+    }
 }

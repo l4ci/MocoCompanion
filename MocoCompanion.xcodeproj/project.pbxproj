@@ -141,6 +141,7 @@
 		A7AE1FACA62C403054FC315A /* RuleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD8FA186D23756850CE8C10 /* RuleEditorSheet.swift */; };
 		A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DE3813688601F145EE7C4 /* StatusItemController.swift */; };
 		AC06679248047DEE5547D1A7 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */; };
+		ACA105E72C44A8FA9A0E9827 /* FocusedWindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6791FBBF9B027DB800C35494 /* FocusedWindowObserver.swift */; };
 		AD81C4D9CFCEF08DC91800B5 /* KeyCombo+System.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC92CE67BD12A7846E9B0B9 /* KeyCombo+System.swift */; };
 		AF05B1ABCD10E9756A49D72F /* ActivityDurationText.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0EBBEC83E42E1437CA53BD2 /* ActivityDurationText.swift */; };
 		B0CF016F487AFC1F39D849B2 /* AppRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */; };
@@ -298,6 +299,7 @@
 		608AC7EBCAA9E5B073493D02 /* AutotrackerSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutotrackerSettingsTab.swift; sourceTree = "<group>"; };
 		64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPopoverView.swift; sourceTree = "<group>"; };
 		66B6801173E7E7D7BAADADEC /* CalendarEventBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventBlockView.swift; sourceTree = "<group>"; };
+		6791FBBF9B027DB800C35494 /* FocusedWindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedWindowObserver.swift; sourceTree = "<group>"; };
 		6858833D372BEA919029C8D0 /* TimeSlotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSlotView.swift; sourceTree = "<group>"; };
 		68735F0E6B189FF28DBED588 /* PersistedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedState.swift; sourceTree = "<group>"; };
 		697385DCAD65C5ACEF09A822 /* TomorrowPlanningRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomorrowPlanningRowView.swift; sourceTree = "<group>"; };
@@ -510,6 +512,7 @@
 				CEC0065706C321F573697AB9 /* DescriptionStore.swift */,
 				011B6721B43C2268A3D0C31E /* EntryQueue.swift */,
 				F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */,
+				6791FBBF9B027DB800C35494 /* FocusedWindowObserver.swift */,
 				801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */,
 				882CA70BE643BC4519089A44 /* MonitorEngine.swift */,
 				A3451464A94CF321FD4B56BF /* NetworkMonitor.swift */,
@@ -901,6 +904,7 @@
 				FEDA0FB7F7ACE340F0D1C674 /* FavoritesSettingsTab.swift in Sources */,
 				0AEFBFC907D75EB14A951A13 /* FirstUseHintView.swift in Sources */,
 				23618893A4088D259A66FCBF /* FloatingPanel.swift in Sources */,
+				ACA105E72C44A8FA9A0E9827 /* FocusedWindowObserver.swift in Sources */,
 				7B908F83CA18C421EE81E2B8 /* FuzzyMatcher.swift in Sources */,
 				F8CA65F8458F1BBA51C8D296 /* GeneralSettingsTab.swift in Sources */,
 				4C34B11A5355433709DCF33D /* GreetingHelper.swift in Sources */,

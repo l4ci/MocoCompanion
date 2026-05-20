@@ -40,6 +40,14 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
     /// `Autotracker.init`.
     var captureWindowTitles: () -> Bool = { false }
 
+    /// Per-PID observer for intra-app focus changes (tab switch in browsers,
+    /// email opened in mail clients, document switch in editors). Replaced on
+    /// every app activation; nil'd in `stop()`.
+    private var focusedWindowObserver: FocusedWindowObserver?
+    private var observedPid: pid_t?
+    private var observedBundleId: String?
+    private var observedAppName: String?
+
     /// Sync frontmost info. Returns nil window title — full title capture
     /// would block the caller on AX reads. The first didActivate event
     /// after this will fill in the title asynchronously.
@@ -64,9 +72,16 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
 
             if !wantsTitle {
                 MainActor.assumeIsolated {
+                    self.detachFocusedWindowObserver()
                     self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: nil))
                 }
                 return
+            }
+
+            // Rebind the per-PID observer synchronously so intra-app focus
+            // changes start firing immediately for the new frontmost app.
+            MainActor.assumeIsolated {
+                self.attachFocusedWindowObserver(pid: pid, bundleId: bundleId, appName: name)
             }
 
             // Time-boxed off-main AX capture. The main actor is released
@@ -97,6 +112,45 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
         let ws = NSWorkspace.shared.notificationCenter
         for token in observers { ws.removeObserver(token) }
         observers.removeAll()
+        detachFocusedWindowObserver()
+    }
+
+    /// Bind a new AX observer to the given PID. Tears down any previous
+    /// observer first so we only hold one at a time. Called from the
+    /// `didActivateApplication` handler.
+    private func attachFocusedWindowObserver(pid: pid_t, bundleId: String, appName: String) {
+        detachFocusedWindowObserver()
+        observedPid = pid
+        observedBundleId = bundleId
+        observedAppName = appName
+        focusedWindowObserver = FocusedWindowObserver(pid: pid) { [weak self] in
+            self?.handleFocusedWindowChange()
+        }
+    }
+
+    private func detachFocusedWindowObserver() {
+        focusedWindowObserver = nil
+        observedPid = nil
+        observedBundleId = nil
+        observedAppName = nil
+    }
+
+    /// Fires when the AX server posts `kAXFocusedWindowChangedNotification`
+    /// for the currently-observed app. Re-reads the focused window title and
+    /// emits a fresh `appActivated` event so `Autotracker` debounces and, if
+    /// the title genuinely changed, flushes the current segment and starts a
+    /// new one tagged with the new title.
+    private func handleFocusedWindowChange() {
+        guard let pid = observedPid,
+              let bundleId = observedBundleId,
+              let appName = observedAppName else { return }
+
+        Task { [weak self] in
+            let title = await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
+            await MainActor.run {
+                self?.handler?(.appActivated(bundleId: bundleId, appName: appName, windowTitle: title))
+            }
+        }
     }
 }
 
