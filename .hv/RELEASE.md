@@ -17,7 +17,8 @@ The script bumps `MARKETING_VERSION` in `project.pbxproj` via sed, commits, tags
 Each `- [ ]` line is a gate `/hv-release` walks before bumping the version. They also apply when running `scripts/release.sh` manually — work through them first.
 
 - [ ] CHANGELOG.md has a section for the new version (write it BEFORE running the script; `--generate-notes` is just commit titles) (manual)
-- [ ] `project.yml` `MARKETING_VERSION` matches the target (run `xcodegen` if you changed it; the script edits `project.pbxproj` directly, so drift between the two files is a known foot-gun) (manual)
+- [ ] `project.yml` is the source of truth for `MARKETING_VERSION` — the script bumps it then runs `xcodegen` so `MocoCompanion.xcodeproj/project.pbxproj` stays in sync. Verify both files agree after step 1 of the script (manual)
+- [ ] `xcodegen` is installed (`brew install xcodegen`) — the script aborts if it's missing
 - [ ] Developer ID Application certificate is in Keychain (`security find-identity -v -p codesigning`) (manual)
 - [ ] Notarization credentials stored (`xcrun notarytool store-credentials "notarytool-profile"`) (manual)
 - [ ] `gh auth status` is logged in
@@ -30,7 +31,3 @@ Each `- [ ]` line is a gate `/hv-release` walks before bumping the version. They
 - [ ] Replace `--generate-notes` body with the curated CHANGELOG.md section: `gh release edit v<X.Y.Z> --notes-file <path>` (manual)
 - [ ] Verify the cask install works: `brew update && brew install --cask l4ci/tap/mococompanion`
 - [ ] Smoke-test the signed .app from the GitHub release ZIP (Gatekeeper should accept it without right-click-open)
-
-## Known issues
-
-- `project.yml` ↔ `project.pbxproj` drift: `scripts/release.sh` edits `project.pbxproj` via sed but ignores `project.yml`. Anyone running `xcodegen` afterwards will overwrite the just-bumped version. Fix path: either teach the script to bump `project.yml` first then run `xcodegen`, or drop `project.yml` if Tuist/xcodegen isn't actively used.

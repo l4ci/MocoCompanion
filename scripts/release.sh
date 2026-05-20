@@ -27,21 +27,34 @@ echo "=== Releasing MocoCompanion v${VERSION} ==="
 echo ""
 
 # ── 1. Bump version in Xcode project ─────────────────────────────
+# Source of truth is project.yml; xcodegen propagates to project.pbxproj.
+# Editing pbxproj directly drifts from project.yml and gets clobbered by
+# the next `xcodegen generate`.
 echo "[1/9] Bumping version to ${VERSION}..."
-sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION/" \
-    MocoCompanion.xcodeproj/project.pbxproj
-
-# Verify it took
-FOUND=$(grep "MARKETING_VERSION = $VERSION" MocoCompanion.xcodeproj/project.pbxproj | wc -l | tr -d ' ')
-if [ "$FOUND" -eq 0 ]; then
-    echo "ERROR: Version bump failed — MARKETING_VERSION not updated"
+if ! command -v xcodegen >/dev/null 2>&1; then
+    echo "ERROR: xcodegen not installed — brew install xcodegen"
     exit 1
 fi
-echo "    Updated MARKETING_VERSION in $FOUND places"
+
+sed -i '' "s/MARKETING_VERSION: \"[^\"]*\"/MARKETING_VERSION: \"$VERSION\"/" project.yml
+
+if ! grep -q "MARKETING_VERSION: \"$VERSION\"" project.yml; then
+    echo "ERROR: Version bump failed — project.yml MARKETING_VERSION not updated"
+    exit 1
+fi
+
+xcodegen generate >/dev/null
+
+FOUND=$(grep -c "MARKETING_VERSION = $VERSION" MocoCompanion.xcodeproj/project.pbxproj | tr -d ' ')
+if [ "$FOUND" -eq 0 ]; then
+    echo "ERROR: xcodegen did not propagate MARKETING_VERSION to project.pbxproj"
+    exit 1
+fi
+echo "    Updated MARKETING_VERSION to $VERSION (project.yml + $FOUND pbxproj sites)"
 
 # ── 2. Commit + tag ──────────────────────────────────────────────
 echo "[2/9] Committing and tagging..."
-git add MocoCompanion.xcodeproj/project.pbxproj
+git add project.yml MocoCompanion.xcodeproj/project.pbxproj
 git commit -m "Bump version to v${VERSION}"
 git tag "v${VERSION}"
 
