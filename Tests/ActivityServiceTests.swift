@@ -218,9 +218,9 @@ struct ActivityServiceTests {
         #expect(service.todayActivities.count == 1)
     }
 
-    // MARK: - upsertActivity
+    // MARK: - upsertActivity(fromServer:)
 
-    @Test("upsertActivity inserts new and updates existing")
+    @Test("upsertActivity(fromServer:) inserts new and updates existing")
     @MainActor func upsertInsertAndUpdate() async {
         var api = MockActivityAPI()
         let existing = TestFactories.makeActivity(id: 30, seconds: 3600, hours: 1.0)
@@ -231,15 +231,48 @@ struct ActivityServiceTests {
         #expect(service.todayActivities.count == 1)
 
         // Update existing
-        let updatedExisting = TestFactories.makeShadowEntry(id: 30, seconds: 7200, hours: 2.0)
-        service.upsertActivity(updatedExisting)
+        let updatedExisting = TestFactories.makeActivity(id: 30, seconds: 7200, hours: 2.0)
+        service.upsertActivity(fromServer: updatedExisting)
         #expect(service.todayActivities.first(where: { $0.id == 30 })?.seconds == 7200)
 
         // Insert new (activity with today's date not already in array)
-        let brand = TestFactories.makeShadowEntry(id: 31, seconds: 1800, hours: 0.5)
-        service.upsertActivity(brand)
+        let brand = TestFactories.makeActivity(id: 31, seconds: 1800, hours: 0.5)
+        service.upsertActivity(fromServer: brand)
         #expect(service.todayActivities.count == 2)
         #expect(service.todayActivities.contains(where: { $0.id == 31 }))
+    }
+
+    @Test("upsertActivity(fromServer:) preserves local origin metadata")
+    @MainActor func upsertPreservesOrigin() async {
+        let (service, _) = makeService()
+
+        // Inject a today entry with origin metadata via the public
+        // restoreToday entry point (the path DeleteUndoManager uses on
+        // undo). Simulates an autotracker-driven create that the server
+        // doesn't know about.
+        var seeded = TestFactories.makeShadowEntry(id: 40, seconds: 3600, hours: 1.0)
+        seeded.startTime = "09:30"
+        seeded.origin = ShadowEntry.Origin(
+            appBundleId: "com.example.app",
+            ruleId: 7,
+            calendarEventId: nil
+        )
+        service.restoreToday(seeded)
+
+        // A server response after editing the same entry would normally
+        // zero out origin metadata via plain `ShadowEntry.from(_:)`. The
+        // (fromServer:) variant must merge the prior local row.
+        let edited = TestFactories.makeActivity(id: 40, seconds: 7200, hours: 2.0)
+        let merged = service.upsertActivity(fromServer: edited)
+
+        #expect(merged.origin.appBundleId == "com.example.app")
+        #expect(merged.origin.ruleId == 7)
+        #expect(merged.startTime == "09:30")
+        #expect(merged.seconds == 7200)
+
+        let row = service.todayActivities.first(where: { $0.id == 40 })
+        #expect(row?.origin.appBundleId == "com.example.app")
+        #expect(row?.seconds == 7200)
     }
 
     // MARK: - sortedTodayActivities

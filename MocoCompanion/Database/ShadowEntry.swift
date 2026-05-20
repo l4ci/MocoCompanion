@@ -93,6 +93,18 @@ struct ShadowEntry: Sendable, Equatable {
 
     // MARK: - Conversion from MocoActivity
 
+    /// Build a fresh shadow row from a server response with no local context.
+    /// Local-only columns (`startTime`, `origin.*`) are zeroed because Moco
+    /// doesn't carry them across the wire.
+    ///
+    /// Use this only when the entry is genuinely fresh:
+    ///   - server pull on initial load or refresh
+    ///   - brand-new local create (no prior row to preserve from)
+    ///
+    /// For server responses that mutate an entry you already had locally
+    /// (timer pause / resume / stop, edit, reassign, push of a pending
+    /// create), use `merged(api:, preserving:)` instead — that path keeps
+    /// the origin metadata intact.
     static func from(_ activity: MocoActivity) -> ShadowEntry {
         ShadowEntry(
             id: activity.id,
@@ -130,6 +142,21 @@ struct ShadowEntry: Sendable, Equatable {
             ),
             origin: Origin()
         )
+    }
+
+    /// Build a shadow row from a server response, preserving local-only
+    /// origin metadata from an existing local row. Use this for any API
+    /// response that's a *mutation* of an entry already known locally:
+    ///   - timer pause / resume / stop (the original entry had origin data)
+    ///   - edit / reassign (server response would otherwise zero origin)
+    ///   - push of a pending-create (the draft carried the origin)
+    ///
+    /// Equivalent to `from(activity)` + `copyLocalOnlyFields(from: local)`,
+    /// expressed as a single call so callers can't forget the second step.
+    static func merged(api activity: MocoActivity, preserving local: ShadowEntry) -> ShadowEntry {
+        var merged = ShadowEntry.from(activity)
+        merged.copyLocalOnlyFields(from: local)
+        return merged
     }
 
     /// Extract "HH:mm" time portion from an ISO8601 datetime string, converted to the
