@@ -327,25 +327,60 @@ import os
 
     // MARK: - Entry Mutation (Gestures)
 
-    /// Persist a mutated entry to the store, reload data, and push to Moco.
+    /// Persist a mutated entry to the store, push to Moco, and refresh the view.
     /// Handles both synced entries (mark dirty) and local-only pendingCreate entries.
+    ///
+    /// Patches the in-memory arrays directly with the mutated row for instant
+    /// visual feedback during rapid drags / resizes — this avoids a full
+    /// SQLite reload, AppUsageBlock merge, calendar refetch, and rule
+    /// evaluation pass per gesture commit. The post-sync `loadData()` is the
+    /// safety net for any server-applied adjustments (e.g., default tags).
     private func persistMutation(_ original: ShadowEntry, _ updated: ShadowEntry, label: String) async throws {
+        let toPersist: ShadowEntry
         if original.id != nil {
             var entry = updated
             entry.sync.status = .dirty
             try await shadowEntryStore.update(entry)
+            toPersist = entry
         } else if original.localId != nil, original.sync.status == .pendingCreate {
             var entry = updated
             entry.sync.status = .pendingCreate
             try await shadowEntryStore.updateByLocalId(entry)
+            toPersist = entry
         } else {
             return
         }
         Self.logger.info("\(label)")
-        await loadData()
+        applyInPlace(toPersist)
         await onEntryChanged?()
         await syncEngine?.sync(dates: [updated.date])
         await loadData()
+    }
+
+    /// Patch a single mutated entry into the in-memory arrays without
+    /// reloading the whole date from SQLite. If the entry's date moved off
+    /// the selected day, it drops out of the view entirely; otherwise it's
+    /// re-bucketed into `positionedEntries` / `unpositionedEntries` based
+    /// on whether it carries a `startTime`.
+    private func applyInPlace(_ entry: ShadowEntry) {
+        let dateString = TimelineGeometry.dateString(from: selectedDate)
+        let matches: (ShadowEntry) -> Bool = { e in
+            if let id = entry.id { return e.id == id }
+            if let local = entry.localId { return e.localId == local }
+            return false
+        }
+        shadowEntries.removeAll(where: matches)
+        positionedEntries.removeAll(where: matches)
+        unpositionedEntries.removeAll(where: matches)
+        // Re-insert only if the entry still belongs to the selected date
+        // and isn't tombstoned for deletion.
+        guard entry.date == dateString, entry.sync.status != .pendingDelete else { return }
+        shadowEntries.append(entry)
+        if entry.startTime != nil {
+            positionedEntries.append(entry)
+        } else {
+            unpositionedEntries.append(entry)
+        }
     }
 
     /// Move an entry to a new start time. Locked entries are rejected.
