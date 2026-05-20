@@ -304,9 +304,21 @@ final class ActivityService: ActivitySyncing {
 
     // MARK: - Local State Mutations (optimistic)
 
-    /// Public: upsert an activity from an external source (e.g., TimerService after pause/resume).
-    func upsertActivity(_ activity: ShadowEntry) {
-        upsertToday(activity)
+    /// Public: upsert a server-mutation response from an external source
+    /// (e.g., TimerService after pause/resume). Looks up any prior local
+    /// row and merges its origin metadata onto the server response so
+    /// `Origin.appBundleId` / `ruleId` / `calendarEventId` survive timer
+    /// transitions. Returns the merged shadow so the caller can use the
+    /// same row for its own state (e.g., `TimerService.currentActivity`).
+    @discardableResult
+    func upsertActivity(fromServer activity: MocoActivity) -> ShadowEntry {
+        let local = todayActivities.first(where: { $0.id == activity.id })
+            ?? yesterdayActivities.first(where: { $0.id == activity.id })
+        let merged = local.map { ShadowEntry.merged(api: activity, preserving: $0) }
+            ?? ShadowEntry.from(activity)
+        upsertToday(merged)
+        upsertYesterday(merged)
+        return merged
     }
 
     /// Remove an activity from both today and yesterday arrays.

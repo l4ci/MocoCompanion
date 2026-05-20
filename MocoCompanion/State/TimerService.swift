@@ -5,7 +5,14 @@ import os
 /// ActivityService conforms; TimerService depends on the protocol.
 @MainActor
 protocol ActivitySyncing: AnyObject {
-    func upsertActivity(_ activity: ShadowEntry)
+    /// Mirror a server response into the canonical activity arrays,
+    /// preserving local-only origin metadata from any prior local row.
+    /// `MocoActivity` (not `ShadowEntry`) is the input so callers can't
+    /// accidentally pass a zero-origin row. Returns the merged shadow so
+    /// the caller can also update its own in-memory state with the same
+    /// row (e.g., `TimerService.currentActivity`).
+    @discardableResult
+    func upsertActivity(fromServer activity: MocoActivity) -> ShadowEntry
     func applyFetchedTodayActivities(_ activities: [ShadowEntry])
     func refreshTodayStats() async
 }
@@ -104,13 +111,17 @@ final class TimerService: TimerStopProvider {
                 logger.info("Timer already running after createActivity — skipping startTimer")
             }
 
-            let activity = ShadowEntry.from(apiActivity)
+            // Brand-new create: no prior local row to merge from. The
+            // upsertActivity(fromServer:) path internally falls back to
+            // `from()` when no local row exists, so origin stays zeroed —
+            // which is correct here.
+            let activity = activitySync?.upsertActivity(fromServer: apiActivity)
+                ?? ShadowEntry.from(apiActivity)
             currentActivity = activity
             timerState = .running(activityId: apiActivity.id, projectName: activity.projectName)
             BreadcrumbTrail.shared.record("TimerService", "Timer started: projectId=\(projectId) taskId=\(taskId)")
             lastError = nil
 
-            activitySync?.upsertActivity(activity)
             onEvent?(.started(projectId: projectId, taskId: taskId, description: description, projectName: activity.projectName))
 
             return .success(activity)
@@ -147,7 +158,7 @@ final class TimerService: TimerStopProvider {
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
             BreadcrumbTrail.shared.record("TimerService", "Timer paused: activityId=\(activityId)")
             onEvent?(.paused(projectName: projectName))
-            activitySync?.upsertActivity(ShadowEntry.from(stopped))
+            activitySync?.upsertActivity(fromServer: stopped)
         } catch {
             handleError(error, label: "pauseTimer")
         }
@@ -163,13 +174,13 @@ final class TimerService: TimerStopProvider {
 
         do {
             let startedApi = try await client.startTimer(activityId: activityId)
-            let started = ShadowEntry.from(startedApi)
+            let started = activitySync?.upsertActivity(fromServer: startedApi)
+                ?? ShadowEntry.from(startedApi)
             currentActivity = started
             timerState = .running(activityId: activityId, projectName: projectName)
             logger.info("Timer resumed: activityId=\(activityId) project=\(projectName)")
             BreadcrumbTrail.shared.record("TimerService", "Timer resumed: activityId=\(activityId)")
             onEvent?(.resumed(projectName: projectName))
-            activitySync?.upsertActivity(started)
         } catch {
             handleError(error, label: "resumeTimer")
         }
@@ -255,14 +266,14 @@ final class TimerService: TimerStopProvider {
 
         do {
             let startedApi = try await client.startTimer(activityId: activityId)
-            let started = ShadowEntry.from(startedApi)
+            let started = activitySync?.upsertActivity(fromServer: startedApi)
+                ?? ShadowEntry.from(startedApi)
             currentActivity = started
             timerState = .running(activityId: startedApi.id, projectName: projectName)
             lastError = nil
             logger.info("Continued timer on activityId=\(activityId) project=\(projectName)")
             BreadcrumbTrail.shared.record("TimerService", "Timer continued: activityId=\(activityId)")
             onEvent?(.continued(projectId: started.projectId, taskId: started.taskId, projectName: projectName))
-            activitySync?.upsertActivity(started)
         } catch {
             handleError(error, label: "continueTimer")
             _ = await syncCurrentTimer()
@@ -276,7 +287,7 @@ final class TimerService: TimerStopProvider {
         if case .running(let activityId, _) = timerState {
             do {
                 let stopped = try await client.stopTimer(activityId: activityId)
-                activitySync?.upsertActivity(ShadowEntry.from(stopped))
+                activitySync?.upsertActivity(fromServer: stopped)
                 logger.info("Quietly stopped running timer: activityId=\(activityId)")
             } catch {
                 logger.error("stopRunningTimerQuietly failed: \(error.localizedDescription)")

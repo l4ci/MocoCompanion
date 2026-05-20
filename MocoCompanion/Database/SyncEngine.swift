@@ -139,11 +139,10 @@ actor SyncEngine {
                         try await store.deleteByLocalId(localId)
                     }
                     // Preserve local-only metadata across the API round-trip.
-                    // `ShadowEntry.from(MocoActivity)` zeroes these fields
-                    // because Moco doesn't know about them; we copy them back
-                    // from the dirty local row via copyLocalOnlyFields(from:).
-                    var serverShadow = ShadowEntry.from(created)
-                    serverShadow.copyLocalOnlyFields(from: entry)
+                    // `ShadowEntry.merged(api:preserving:)` does the
+                    // from-then-copy in one step so origin metadata can't
+                    // be silently dropped.
+                    let serverShadow = ShadowEntry.merged(api: created, preserving: entry)
                     try await store.insert(serverShadow)
                     pushCount += 1
 
