@@ -575,6 +575,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard sysctlbyname(name, nil, &size, nil, 0) == 0, size > 0 else { return nil }
         var buffer = [CChar](repeating: 0, count: size)
         guard sysctlbyname(name, &buffer, &size, nil, 0) == 0 else { return nil }
-        return String(cString: buffer)
+        // sysctlbyname writes a NUL-terminated C string; drop the terminator
+        // before decoding so the resulting Swift String has no trailing \0.
+        let bytes = buffer.prefix(while: { $0 != 0 }).map(UInt8.init(bitPattern:))
+        return String(decoding: bytes, as: UTF8.self)
     }
 }
