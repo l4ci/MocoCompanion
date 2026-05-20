@@ -482,7 +482,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         hotKey = HotKey(keyCombo: combo)
         hotKey?.keyDownHandler = { [weak self] in
             MainActor.assumeIsolated {
-                self?.panelController.toggle()
+                guard let self else { return }
+                switch self.appState.settings.shortcutTarget {
+                case .panel:
+                    self.panelController.toggle()
+                case .timeline:
+                    self.showAutotrackerWindow()
+                }
             }
         }
         Self.logger.info("Global hotkey registered: \(combo.description)")
