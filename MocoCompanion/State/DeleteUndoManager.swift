@@ -89,11 +89,11 @@ final class DeleteUndoManager {
             // Activity wasn't in local arrays — just delete server-side
             do {
                 try await clientFactory()?.deleteActivity(activityId: activityId)
-                try? await shadowEntryStore.delete(id: activityId)
+                await shadowDeleteOrLog(id: activityId, label: "deleteActivity (orphan)")
             } catch MocoError.notFound {
                 // Server doesn't have it anyway — safe to clear the local tombstone
                 logger.info("Activity \(activityId) already gone from server")
-                try? await shadowEntryStore.delete(id: activityId)
+                await shadowDeleteOrLog(id: activityId, label: "deleteActivity (orphan, server-404)")
             } catch {
                 // Leave the shadow row as .pendingDelete so the next sync can retry.
                 handleError(error, label: "deleteActivity")
@@ -184,17 +184,30 @@ final class DeleteUndoManager {
         do {
             try await client.deleteActivity(activityId: activityId)
             logger.info("Deleted activity \(activityId) from server")
-            try? await shadowEntryStore.delete(id: activityId)
+            await shadowDeleteOrLog(id: activityId, label: "executeDelete")
         } catch MocoError.notFound {
             // Server doesn't have it anyway — safe to clear the local tombstone
             logger.info("Activity \(activityId) already gone from server")
-            try? await shadowEntryStore.delete(id: activityId)
+            await shadowDeleteOrLog(id: activityId, label: "executeDelete (server-404)")
         } catch {
             // Leave the shadow row as .pendingDelete so the next sync can retry.
             handleError(error, label: "deleteActivity")
         }
         if pendingDelete?.activity.id == activityId {
             pendingDelete = nil
+        }
+    }
+
+    /// Hard-delete the shadow row after a successful (or 404) server delete.
+    /// Failure here means the row stays as `.pendingDelete` indefinitely —
+    /// invisible in the UI but blocking the row id. Log explicitly so it
+    /// shows up in post-mortems; the next sync pass will retry.
+    private func shadowDeleteOrLog(id: Int, label: String) async {
+        do {
+            try await shadowEntryStore.delete(id: id)
+        } catch {
+            logger.error("\(label) shadow-store delete failed (id=\(id)): \(error.localizedDescription)")
+            Task { await AppLogger.shared.app("\(label) shadow-store delete failed: \(error.localizedDescription)", level: .error, context: "DeleteUndoManager") }
         }
     }
 
