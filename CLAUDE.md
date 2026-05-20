@@ -50,6 +50,69 @@ Professionals who track their hours in Moco daily — developers, designers, con
 
 Durable learnings live in `.hv/KNOWLEDGE.md`. Consult it when work touches these topics:
 
-- _(no topics yet — run `/hv-learn` to capture learnings)_
+- Build & Tooling
+- Architecture
+- Menubar
 
 <!-- hv-knowledge-end -->
+
+<!-- hv-vision-start -->
+## Project Vision
+
+Project milestones live in `.hv/MILESTONES.md`.
+
+_(no milestones yet — run `/hv-vision` to brainstorm)_
+<!-- hv-vision-end -->
+
+<!-- hv-skills-start -->
+## hv-skills
+
+This project uses hv-skills for backlog tracking, planning, and skill orchestration. State lives in `.hv/` — most content is tracked (backlog, knowledge, decisions, plans, designs, milestones) so it travels with the repo. Only `.hv/bin/` (regenerated mirror of canonical `bin/`, overwritten on every `/hv-init`), `.hv/status.json`, `.hv/repos.json`, `.hv/config.local.json`, `.hv/handoff/`, and `.hv/qa-runs/` are gitignored. Use the skill helpers to update tracked content (never edit by hand). Edit canonical sources (`bin/`, `hv-*/`, `docs/`, `test/`) for skill changes.
+
+**Capture & pick** — `/hv-capture` (with `--remove <ID>` to delete items), `/hv-go`, `/hv-next`, `/hv-pause`
+**Plan & build** — `/hv-brainstorm`, `/hv-plan`, `/hv-spike`, `/hv-work` (`--preview` for read-only peek), `/hv-debug`
+**Review & ship** — `/hv-review`, `/hv-qa` (opt-in gate via `ship.qa`), `/hv-ship` (`--undo` to roll back the last cycle, `--docs` to maintain public docs)
+**Persist** — `/hv-learn` (durable knowledge; `--term <name>` for glossary), `/hv-decide` (hard boundaries — manual only)
+**Vision & maps** — `/hv-vision`, `/hv-refactor`
+**Maintenance** — `/hv-init`, `/hv-config`, `/hv-update`, `/hv-migrate` (v3→v4 codemod), `/hv-release`
+
+Before acting on work that touches a topic listed in `## Project Knowledge`, `## Project Decisions`, or `## Project Vision`, pull only the relevant sections:
+
+- `.hv/bin/hv-knowledge-query <topic>…`
+- `.hv/bin/hv-decisions-query <topic>…`
+- `.hv/bin/hv-glossary-read <term>…` (terms live as nested-bullet entries under `## Glossary` in `.hv/KNOWLEDGE.md`)
+- `.hv/bin/hv-vision-active` (then `.hv/bin/hv-todo-by-milestone <id>` per active milestone)
+<!-- hv-skills-end -->
+
+<!-- hv-decisions-start -->
+## Project Decisions
+
+Hard boundaries live in `.hv/DECISIONS.md`. Consult them before acting on work that touches these topics:
+
+- _(no decisions yet — run `/hv-decide` to capture a hard boundary)_
+
+<!-- hv-decisions-end -->
+
+<!-- hv-map-start -->
+## Project Map
+
+Subsystems live in `.hv/MAP.md` (detail in `.hv/map/<name>.md`). Pull with `.hv/bin/hv-map-query <name>`.
+
+- _(no subsystems yet — write `.hv/map/<name>.md` as you discover subsystems)_
+<!-- hv-map-end -->
+
+<!-- hv-context-start -->
+## Project Context
+
+Domain terminology lives in `.hv/CONTEXT.md`. Use these canonical names; if a term you're using conflicts (synonym or drift), call it out.
+
+- _(no terms yet — run `/hv-context` to capture domain terminology)_
+<!-- hv-context-end -->
+
+<!-- hv-qa-start -->
+## Project QA
+
+QA strategies live in `.hv/QA.md` (detail in `.hv/qa/<target>.md`). Pull with `.hv/bin/hv-qa-query <target>`. `/hv-qa run` consumes these; the skill never hardcodes runners.
+
+- _(no QA strategy yet — run `/hv-qa first-run` to scaffold)_
+<!-- hv-qa-end -->

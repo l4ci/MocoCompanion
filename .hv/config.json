@@ -1,0 +1,47 @@
+{
+  "models": {
+    "orchestrator": "opus",
+    "worker": "sonnet"
+  },
+  "work": {
+    "isolation": "branch",
+    "mergeStrategy": "direct"
+  },
+  "refactor": {
+    "confirmBeforeExecute": true,
+    "verifyCommands": []
+  },
+  "learn": {
+    "verify": true,
+    "promoteThreshold": 3
+  },
+  "ship": {
+    "review": true,
+    "secondOpinion": false,
+    "qa": false
+  },
+  "autonomy": {
+    "level": "auto"
+  },
+  "debug": {
+    "competingHypotheses": false
+  },
+  "docs": {
+    "path": "docs",
+    "autoCreate": false,
+    "afterWork": false
+  },
+  "umbrella": {
+    "enabled": false
+  },
+  "hvSkills": {
+    "version": "4.3.0"
+  },
+  "git": {
+    "baseBranch": ""
+  },
+  "qa": {
+    "gate": "advisory",
+    "afterWork": false
+  }
+}
