@@ -42,6 +42,12 @@ enum DefaultTab: String, CaseIterable, Sendable {
     case today
 }
 
+/// What the global shortcut opens.
+enum ShortcutTarget: String, CaseIterable, Sendable {
+    case panel
+    case timeline
+}
+
 /// Persists user settings. API key goes to Keychain; other preferences to UserDefaults.
 @Observable
 @MainActor
@@ -61,6 +67,7 @@ final class SettingsStore {
         static let soundEnabled = "soundEnabled"
         static let customShortcutKeyCode = "customShortcutKeyCode"
         static let customShortcutModifiers = "customShortcutModifiers"
+        static let shortcutTarget = "shortcutTarget"
         static let appearance = "appearance"
         static let favoritesEnabled = "favoritesEnabled"
         static let autoCompleteEnabled = "autoCompleteEnabled"
@@ -259,6 +266,13 @@ final class SettingsStore {
         customShortcutKeyCode != 0
     }
 
+    /// What the global shortcut opens: the quick-entry panel (toggles) or the
+    /// Timeline window (opens/activates). Default `.panel` preserves existing
+    /// behaviour for users upgrading from a version without this setting.
+    var shortcutTarget: ShortcutTarget {
+        didSet { Self.save(Key.shortcutTarget, shortcutTarget.rawValue) }
+    }
+
     // MARK: - Preferences: Autotracker
 
     var autotrackerEnabled: Bool {
@@ -403,6 +417,7 @@ final class SettingsStore {
         self.selectedCalendarId = UserDefaults.standard.string(forKey: Key.selectedCalendarId)
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
+        self.shortcutTarget = ShortcutTarget(rawValue: Self.read(Key.shortcutTarget, default: "panel")) ?? .panel
         self.demoMode = Self.read(Key.demoMode, default: false)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
         self.appLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.appLogLevel, default: 1)) ?? .info
@@ -454,6 +469,7 @@ final class SettingsStore {
         workingDays = [2, 3, 4, 5, 6]
         customShortcutKeyCode = 0
         customShortcutModifiers = 0
+        shortcutTarget = .panel
         apiLogLevel = .info
         appLogLevel = .info
         descriptionRequired = false

@@ -18,6 +18,11 @@ struct GeneralSettingsTab: View {
                     Text(String(localized: "settings.defaultTab.today")).tag(DefaultTab.today)
                 }
 
+                Picker(String(localized: "settings.shortcutTarget"), selection: $settings.shortcutTarget) {
+                    Text(String(localized: "settings.shortcutTarget.panel")).tag(ShortcutTarget.panel)
+                    Text(String(localized: "settings.shortcutTarget.timeline")).tag(ShortcutTarget.timeline)
+                }
+
                 Button(String(localized: "settings.resetPosition")) {
                     settings.resetPanelPosition()
                 }
