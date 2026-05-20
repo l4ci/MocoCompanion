@@ -62,9 +62,5 @@ vendor/
 .gsd-id
 
 # ── hv-skills ──
-.hv/bin/
-.hv/status.json
-.hv/repos.json
-.hv/config.local.json
-.hv/handoff/
-.hv/qa-runs/
+# Workspace state — local-only, not shared via git.
+.hv/

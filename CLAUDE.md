@@ -67,7 +67,7 @@ _(no milestones yet — run `/hv-vision` to brainstorm)_
 <!-- hv-skills-start -->
 ## hv-skills
 
-This project uses hv-skills for backlog tracking, planning, and skill orchestration. State lives in `.hv/` — most content is tracked (backlog, knowledge, decisions, plans, designs, milestones) so it travels with the repo. Only `.hv/bin/` (regenerated mirror of canonical `bin/`, overwritten on every `/hv-init`), `.hv/status.json`, `.hv/repos.json`, `.hv/config.local.json`, `.hv/handoff/`, and `.hv/qa-runs/` are gitignored. Use the skill helpers to update tracked content (never edit by hand). Edit canonical sources (`bin/`, `hv-*/`, `docs/`, `test/`) for skill changes.
+This project uses hv-skills for backlog tracking, planning, and skill orchestration. State lives in `.hv/` and is **local-only** — the entire directory is gitignored, so backlog, knowledge, decisions, plans, designs, and milestones do not travel with the repo. Each contributor maintains their own `.hv/` via `/hv-init`. Use the skill helpers to update workspace content (never edit by hand).
 
 **Capture & pick** — `/hv-capture` (with `--remove <ID>` to delete items), `/hv-go`, `/hv-next`, `/hv-pause`
 **Plan & build** — `/hv-brainstorm`, `/hv-plan`, `/hv-spike`, `/hv-work` (`--preview` for read-only peek), `/hv-debug`
