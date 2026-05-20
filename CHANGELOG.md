@@ -2,6 +2,24 @@
 
 All notable changes to MocoCompanion are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) loosely; versions follow semver.
 
+## v0.6.1 — 2026-05-20
+
+One user-visible behavior change: window-title capture now keeps up with tab and document switches inside the same app, not just app switches.
+
+### New
+
+- **Window-title capture follows intra-app focus changes.** Switching Chrome tabs, opening a different email in Outlook, or jumping between Xcode documents each now create their own timeline segment tagged with the new title. Before this, the autotracker only re-read the title on app switch — a one-hour Chrome session showed a single segment with the first tab's title. Requires **Settings → Autotracker → Window title tracking** to be on. Built on a per-PID `AXObserver` subscribed to `kAXFocusedWindowChangedNotification`; title-change notifications are deliberately not observed, so Gmail unread-counter flicker and similar JS-driven title updates don't fragment segments.
+
+### Changed
+
+- Dev workflow: `.hv/` workspace state (backlog, knowledge, decisions, milestones, sidecars) is now gitignored and local-only; each contributor maintains their own.
+
+### Stats
+
+1 user-visible commit · 4 files changed · +172 lines
+
+**Full changelog:** https://github.com/l4ci/MocoCompanion/compare/v0.6.0...v0.6.1
+
 ## v0.6.0 — 2026-05-20
 
 Two new settings, four bug fixes around the menubar and Timeline, plus an internal refactor pass.
