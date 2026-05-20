@@ -3,6 +3,7 @@
 ## Bugs
 
 ## Features
+- **[F04] [Minor] Default-window setting also drives menubar left-click target.** The setting introduced in [F03] (currently named `shortcutTarget` / `settings.shortcutTarget`) should also decide which window opens when the user left-clicks the menubar icon — not just the global keyboard shortcut. Rename the config key + the UI label to reflect the broader scope (something like `defaultWindow` / "Default Window"). Touches `StatusItemController.statusItemClicked`, the `ShortcutTarget` enum in `SettingsStore`, and the picker in `GeneralSettingsTab`. Watch for the rename migration: existing users have `shortcutTarget` in UserDefaults — either read both keys with a legacy fallback or migrate on launch. Related: [F03] Since: 2be5ec6
 
 ## Tasks
 
