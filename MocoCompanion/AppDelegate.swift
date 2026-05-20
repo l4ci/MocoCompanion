@@ -62,7 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let sic = StatusItemController(
             timerService: timerService,
             appState: appState,
-            onShowPanel: { [weak self] in self?.panelController.toggle() },
+            onLeftClick: { [weak self] in self?.openDefaultWindow() },
             onNewTimer: { [weak self] in self?.panelController.showFresh() },
             onShowSettings: { [weak self] in self?.showSettings() },
             onShowAutotracker: { [weak self] in self?.showAutotrackerWindow() }
@@ -368,6 +368,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         Self.logger.info("Settings window opened")
     }
 
+    // MARK: - Default Window Dispatch
+
+    /// Open the window selected by `SettingsStore.defaultWindow`. Shared
+    /// entry point for the global shortcut and the menubar left-click —
+    /// both honour the same user preference.
+    func openDefaultWindow() {
+        switch appState.settings.defaultWindow {
+        case .panel:
+            panelController.toggle()
+        case .timeline:
+            showAutotrackerWindow()
+        }
+    }
+
     // MARK: - Autotracker Window
 
     func showAutotrackerWindow() {
@@ -482,13 +496,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         hotKey = HotKey(keyCombo: combo)
         hotKey?.keyDownHandler = { [weak self] in
             MainActor.assumeIsolated {
-                guard let self else { return }
-                switch self.appState.settings.shortcutTarget {
-                case .panel:
-                    self.panelController.toggle()
-                case .timeline:
-                    self.showAutotrackerWindow()
-                }
+                self?.openDefaultWindow()
             }
         }
         Self.logger.info("Global hotkey registered: \(combo.description)")

@@ -6212,23 +6212,23 @@
         }
       }
     },
-    "settings.shortcutTarget" : {
+    "settings.defaultWindow" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tastenkürzel öffnet"
+            "value" : "Standardfenster"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Global Shortcut Opens"
+            "value" : "Default Window"
           }
         }
       }
     },
-    "settings.shortcutTarget.panel" : {
+    "settings.defaultWindow.panel" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6244,7 +6244,7 @@
         }
       }
     },
-    "settings.shortcutTarget.timeline" : {
+    "settings.defaultWindow.timeline" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
