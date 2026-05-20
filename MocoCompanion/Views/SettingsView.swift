@@ -6,6 +6,16 @@ struct SettingsView: View {
     var appState: AppState?
     var onShortcutChanged: ((UInt32, UInt32) -> Void)?
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    // Settings runs in a standalone NSHostingController-backed NSWindow, so the
+    // SwiftUI colorScheme/theme environment must be re-asserted from the user's
+    // appearance setting; otherwise `\.theme` falls back to the default (light)
+    // and the dark-mode window paints light-mode text tokens on a dark surface.
+    private var effectiveColorScheme: ColorScheme {
+        Theme.colorScheme(from: settings.appearance) ?? colorScheme
+    }
+
     var body: some View {
         TabView {
             Tab(String(localized: "settings.account"), systemImage: "person.circle") {
@@ -47,5 +57,7 @@ struct SettingsView: View {
         }
         .frame(width: 780, height: 580)
         .padding()
+        .preferredColorScheme(Theme.colorScheme(from: settings.appearance))
+        .withTheme(colorScheme: effectiveColorScheme)
     }
 }
