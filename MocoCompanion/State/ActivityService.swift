@@ -270,7 +270,7 @@ final class ActivityService: ActivitySyncing {
                 description: apiDescription, seconds: seconds, tag: tag
             )
             let entry = ShadowEntry.from(created)
-            try? await syncEngine?.insertSynced(entry)
+            await insertSyncedOrLog(entry, label: "bookManualEntry")
             appendToday(entry)
             usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)
             notificationDispatcher.manualEntry(projectName: entry.projectName, hours: Double(seconds) / 3600.0)
@@ -292,7 +292,7 @@ final class ActivityService: ActivitySyncing {
                 tag: source.tag.isEmpty ? nil : source.tag
             )
             let entry = ShadowEntry.from(created)
-            try? await syncEngine?.insertSynced(entry)
+            await insertSyncedOrLog(entry, label: "duplicateToToday")
             appendToday(entry)
             notificationDispatcher.entryDuplicated(projectName: entry.projectName, hours: entry.hours)
             return .success(entry)
@@ -389,5 +389,21 @@ final class ActivityService: ActivitySyncing {
         notificationDispatcher.apiError(mocoError)
         logger.error("\(label) failed: \(error.localizedDescription)")
         Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
+    }
+
+    /// Mirror a freshly-created server entry into the local shadow store.
+    /// Server-side write already succeeded; a local-store failure here means
+    /// the optimistic in-memory append is now inconsistent with SQLite —
+    /// log so post-mortems can find it. Don't notify the user: the next sync
+    /// reconciles, and the action they took (manual entry, duplicate) did
+    /// succeed end-to-end.
+    private func insertSyncedOrLog(_ entry: ShadowEntry, label: String) async {
+        guard let syncEngine else { return }
+        do {
+            try await syncEngine.insertSynced(entry)
+        } catch {
+            logger.error("\(label) shadow-store insert failed (id=\(entry.id ?? -1)): \(error.localizedDescription)")
+            Task { await AppLogger.shared.app("\(label) shadow-store insert failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
+        }
     }
 }

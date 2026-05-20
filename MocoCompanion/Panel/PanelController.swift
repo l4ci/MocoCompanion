@@ -152,11 +152,20 @@ final class PanelController {
 
     func hide() {
         panel?.orderOut(nil)
+        handleHide(reason: "manual")
+    }
+
+    /// Single source of truth for "the panel is no longer visible".
+    /// Called from `hide()` (explicit dismiss), focus-loss, and the
+    /// willClose observer — all three previously duplicated this trio.
+    /// The `reason` tag flows through logs + breadcrumbs to make
+    /// post-mortems easier to read.
+    private func handleHide(reason: String) {
         isVisible = false
         PanelVisibility.shared.set(false)
         scheduleStateReset()
-        Self.logger.debug("Panel hidden")
-        BreadcrumbTrail.shared.record("Panel", "Panel hidden")
+        Self.logger.debug("Panel hidden (\(reason))")
+        BreadcrumbTrail.shared.record("Panel", "Panel hidden (\(reason))")
     }
 
     // MARK: - State Reset
@@ -197,9 +206,7 @@ final class PanelController {
         // Focus loss (click outside, app switch) — hide but preserve state
         newPanel.onFocusLost = { [weak self] in
             MainActor.assumeIsolated {
-                self?.isVisible = false
-                PanelVisibility.shared.set(false)
-                self?.scheduleStateReset()
+                self?.handleHide(reason: "focus-loss")
             }
         }
 
@@ -210,9 +217,7 @@ final class PanelController {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.isVisible = false
-                PanelVisibility.shared.set(false)
-                self?.scheduleStateReset()
+                self?.handleHide(reason: "explicit-close")
             }
         }
 
