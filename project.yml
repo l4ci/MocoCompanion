@@ -60,3 +60,23 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.mococompanion.tests
         GENERATE_INFOPLIST_FILE: true
         SWIFT_VERSION: "6.0"
+
+schemes:
+  MocoCompanion:
+    build:
+      targets:
+        MocoCompanion: all
+        MocoCompanionTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: MocoCompanionTests
+          randomExecutionOrder: true
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

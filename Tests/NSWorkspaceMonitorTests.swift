@@ -37,10 +37,19 @@ struct NSWorkspaceMonitorTests {
             }
         }
 
+        // Signaled by the slow resolver once it has actually produced its
+        // (stale) result, so the test can wait for that exact moment instead
+        // of guessing a wall-clock margin that has to outrun the resolver's
+        // own delay — flaky under a large parallel test run's contention.
+        var slowResolverSignalContinuation: AsyncStream<Void>.Continuation!
+        let slowResolverDone = AsyncStream<Void> { slowResolverSignalContinuation = $0 }
+        let slowResolverSignal = slowResolverSignalContinuation!
+
         // First activation: a slow AX resolution (simulates a laggy AX read
         // for the app the user has already switched away from).
         monitor.titleResolver = { _ in
             try? await Task.sleep(for: .milliseconds(120))
+            slowResolverSignal.yield(())
             return "Stale Title"
         }
         monitor._testBeginTitleResolution(pid: 111, bundleId: "com.app.A", appName: "AppA")
@@ -52,9 +61,13 @@ struct NSWorkspaceMonitorTests {
 
         // Wait for the fast (second) activation to report...
         try await waitUntil { !received.isEmpty }
-        // ...then wait past the slow resolver's delay too, so the guard has
-        // had a chance to (correctly) drop its late, stale result.
-        try await Task.sleep(for: .milliseconds(200))
+        // ...then wait for the slow resolver to have actually completed...
+        var slowIterator = slowResolverDone.makeAsyncIterator()
+        _ = await slowIterator.next()
+        // ...and yield a handful of times so the guard's own MainActor hop
+        // (queued immediately after the resolver returns) gets a chance to
+        // run and (correctly) drop the stale result before we assert.
+        for _ in 0..<50 { await Task.yield() }
 
         // Only the latest activation's result should have reached the
         // handler — the slower, earlier one must be dropped rather than

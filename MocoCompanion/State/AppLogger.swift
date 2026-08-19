@@ -41,11 +41,19 @@ actor AppLogger {
     private let maxFileSize: Int = 2 * 1024 * 1024  // 2 MB per log file
     private let maxBackups = 3
 
+    /// Under XCTest the test host shares the real user's Application Support
+    /// directory, so creating log directories/files there would pollute the
+    /// user's real logs on every test run. Tests get a no-op logger instead
+    /// — call sites keep working, nothing touches disk. See KeychainHelper
+    /// for the same rationale applied to Keychain access.
+    private static let isRunningTests = ProcessInfo.processInfo.isRunningTests
+
     // MARK: - Log directory
 
     private var logDirectory: URL {
         let appSupport = URL.applicationSupportDirectory
         let dir = appSupport.appendingPathComponent("MocoCompanion/Logs", isDirectory: true)
+        guard !Self.isRunningTests else { return dir }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
@@ -136,6 +144,8 @@ actor AppLogger {
     private static let flushInterval: Duration = .seconds(30)
 
     private func write(category: LogCategory, level: LogLevel, message: String, context: String? = nil) {
+        // No-op under tests: don't buffer, don't start the flush timer, don't touch disk.
+        guard !Self.isRunningTests else { return }
         let minLevel = category == .api ? apiLogLevel : appLogLevel
         guard level >= minLevel else { return }
 

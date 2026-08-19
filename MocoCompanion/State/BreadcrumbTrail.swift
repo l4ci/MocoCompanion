@@ -24,6 +24,14 @@ final class BreadcrumbTrail: @unchecked Sendable {
     private let filePath: URL
     private let logger = Logger(category: "Breadcrumbs")
 
+    /// Under XCTest the test host shares the real user's Application Support
+    /// directory, so creating breadcrumb files there would pollute the
+    /// user's real logs on every test run. Tests keep the in-memory ring
+    /// buffer (call sites like `record()` keep working) but never touch
+    /// disk. See KeychainHelper for the same rationale applied to Keychain
+    /// access.
+    private static let isRunningTests = ProcessInfo.processInfo.isRunningTests
+
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -33,7 +41,9 @@ final class BreadcrumbTrail: @unchecked Sendable {
     private init() {
         let appSupport = URL.applicationSupportDirectory
         let logDir = appSupport.appendingPathComponent("MocoCompanion/Logs", isDirectory: true)
-        try? FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
+        if !Self.isRunningTests {
+            try? FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
+        }
         filePath = logDir.appendingPathComponent("breadcrumbs.log")
         buffer.reserveCapacity(capacity)
     }
@@ -116,6 +126,9 @@ final class BreadcrumbTrail: @unchecked Sendable {
     // MARK: - File I/O (must be called under lock)
 
     private func openFile() {
+        // No-op under tests: `record()` still fills the in-memory ring buffer,
+        // it just never gets a live file handle to append to.
+        guard !Self.isRunningTests else { return }
         let fm = FileManager.default
         if !fm.fileExists(atPath: filePath.path) {
             fm.createFile(atPath: filePath.path, contents: nil)
@@ -146,6 +159,7 @@ final class BreadcrumbTrail: @unchecked Sendable {
 
     /// Rewrite the file with only the current ring buffer contents to prevent unbounded growth.
     private func rewriteFile() {
+        guard !Self.isRunningTests else { return }
         closeFile()
         let entries = buffer.count < capacity
             ? buffer

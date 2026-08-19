@@ -23,9 +23,9 @@ struct TimerSideEffectsTests {
         // SettingsStore reads `soundEnabled` key — we just need the settings instance.
         // SoundFeedback is a static enum we can't mock, so we leave sound disabled.
         let sideEffects = TimerSideEffects(
-            recencyTracker: RecencyTracker(),
-            recentEntriesTracker: RecentEntriesTracker(),
-            descriptionStore: DescriptionStore(),
+            recencyTracker: RecencyTracker(backend: InMemoryBackend()),
+            recentEntriesTracker: RecentEntriesTracker(backend: InMemoryBackend()),
+            descriptionStore: DescriptionStore(backend: InMemoryBackend()),
             settings: settings,
             notificationDispatcher: dispatcher,
             searchEntriesProvider: { [] },

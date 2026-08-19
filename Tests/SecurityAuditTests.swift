@@ -37,9 +37,16 @@ struct SecurityAuditTests {
         return files
     }
 
-    /// Read file contents, returning nil on failure.
+    /// Read file contents. Fails the test loudly rather than silently
+    /// narrowing the scanned file set — a file that can't be read must not
+    /// be quietly skipped by a security audit.
     private static func contents(of url: URL) -> String? {
-        try? String(contentsOf: url, encoding: .utf8)
+        do {
+            return try String(contentsOf: url, encoding: .utf8)
+        } catch {
+            Issue.record("Failed to read \(url.lastPathComponent): \(error)")
+            return nil
+        }
     }
 
     // MARK: - R016: No Tokens in Logs

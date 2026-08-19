@@ -287,9 +287,9 @@ enum TestFactories {
     @MainActor
     static func makeStubSideEffects() -> TimerSideEffects {
         TimerSideEffects(
-            recencyTracker: RecencyTracker(),
-            recentEntriesTracker: RecentEntriesTracker(),
-            descriptionStore: DescriptionStore(),
+            recencyTracker: RecencyTracker(backend: InMemoryBackend()),
+            recentEntriesTracker: RecentEntriesTracker(backend: InMemoryBackend()),
+            descriptionStore: DescriptionStore(backend: InMemoryBackend()),
             settings: SettingsStore(),
             notificationDispatcher: NotificationDispatcher(isEnabledCheck: { _ in false }),
             searchEntriesProvider: { [] },
