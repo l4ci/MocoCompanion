@@ -1113,7 +1113,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1137,7 +1137,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mococompanion.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
