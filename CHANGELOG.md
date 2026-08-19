@@ -2,7 +2,7 @@
 
 All notable changes to MocoCompanion are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) loosely; versions follow semver.
 
-## Unreleased
+## v0.7.0 — 2026-08-19
 
 Audit pass: security, performance, concurrency and test-hygiene reviews, with fixes. Day-to-day use is unchanged apart from the additions below.
 
@@ -30,6 +30,12 @@ Audit pass: security, performance, concurrency and test-hygiene reviews, with fi
 - App-usage recording moved off the main thread; the last segment is flushed before quit.
 - Unit tests run in random order and no longer touch the real Keychain, preferences or log directory. (Previously a test run could overwrite the stored Moco API key.)
 - `Vendor/HotKey` ships its MIT license; xcodegen 2.46, Xcode 26.6.
+
+### Stats
+
+15 user-visible commits · 72 files changed · +7,400 / −5,576 lines
+
+**Full changelog:** https://github.com/l4ci/MocoCompanion/compare/v0.6.1...v0.7.0
 
 ## v0.6.1 — 2026-05-20
 
