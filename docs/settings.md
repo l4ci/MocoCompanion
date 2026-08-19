@@ -8,6 +8,7 @@ Settings window (780×580) has 9 tabs:
 - **Subdomain** — your Moco instance name (accepts full URLs, auto-extracts subdomain)
 - **API Key** — stored in macOS Keychain (masked display)
 - **Status** — connection indicator + Refresh Projects button
+- **Reset all data** — removes the API key, preferences, and the local databases (offline queue, rules, tracked app history), then returns to setup
 
 ## How to Use
 - **Global Shortcut** — current shortcut display + click-to-record custom shortcut
@@ -31,7 +32,7 @@ Three sections:
 
 - **Calendar** — Enable calendar integration (requires macOS calendar permission)
 - **Rules** — Enable autotracker rules, manage rule list (add/edit/delete/toggle individual rules), rule type icons
-- **Tracking** — Track window titles toggle, excluded apps list with running-app picker
+- **Tracking** — Track window titles toggle, excluded apps list with running-app picker, and **Clear tracked app history** (deletes all recorded app/window segments after a confirmation)
 
 ## Favorites
 - **Show Favorites** toggle
@@ -57,8 +58,8 @@ Three sections:
 - Refresh button for manual re-sync
 
 ## Debug
-- **Demo Mode** — use sample data for screenshots (requires restart)
-- Log levels (API, App) — adjustable verbosity
+- **Demo Mode** — use sample data for screenshots (requires restart); a "Demo" badge shows in the panel header while it's on
+- Log levels (API, App) — adjustable verbosity; the API log omits query strings and truncates error bodies unless set to Debug
 - Open/reveal/clear log files
 
 ## About

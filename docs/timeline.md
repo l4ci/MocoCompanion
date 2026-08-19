@@ -48,6 +48,8 @@ When you see app usage blocks on the timeline, you can:
 
 **Excluded apps:** In Settings → Timeline → Excluded Apps, you can blacklist apps that should not be tracked (e.g., your password manager). Uses a running-app picker for easy selection.
 
+**Clearing history:** Settings → Timeline → Tracking → **Clear tracked app history** deletes all recorded segments. Records older than the retention period are removed automatically at launch.
+
 ---
 
 ## Calendar Integration
