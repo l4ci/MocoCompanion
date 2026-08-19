@@ -6,8 +6,26 @@ import os
 enum KeychainHelper {
     private static let logger = Logger(category: "Keychain")
 
+    /// Under XCTest the real Keychain is off-limits: the test host shares the
+    /// login keychain with the installed app, so a test writing `apiKey` would
+    /// overwrite the user's real credential, and every rebuilt (ad-hoc signed)
+    /// test host would trigger an access prompt that hangs the run. Tests get
+    /// a process-local in-memory store instead.
+    private static let isRunningTests = ProcessInfo.processInfo.isRunningTests
+    nonisolated(unsafe) private static var inMemoryStore: [String: String] = [:]
+    private static let inMemoryLock = NSLock()
+
+    private static func inMemoryKey(_ service: String, _ account: String) -> String { "\(service)\u{1F}\(account)" }
+
     /// Save a string value to the Keychain. Empty string deletes the entry.
     static func save(value: String, service: String, account: String) {
+        if isRunningTests {
+            inMemoryLock.withLock {
+                if value.isEmpty { inMemoryStore.removeValue(forKey: inMemoryKey(service, account)) }
+                else { inMemoryStore[inMemoryKey(service, account)] = value }
+            }
+            return
+        }
         let searchQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -44,6 +62,9 @@ enum KeychainHelper {
 
     /// Load a string value from the Keychain. Returns nil if not found or inaccessible.
     static func load(service: String, account: String) -> String? {
+        if isRunningTests {
+            return inMemoryLock.withLock { inMemoryStore[inMemoryKey(service, account)] }
+        }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -70,6 +91,7 @@ enum KeychainHelper {
     /// signing configurations. This reads from the data protection keychain,
     /// writes back to the login keychain, and cleans up.
     static func recoverFromDataProtectionKeychain(service: String, account: String) {
+        guard !isRunningTests else { return }
         let recoveryKey = "keychain.recovered.\(service).\(account)"
         guard !UserDefaults.standard.bool(forKey: recoveryKey) else { return }
         defer { UserDefaults.standard.set(true, forKey: recoveryKey) }

@@ -20,10 +20,10 @@ import os
 // `Self.read(_:default:)` returns a non-optional `T`, so optional
 // String preferences need two small deviations from the standard pattern:
 //
-// - **init**: use `UserDefaults.standard.string(forKey:)` directly
+// - **init**: use `Self.defaults.string(forKey:)` directly
 //   (returns nil when the key is absent).
 // - **didSet**: branch on nil — call `Self.save` when a value is present,
-//   `UserDefaults.standard.removeObject(forKey:)` when nil (storing NSNull
+//   `Self.defaults.removeObject(forKey:)` when nil (storing NSNull
 //   via `Self.save(nil)` would leave a junk entry in UserDefaults).
 //
 // ## Migration defaults
@@ -101,26 +101,37 @@ final class SettingsStore {
 
     // MARK: - Defaults Helper
 
+    /// Backing store for preferences. Under XCTest this is a throwaway suite
+    /// so the test host never reads or writes the user's real preferences.
+    private static let defaults: UserDefaults = {
+        guard ProcessInfo.processInfo.isRunningTests else { return .standard }
+        let suite = "com.mococompanion.tests"
+        let d = UserDefaults(suiteName: suite)!
+        d.removePersistentDomain(forName: suite)
+        return d
+    }()
+
+
     /// Read a value from UserDefaults with a fallback when the key is absent.
     /// Handles the `bool(forKey:)` problem where absent keys return `false`.
     private static func read<T>(_ key: String, default fallback: T) -> T {
-        let defaults = UserDefaults.standard
+        let defaults = Self.defaults
         guard let value = defaults.object(forKey: key) else { return fallback }
         return value as? T ?? fallback
     }
 
     private static func save(_ key: String, _ value: Any) {
-        UserDefaults.standard.set(value, forKey: key)
+        Self.defaults.set(value, forKey: key)
     }
 
     private static func saveJSON<T: Encodable>(_ key: String, _ value: T) {
         if let data = try? JSONEncoder().encode(value) {
-            UserDefaults.standard.set(data, forKey: key)
+            Self.defaults.set(data, forKey: key)
         }
     }
 
     private static func loadJSON<T: Decodable>(_ key: String, default fallback: T) -> T {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return fallback }
+        guard let data = Self.defaults.data(forKey: key) else { return fallback }
         return (try? JSONDecoder().decode(T.self, from: data)) ?? fallback
     }
 
@@ -340,7 +351,7 @@ final class SettingsStore {
             if let id = selectedCalendarId {
                 Self.save(Key.selectedCalendarId, id)
             } else {
-                UserDefaults.standard.removeObject(forKey: Key.selectedCalendarId)
+                Self.defaults.removeObject(forKey: Key.selectedCalendarId)
             }
         }
     }
@@ -420,22 +431,22 @@ final class SettingsStore {
         let existingAutotracker = Self.read(Key.autotrackerEnabled, default: false)
         self.rulesEnabled = Self.read(Key.rulesEnabled, default: existingAutotracker)
         self.windowTitleTrackingEnabled = Self.read(Key.windowTitleTrackingEnabled, default: false)
-        self.selectedCalendarId = UserDefaults.standard.string(forKey: Key.selectedCalendarId)
+        self.selectedCalendarId = Self.defaults.string(forKey: Key.selectedCalendarId)
         self.customShortcutKeyCode = UInt32(Self.read(Key.customShortcutKeyCode, default: 0) as Int)
         self.customShortcutModifiers = UInt32(Self.read(Key.customShortcutModifiers, default: 0) as Int)
         // F04 migration: read the new key first; if absent, fall back to the
         // legacy `shortcutTarget` value as the default. After loading, if the
         // legacy key was set and the new key wasn't, persist the migrated
         // value to the new key and clear the legacy entry.
-        let legacyDefaultWindow = UserDefaults.standard.string(forKey: Key.legacyShortcutTarget)
-        let newDefaultWindowMissing = UserDefaults.standard.object(forKey: Key.defaultWindow) == nil
+        let legacyDefaultWindow = Self.defaults.string(forKey: Key.legacyShortcutTarget)
+        let newDefaultWindowMissing = Self.defaults.object(forKey: Key.defaultWindow) == nil
         let resolvedDefaultWindow = DefaultWindow(
             rawValue: Self.read(Key.defaultWindow, default: legacyDefaultWindow ?? "panel")
         ) ?? .panel
         self.defaultWindow = resolvedDefaultWindow
         if newDefaultWindowMissing, legacyDefaultWindow != nil {
-            UserDefaults.standard.set(resolvedDefaultWindow.rawValue, forKey: Key.defaultWindow)
-            UserDefaults.standard.removeObject(forKey: Key.legacyShortcutTarget)
+            Self.defaults.set(resolvedDefaultWindow.rawValue, forKey: Key.defaultWindow)
+            Self.defaults.removeObject(forKey: Key.legacyShortcutTarget)
         }
         self.demoMode = Self.read(Key.demoMode, default: false)
         self.apiLogLevel = AppLogger.LogLevel(rawValue: Self.read(Key.apiLogLevel, default: 1)) ?? .info
@@ -443,7 +454,7 @@ final class SettingsStore {
         self.breadcrumbsEnabled = Self.read(Key.breadcrumbsEnabled, default: false)
 
         // Working days: stored as [Int], default Mon-Fri
-        if let daysArray = UserDefaults.standard.object(forKey: Key.workingDays) as? [Int] {
+        if let daysArray = Self.defaults.object(forKey: Key.workingDays) as? [Int] {
             self.workingDays = Set(daysArray)
         } else {
             self.workingDays = [2, 3, 4, 5, 6]
@@ -467,8 +478,8 @@ final class SettingsStore {
 
         // 3. Remove the entire UserDefaults domain for this app
         if let bundleId = Bundle.main.bundleIdentifier {
-            UserDefaults.standard.removePersistentDomain(forName: bundleId)
-            UserDefaults.standard.synchronize()
+            Self.defaults.removePersistentDomain(forName: bundleId)
+            Self.defaults.synchronize()
         }
 
         // 4. Reset in-memory properties to defaults
