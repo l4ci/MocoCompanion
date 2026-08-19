@@ -12,8 +12,24 @@ actor SyncEngine {
     private let syncState: SyncState
     /// Called when a validation error indicates the Moco instance requires descriptions.
     nonisolated(unsafe) var onDescriptionRequired: (() -> Void)?
-    private let logger = Logger(subsystem: "com.mococompanion", category: "SyncEngine")
+    private let logger = Logger(category: "SyncEngine")
     nonisolated(unsafe) private static let isoFormatter = ISO8601DateFormatter()
+
+    // MARK: - Reentrancy guard
+    //
+    // `sync(dates:)` has five call sites (AppDelegate's 300s periodic timer,
+    // ActivityService, TimelineViewModel, AppDelegate's background poll) that
+    // can fire concurrently. Because the actor suspends across awaits inside
+    // `pullRemote`/`pushDirty`, two overlapping calls could both read the same
+    // `.pendingCreate` row before either has written it back with a server ID,
+    // producing a duplicate `createActivity`. Rather than dropping a request
+    // that arrives while a cycle is in flight, we coalesce it: the requested
+    // dates are folded into `pendingDates`, and the in-flight drain task keeps
+    // running cycles for the accumulated union until nothing new arrived.
+    // Late callers await that same task, so `await sync(dates:)` still means
+    // "my dates have been synced" when it returns.
+    private var pendingDates: Set<String> = []
+    private var drainTask: Task<Void, Never>?
 
     init(
         store: ShadowEntryStore,
@@ -30,7 +46,33 @@ actor SyncEngine {
     // MARK: - Full Sync Cycle
 
     /// Run a complete pull+push sync for the given dates.
+    ///
+    /// If a cycle is already in flight, `dates` is merged into `pendingDates`
+    /// and this call awaits the in-flight drain, which runs follow-up cycles
+    /// until the accumulated set (including these dates) is empty.
     func sync(dates: [String]) async {
+        pendingDates.formUnion(dates)
+
+        if let task = drainTask {
+            await task.value
+            return
+        }
+
+        let task = Task {
+            while !pendingDates.isEmpty {
+                let batch = pendingDates
+                pendingDates.removeAll()
+                await runSyncCycle(dates: Array(batch).sorted())
+            }
+            drainTask = nil
+        }
+        drainTask = task
+        await task.value
+    }
+
+    /// One pull+push cycle for the given dates. Broken out of `sync(dates:)`
+    /// so the reentrancy guard/coalescing loop can drive multiple cycles.
+    private func runSyncCycle(dates: [String]) async {
         BreadcrumbTrail.shared.record("SyncEngine", "Sync started for dates: \(dates.joined(separator: ", "))")
         await MainActor.run { syncState.setSyncing(true) }
         defer { Task { @MainActor in syncState.setSyncing(false) } }

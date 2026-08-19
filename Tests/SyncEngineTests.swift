@@ -215,6 +215,58 @@ struct SyncEngineTests {
 
     // MARK: - Push Tests
 
+    @Test("Overlapping sync calls create each pending entry exactly once")
+    func overlappingSyncDoesNotDuplicateCreates() async throws {
+        let store = try Self.makeStore()
+        let syncState = await SyncState()
+
+        var pending = TestFactories.makeShadowEntry(date: "2025-06-01", syncStatus: .pendingCreate)
+        pending.localId = "local-dup"
+        pending.id = nil
+        try await store.insert(pending)
+
+        actor Counter {
+            var creates = 0
+            var fetchedDates: Set<String> = []
+            func bumpCreate() { creates += 1 }
+            func fetched(_ d: String) { fetchedDates.insert(d) }
+        }
+        let counter = Counter()
+        let serverActivity = TestFactories.makeActivity(id: 999, date: "2025-06-01")
+
+        var mock = MockSyncAPI()
+        mock.fetchActivitiesHandler = { from, _, _ in
+            await counter.fetched(from)
+            // Slow enough that the second sync() arrives while the first is in flight.
+            try await Task.sleep(for: .milliseconds(50))
+            return []
+        }
+        mock.createActivityHandler = { _, _, _, _, _, _ in
+            await counter.bumpCreate()
+            try await Task.sleep(for: .milliseconds(50))
+            return serverActivity
+        }
+
+        let engine = SyncEngine(
+            store: store,
+            clientFactory: { mock },
+            userIdProvider: { 42 },
+            syncState: syncState
+        )
+
+        async let first: Void = engine.sync(dates: ["2025-06-01"])
+        try await Task.sleep(for: .milliseconds(10))
+        async let second: Void = engine.sync(dates: ["2025-06-02"])
+        _ = await (first, second)
+
+        #expect(await counter.creates == 1)
+        // The late caller's date was not dropped — it ran in a coalesced follow-up cycle.
+        #expect(await counter.fetchedDates == ["2025-06-01", "2025-06-02"])
+        let local = try await store.entry(localId: "local-dup")
+        #expect(local == nil)
+        #expect(try await store.entry(id: 999) != nil)
+    }
+
     @Test("Push creates pending entries via API")
     func pushCreatesPendingEntries() async throws {
         let store = try Self.makeStore()
