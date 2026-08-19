@@ -166,6 +166,7 @@
 		C53D6C8B131EB1A75D8961E6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AA040396C6E5C43AF2FDB4 /* AppState.swift */; };
 		C654F97A73A65D26B0D23BFD /* ShadowEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155477772B61048004E7FA09 /* ShadowEntry.swift */; };
 		C77F42C93F4FFC76687292A1 /* YesterdayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E13760F6FD486E8BA71BE12 /* YesterdayService.swift */; };
+		C7A2A35C308E114375EB1508 /* NSWorkspaceMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1391BF2696100387D44C4C4A /* NSWorkspaceMonitorTests.swift */; };
 		C8F3AC6F65ACC3B6FC7687F5 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */; };
 		CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */; };
 		CD075754355EAFBC2A8B85AD /* MocoError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E0D39E480AA80553F9EFC9 /* MocoError.swift */; };
@@ -238,6 +239,7 @@
 		11539CAD40E18E9C3A9F61F8 /* HotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
 		1244C6FC2B1082217D8F4E7F /* AppRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecord.swift; sourceTree = "<group>"; };
 		12945E8D4304E9F2AABF2AB6 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWizardView.swift; sourceTree = "<group>"; };
+		1391BF2696100387D44C4C4A /* NSWorkspaceMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceMonitorTests.swift; sourceTree = "<group>"; };
 		14D9A2C5D13D8B0C01475084 /* AppRecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecordStore.swift; sourceTree = "<group>"; };
 		14E0B3ADB465704CB13423E5 /* MocoPlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoPlanningModels.swift; sourceTree = "<group>"; };
 		154AABC479F7BA2AC94D1AF8 /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
@@ -471,6 +473,7 @@
 				71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */,
 				89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */,
 				CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */,
+				1391BF2696100387D44C4C4A /* NSWorkspaceMonitorTests.swift */,
 				546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */,
 				47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */,
 				FBDB9DA98944E5F891048B21 /* PanelVisibilityTests.swift */,
@@ -1054,6 +1057,7 @@
 				B9EE677E8EFF9E807CA7C847 /* MockTimerAPI.swift in Sources */,
 				FBD51B48A7B040A332953187 /* MockYesterdayAPI.swift in Sources */,
 				F86776B2F41AAE54D1121EBF /* MonitorEngineTests.swift in Sources */,
+				C7A2A35C308E114375EB1508 /* NSWorkspaceMonitorTests.swift in Sources */,
 				A41228181FD57B065E7A0576 /* NotificationDispatcherTests.swift in Sources */,
 				9D97044DF3117A9C6C5BF32A /* OfflineSyncServiceTests.swift in Sources */,
 				CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */,

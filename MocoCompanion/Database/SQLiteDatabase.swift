@@ -145,6 +145,22 @@ final class SQLiteDatabase {
         try execute(sql)
     }
 
+    /// Runs `body` inside a `BEGIN IMMEDIATE` / `COMMIT` transaction — avoids
+    /// the implicit per-statement transaction cycle (with its fsync) that
+    /// SQLite otherwise wraps around every individual `execute` call, the
+    /// dominant cost of batched writes. Rolls back and rethrows if `body`
+    /// throws or if `COMMIT` itself fails.
+    func transaction(_ body: () throws -> Void) throws {
+        try execute("BEGIN IMMEDIATE")
+        do {
+            try body()
+            try execute("COMMIT")
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
+        }
+    }
+
     // MARK: - Private
 
     private func bind(_ stmt: OpaquePointer, params: [Any?]) {

@@ -1,117 +1,90 @@
 import Foundation
-import SQLite3
 import os
 
-/// Stores app usage records in a local SQLite database.
-@Observable
-@MainActor
-final class AppRecordStore {
+/// Stores app usage records in a local SQLite database. Serializes all
+/// SQLite access through this actor via `SQLiteDatabase` — mirrors
+/// `ShadowEntryStore`'s ownership pattern. Every call site now `await`s,
+/// which moves disk IO for Autotracker segment flushes and timeline loads
+/// off the main actor instead of blocking it on every app/window focus
+/// switch.
+actor AppRecordStore {
     private static let logger = Logger(category: "AppRecordStore")
 
-    /// SQLite connection handle. Opted out of observation (not UI state) so
-    /// `nonisolated(unsafe)` applies to the real stored property and deinit
-    /// can close the connection without isolation errors.
-    @ObservationIgnored nonisolated(unsafe) private var db: OpaquePointer?
-    private static let dateFormatter: ISO8601DateFormatter = {
+    private let database: SQLiteDatabase
+
+    nonisolated(unsafe) private static let dateFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
-    init(inMemory: Bool = false) {
+    /// - Parameter inMemory: `true` for tests (`:memory:` SQLite DB). The
+    ///   default computes the same on-disk path this store used before the
+    ///   actor port — `Application Support/MocoCompanion/app_records.sqlite`
+    ///   — so existing installs keep their history.
+    init(inMemory: Bool = false) throws {
+        let path: String
         if inMemory {
-            open(path: ":memory:")
+            path = ":memory:"
         } else {
             let dir = URL.applicationSupportDirectory
                 .appendingPathComponent("MocoCompanion", isDirectory: true)
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let path = dir.appendingPathComponent("app_records.sqlite").path
-            open(path: path)
+            path = dir.appendingPathComponent("app_records.sqlite").path
         }
+        database = try SQLiteDatabase(path: path)
+        try database.createTable(sql: Self.createTableSQL)
+        try database.execute("CREATE INDEX IF NOT EXISTS idx_app_records_timestamp ON app_records(timestamp)")
     }
 
-    private func open(path: String) {
-        if sqlite3_open(path, &db) != SQLITE_OK {
-            let err = dbError
-            Self.logger.error("Failed to open database at \(path): \(err)")
-            return
-        }
-        createTable()
-    }
+    private static let createTableSQL = """
+        CREATE TABLE IF NOT EXISTS app_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            app_bundle_id TEXT NOT NULL,
+            app_name TEXT NOT NULL,
+            window_title TEXT,
+            duration_seconds REAL NOT NULL
+        )
+        """
 
-    private func createTable() {
-        let sql = """
-            CREATE TABLE IF NOT EXISTS app_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                app_bundle_id TEXT NOT NULL,
-                app_name TEXT NOT NULL,
-                window_title TEXT,
-                duration_seconds REAL NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS idx_app_records_timestamp ON app_records(timestamp);
-            """
-        var errMsg: UnsafeMutablePointer<CChar>?
-        if sqlite3_exec(db, sql, nil, nil, &errMsg) != SQLITE_OK {
-            let msg = errMsg.map { String(cString: $0) } ?? "unknown"
-            Self.logger.error("Failed to create table: \(msg)")
-            sqlite3_free(errMsg)
-        }
-    }
+    // MARK: - Writes
 
     func insert(_ record: AppRecord) {
         insertMany([record])
     }
 
     /// Insert one or more records in a single SQLite transaction. Using a
-    /// transaction for even a single insert avoids the implicit per-statement
-    /// BEGIN/COMMIT cycle (with its fsync on journal_mode=DELETE), which is
-    /// the dominant cost of per-segment writes in Autotracker. Failing
-    /// inserts are logged individually; a fatal bind failure rolls back the
-    /// entire batch so partial state isn't persisted.
+    /// transaction for even a single insert avoids the implicit
+    /// per-statement BEGIN/COMMIT cycle (with its fsync on
+    /// journal_mode=DELETE), which is the dominant cost of per-segment
+    /// writes in Autotracker. A single record's insert failure is logged
+    /// and skipped so one bad row doesn't drop the rest of the batch; only
+    /// a failure to begin or commit the transaction rolls back everything.
     func insertMany(_ records: [AppRecord]) {
         guard !records.isEmpty else { return }
-        guard let db else { return }
-
-        if sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) != SQLITE_OK {
-            Self.logger.error("Failed to begin transaction: \(self.dbError)")
-            return
-        }
-
-        let sql = "INSERT INTO app_records (timestamp, app_bundle_id, app_name, window_title, duration_seconds) VALUES (?, ?, ?, ?, ?)"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
-            Self.logger.error("Failed to prepare insert: \(self.dbError)")
-            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
-            return
-        }
-        defer { sqlite3_finalize(stmt) }
-
-        for record in records {
-            sqlite3_reset(stmt)
-            sqlite3_clear_bindings(stmt)
-
-            let ts = Self.dateFormatter.string(from: record.timestamp)
-            sqlite3_bind_text(stmt, 1, (ts as NSString).utf8String, -1, nil)
-            sqlite3_bind_text(stmt, 2, (record.appBundleId as NSString).utf8String, -1, nil)
-            sqlite3_bind_text(stmt, 3, (record.appName as NSString).utf8String, -1, nil)
-            if let title = record.windowTitle {
-                sqlite3_bind_text(stmt, 4, (title as NSString).utf8String, -1, nil)
-            } else {
-                sqlite3_bind_null(stmt, 4)
+        do {
+            try database.transaction {
+                for record in records {
+                    do {
+                        try database.execute(Self.insertSQL, params: [
+                            Self.dateFormatter.string(from: record.timestamp),
+                            record.appBundleId,
+                            record.appName,
+                            record.windowTitle,
+                            record.durationSeconds,
+                        ])
+                    } catch {
+                        Self.logger.error("Failed to insert record: \(error)")
+                    }
+                }
             }
-            sqlite3_bind_double(stmt, 5, record.durationSeconds)
-
-            if sqlite3_step(stmt) != SQLITE_DONE {
-                Self.logger.error("Failed to insert record: \(self.dbError)")
-            }
-        }
-
-        if sqlite3_exec(db, "COMMIT", nil, nil, nil) != SQLITE_OK {
-            Self.logger.error("Failed to commit batch insert: \(self.dbError)")
-            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+        } catch {
+            Self.logger.error("Failed to commit batch insert: \(error)")
         }
     }
+
+    // MARK: - Reads
 
     func records(for date: Date) -> [AppRecord] {
         let calendar = Calendar.current
@@ -121,82 +94,62 @@ final class AppRecordStore {
         let startStr = Self.dateFormatter.string(from: startOfDay)
         let endStr = Self.dateFormatter.string(from: endOfDay)
 
-        let sql = "SELECT id, timestamp, app_bundle_id, app_name, window_title, duration_seconds FROM app_records WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
-            let err = dbError
-            Self.logger.error("Failed to prepare query: \(err)")
+        do {
+            let rows = try database.query(Self.selectByDateSQL, params: [startStr, endStr])
+            return rows.compactMap(Self.recordFromRow)
+        } catch {
+            Self.logger.error("Failed to query records: \(error)")
             return []
         }
-        defer { sqlite3_finalize(stmt) }
-
-        sqlite3_bind_text(stmt, 1, (startStr as NSString).utf8String, -1, nil)
-        sqlite3_bind_text(stmt, 2, (endStr as NSString).utf8String, -1, nil)
-
-        var results: [AppRecord] = []
-        while sqlite3_step(stmt) == SQLITE_ROW {
-            if let record = readRow(stmt) {
-                results.append(record)
-            }
-        }
-        return results
     }
 
     func recordCount() -> Int {
-        let sql = "SELECT COUNT(*) FROM app_records"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return 0 }
-        defer { sqlite3_finalize(stmt) }
-        return sqlite3_step(stmt) == SQLITE_ROW ? Int(sqlite3_column_int64(stmt, 0)) : 0
+        do {
+            let rows = try database.query("SELECT COUNT(*) as count FROM app_records")
+            return (rows.first?["count"] as? Int64).map(Int.init) ?? 0
+        } catch {
+            Self.logger.error("Failed to count records: \(error)")
+            return 0
+        }
     }
+
+    // MARK: - Cleanup
 
     func cleanup(olderThan days: Int) {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date.now) else { return }
         let cutoffStr = Self.dateFormatter.string(from: cutoff)
-        let sql = "DELETE FROM app_records WHERE timestamp < ?"
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
-            let err = dbError
-            Self.logger.error("Failed to prepare cleanup: \(err)")
-            return
-        }
-        defer { sqlite3_finalize(stmt) }
-        sqlite3_bind_text(stmt, 1, (cutoffStr as NSString).utf8String, -1, nil)
-        if sqlite3_step(stmt) != SQLITE_DONE {
-            let err = dbError
-            Self.logger.error("Failed to execute cleanup: \(err)")
+        do {
+            try database.execute("DELETE FROM app_records WHERE timestamp < ?", params: [cutoffStr])
+        } catch {
+            Self.logger.error("Failed to execute cleanup: \(error)")
         }
     }
 
-    deinit {
-        sqlite3_close(db)
-    }
+    // MARK: - SQL
 
-    // MARK: - Private
+    private static let insertSQL = """
+        INSERT INTO app_records (timestamp, app_bundle_id, app_name, window_title, duration_seconds) \
+        VALUES (?, ?, ?, ?, ?)
+        """
 
-    private var dbError: String {
-        db.map { String(cString: sqlite3_errmsg($0)) } ?? "no db"
-    }
+    private static let selectByDateSQL = """
+        SELECT id, timestamp, app_bundle_id, app_name, window_title, duration_seconds \
+        FROM app_records WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC
+        """
 
-    private func readRow(_ stmt: OpaquePointer?) -> AppRecord? {
-        guard let stmt else { return nil }
-        let id = sqlite3_column_int64(stmt, 0)
-        guard let tsRaw = sqlite3_column_text(stmt, 1),
-              let timestamp = Self.dateFormatter.date(from: String(cString: tsRaw)),
-              let bundleRaw = sqlite3_column_text(stmt, 2),
-              let nameRaw = sqlite3_column_text(stmt, 3) else { return nil }
-
-        let windowTitle: String? = sqlite3_column_type(stmt, 4) != SQLITE_NULL
-            ? String(cString: sqlite3_column_text(stmt, 4))
-            : nil
+    private static func recordFromRow(_ row: [String: Any]) -> AppRecord? {
+        guard let tsRaw = row["timestamp"] as? String,
+              let timestamp = dateFormatter.date(from: tsRaw),
+              let bundleId = row["app_bundle_id"] as? String,
+              let name = row["app_name"] as? String else { return nil }
 
         return AppRecord(
-            id: id,
+            id: row["id"] as? Int64,
             timestamp: timestamp,
-            appBundleId: String(cString: bundleRaw),
-            appName: String(cString: nameRaw),
-            windowTitle: windowTitle,
-            durationSeconds: sqlite3_column_double(stmt, 5)
+            appBundleId: bundleId,
+            appName: name,
+            windowTitle: row["window_title"] as? String,
+            durationSeconds: (row["duration_seconds"] as? Double) ?? 0
         )
     }
 }

@@ -391,9 +391,10 @@ final class AppState {
 
         let appSupportURL = URL.applicationSupportDirectory
             .appendingPathComponent("MocoCompanion")
-        let recordStore = AppRecordStore()
+        let recordStore: AppRecordStore
         let rStore: RuleStore
         do {
+            recordStore = try AppRecordStore()
             let rulesDb = try SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
             rStore = try RuleStore(database: rulesDb)
         } catch {

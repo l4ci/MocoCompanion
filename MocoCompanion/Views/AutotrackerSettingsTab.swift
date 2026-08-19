@@ -59,10 +59,12 @@ struct AutotrackerSettingsTab: View {
         Section(String(localized: "timeline.section.appRecording")) {
             Toggle(String(localized: "timeline.toggle.appRecording"), isOn: $settings.appRecordingEnabled)
                 .onChange(of: settings.appRecordingEnabled) { _, enabled in
-                    if enabled {
-                        autotracker?.start()
-                    } else {
-                        autotracker?.stop()
+                    Task {
+                        if enabled {
+                            await autotracker?.start()
+                        } else {
+                            await autotracker?.stop()
+                        }
                     }
                 }
 

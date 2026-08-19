@@ -621,7 +621,7 @@ struct TimelineViewModelTests {
     @MainActor
     private func makeViewModel(shadowEntryStore: ShadowEntryStore? = nil) throws -> TimelineViewModel {
         let store = try shadowEntryStore ?? makeShadowEntryStore()
-        let appRecordStore = AppRecordStore(inMemory: true)
+        let appRecordStore = try AppRecordStore(inMemory: true)
         let rulesDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: rulesDb)
         let autotracker = Autotracker(
@@ -640,7 +640,7 @@ struct TimelineViewModelTests {
 
     @MainActor
     private func makeViewModel(shadowEntryStore: ShadowEntryStore) throws -> TimelineViewModel {
-        let appRecordStore = AppRecordStore(inMemory: true)
+        let appRecordStore = try AppRecordStore(inMemory: true)
         let rulesDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: rulesDb)
         let autotracker = Autotracker(

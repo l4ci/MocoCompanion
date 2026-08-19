@@ -216,10 +216,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             logger.info("Periodic background sync completed")
         }
 
-        // Autotracker: cleanup old records and start if enabled
-        appState.autotracker.cleanup(olderThanDays: appState.settings.autotrackerRetentionDays)
-        if appState.settings.autotrackerEnabled {
-            appState.autotracker.start()
+        // Autotracker: cleanup old records and start if enabled. Both calls
+        // now await the AppRecordStore actor, so they're wrapped in one
+        // Task — sequential awaits inside it preserve the cleanup-then-start
+        // ordering without blocking app launch on disk IO.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.appState.autotracker.cleanup(olderThanDays: self.appState.settings.autotrackerRetentionDays)
+            if self.appState.settings.autotrackerEnabled {
+                await self.appState.autotracker.start()
+            }
         }
     }
 
@@ -248,11 +254,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         NSApp.windows.contains { $0.isVisible && !($0 is NSPanel) }
     }
 
+    /// Autotracker.stop() flushes the in-progress segment through the
+    /// AppRecordStore actor, which is async — a Task fired from
+    /// applicationWillTerminate would not get to run before exit. Defer
+    /// termination until the flush has landed, bounded so a wedged flush
+    /// can't keep the app alive.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard appState.autotracker.isRecording else { return .terminateNow }
+        let autotracker = appState.autotracker
+        var replied = false
+        let reply = { @MainActor in
+            guard !replied else { return }
+            replied = true
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        Task { @MainActor in
+            await autotracker.stop()
+            reply()
+        }
+        // Watchdog: if the flush wedges, terminate anyway.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            reply()
+        }
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         BreadcrumbTrail.shared.record("App", "Application terminating")
         statusItemController?.teardown()
         appState.monitorEngine.stopAll()
-        appState.autotracker.stop()
         backgroundPollingTask?.cancel()
         timerSyncTask?.cancel()
         periodicSyncTask?.cancel()

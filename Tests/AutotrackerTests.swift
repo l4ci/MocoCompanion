@@ -15,7 +15,7 @@ struct AutotrackerTests {
 
         let today = Calendar.current.startOfDay(for: Date())
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
 
@@ -33,7 +33,7 @@ struct AutotrackerTests {
 
         let today = Calendar.current.startOfDay(for: Date())
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 10, minute: 0), duration: 600)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
 
@@ -50,7 +50,7 @@ struct AutotrackerTests {
 
         let today = Calendar.current.startOfDay(for: Date())
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
 
@@ -65,7 +65,7 @@ struct AutotrackerTests {
 
         let today = Calendar.current.startOfDay(for: Date())
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 600)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
 
@@ -83,7 +83,7 @@ struct AutotrackerTests {
         let today = Calendar.current.startOfDay(for: Date())
         let dateString = dateString(from: today)
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
 
@@ -104,7 +104,7 @@ struct AutotrackerTests {
         let today = Calendar.current.startOfDay(for: Date())
         let dateString = dateString(from: today)
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: true)
 
@@ -124,7 +124,7 @@ struct AutotrackerTests {
         let today = Calendar.current.startOfDay(for: Date())
         let dateString = dateString(from: today)
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         // Create an existing entry that covers this time
         let existingEntry = makeExistingEntry(
@@ -149,7 +149,7 @@ struct AutotrackerTests {
         let today = Calendar.current.startOfDay(for: Date())
         let dateString = dateString(from: today)
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         let existingEntry = makeExistingEntry(
             date: dateString,
@@ -173,7 +173,7 @@ struct AutotrackerTests {
 
         let today = Calendar.current.startOfDay(for: Date())
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         // First evaluation produces a suggestion
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
@@ -200,7 +200,7 @@ struct AutotrackerTests {
         let today = Calendar.current.startOfDay(for: Date())
         let dateString = dateString(from: today)
         let record = makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: makeDate(hour: 9, minute: 0), duration: 1800)
-        appRecordStore.insert(record)
+        await appRecordStore.insert(record)
 
         await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
         #expect(engine.suggestions.count == 1)
@@ -299,7 +299,7 @@ struct AutotrackerTests {
         let ruleDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: ruleDb)
 
-        let appRecordStore = AppRecordStore(inMemory: true)
+        let appRecordStore = try AppRecordStore(inMemory: true)
 
         let shadowDb = try SQLiteDatabase(path: ":memory:")
         let shadowEntryStore = try ShadowEntryStore(database: shadowDb)

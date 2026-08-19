@@ -228,7 +228,7 @@ import os
             unpositionedEntries = []
         }
 
-        let records = autotracker.records(for: selectedDate)
+        let records = await autotracker.records(for: selectedDate)
         appRecords = records
         appUsageBlocks = AppUsageBlock.merge(records)
         timeSlots = TimeSlot.aggregate(records)

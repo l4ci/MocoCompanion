@@ -48,6 +48,24 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
     private var observedBundleId: String?
     private var observedAppName: String?
 
+    /// Injectable AX title resolver. Production wraps
+    /// `AccessibilityPermission.capturefocusedWindowTitle`; tests substitute
+    /// a controllable async closure to simulate out-of-order AX resolution
+    /// across rapid activations.
+    var titleResolver: @Sendable (pid_t) async -> String? = { pid in
+        await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
+    }
+
+    /// Monotonically increasing counter bumped on every activation (full app
+    /// switch or intra-app focus change) that kicks off an AX title
+    /// resolution. Each resolution captures the counter's value at spawn
+    /// time; when it completes, the result is only reported to `handler` if
+    /// the counter still matches — otherwise a newer activation has since
+    /// superseded it. Without this guard, a slow AX read for an earlier
+    /// activation can resolve after a faster later one and overwrite it with
+    /// stale app/title data.
+    private var activationGeneration: Int = 0
+
     /// Sync frontmost info. Returns nil window title — full title capture
     /// would block the caller on AX reads. The first didActivate event
     /// after this will fill in the title asynchronously.
@@ -72,6 +90,10 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
 
             if !wantsTitle {
                 MainActor.assumeIsolated {
+                    // Bump the generation even though this path reports no
+                    // title itself — a stale AX read still in flight from
+                    // the previous activation must not land after this one.
+                    self.activationGeneration += 1
                     self.detachFocusedWindowObserver()
                     self.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: nil))
                 }
@@ -82,16 +104,7 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
             // changes start firing immediately for the new frontmost app.
             MainActor.assumeIsolated {
                 self.attachFocusedWindowObserver(pid: pid, bundleId: bundleId, appName: name)
-            }
-
-            // Time-boxed off-main AX capture. The main actor is released
-            // immediately — the handler fires when the title arrives or
-            // after the 200 ms budget elapses, whichever is first.
-            Task { [weak self] in
-                let title = await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
-                await MainActor.run {
-                    self?.handler?(.appActivated(bundleId: bundleId, appName: name, windowTitle: title))
-                }
+                self.beginTitleResolution(pid: pid, bundleId: bundleId, appName: name)
             }
         })
         observers.append(ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
@@ -144,15 +157,43 @@ final class NSWorkspaceMonitor: WorkspaceMonitor {
         guard let pid = observedPid,
               let bundleId = observedBundleId,
               let appName = observedAppName else { return }
+        beginTitleResolution(pid: pid, bundleId: bundleId, appName: appName)
+    }
 
+    /// Spawns a time-boxed off-main AX title read for `pid`, tagged with a
+    /// fresh generation number. The main actor is released immediately —
+    /// `handler` fires when the title arrives, but only if no newer
+    /// activation or focus change has superseded this one in the meantime
+    /// (see `activationGeneration`). Shared by the full-app-activation path
+    /// and `handleFocusedWindowChange`'s intra-app path.
+    private func beginTitleResolution(pid: pid_t, bundleId: String, appName: String) {
+        activationGeneration += 1
+        let generation = activationGeneration
+        let resolver = titleResolver
         Task { [weak self] in
-            let title = await AccessibilityPermission.capturefocusedWindowTitle(forProcess: pid)
+            let title = await resolver(pid)
             await MainActor.run {
-                self?.handler?(.appActivated(bundleId: bundleId, appName: appName, windowTitle: title))
+                guard let self, self.activationGeneration == generation else { return }
+                self.handler?(.appActivated(bundleId: bundleId, appName: appName, windowTitle: title))
             }
         }
     }
 }
+
+#if DEBUG
+extension NSWorkspaceMonitor {
+    /// Test-only entry point that exercises the same generation-guarded AX
+    /// title resolution path as the real `didActivateApplicationNotification`
+    /// and `handleFocusedWindowChange` handlers, without requiring a live
+    /// NSWorkspace notification or an AX-trusted process. Inject
+    /// `titleResolver` with a controlled delay to simulate an earlier
+    /// activation's AX read completing after a later one's. DO NOT use in
+    /// production code.
+    func _testBeginTitleResolution(pid: pid_t, bundleId: String, appName: String) {
+        beginTitleResolution(pid: pid, bundleId: bundleId, appName: appName)
+    }
+}
+#endif
 
 // MARK: - Autotracker
 
@@ -258,7 +299,17 @@ final class Autotracker {
         self.workspace = resolvedWorkspace
         self.clock = clock
         self.declinedDefaults = declinedDefaults
-        self.recordCount = appRecordStore.recordCount()
+
+        // AppRecordStore is an actor — its recordCount() can't be awaited
+        // synchronously from this (non-async) init. `recordCount` starts at
+        // 0 and is corrected moments later by this Task, which is enqueued
+        // on the main actor before init returns and so runs before any
+        // later flush-triggered update (start()/processAppChange happen
+        // only after the caller receives this instance).
+        Task { [weak self, appRecordStore] in
+            let count = await appRecordStore.recordCount()
+            self?.recordCount = count
+        }
 
         if let ns = resolvedWorkspace as? NSWorkspaceMonitor {
             ns.captureWindowTitles = { [weak settings] in
@@ -267,45 +318,47 @@ final class Autotracker {
         }
 
         self.workspace.handler = { [weak self] event in
-            self?.handleWorkspaceEvent(event)
+            Task { @MainActor [weak self] in
+                await self?.handleWorkspaceEvent(event)
+            }
         }
     }
 
     // MARK: - Lifecycle
 
-    func start() {
+    func start() async {
         guard !isRecording else { return }
         isRecording = true
         workspace.start()
         if let frontmost = workspace.currentFrontmost {
-            processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
+            await processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
         }
         Self.atLogger.info("Recording started")
     }
 
-    func stop() {
+    func stop() async {
         pendingAppChangeTask?.cancel()
         pendingAppChangeTask = nil
-        flushCurrentSegment()
+        await flushCurrentSegment()
         workspace.stop()
         isRecording = false
         currentAppName = nil
         Self.atLogger.info("Recording stopped")
     }
 
-    private func handleWorkspaceEvent(_ event: WorkspaceEvent) {
+    private func handleWorkspaceEvent(_ event: WorkspaceEvent) async {
         switch event {
         case .appActivated(let bundleId, let appName, let windowTitle):
             scheduleDebouncedAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         case .sleep:
             pendingAppChangeTask?.cancel()
             pendingAppChangeTask = nil
-            flushCurrentSegment()
+            await flushCurrentSegment()
             Self.atLogger.debug("Paused for sleep/session resign")
         case .wake:
             guard isRecording else { return }
             if let frontmost = workspace.currentFrontmost {
-                processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
+                await processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
             Self.atLogger.debug("Resumed after wake/session active")
         }
@@ -319,13 +372,13 @@ final class Autotracker {
         pendingAppChangeTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: self?.activationDebounce ?? .milliseconds(300))
             guard !Task.isCancelled, let self else { return }
-            self.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            await self.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         }
     }
 
     // MARK: - Coalescing (internal for testing)
 
-    func processAppChange(bundleId: String, appName: String, windowTitle: String? = nil) {
+    func processAppChange(bundleId: String, appName: String, windowTitle: String? = nil) async {
         guard !filteredBundleIds.contains(bundleId) else { return }
         let now = clock()
 
@@ -337,14 +390,14 @@ final class Autotracker {
             // disabled coalescing falls back to bundleId-only.
             currentSegment!.lastSeenAt = now
         } else {
-            flushCurrentSegment()
+            await flushCurrentSegment()
             currentSegment = Segment(bundleId: bundleId, appName: appName, windowTitle: windowTitle, startedAt: now, lastSeenAt: now)
         }
 
         currentAppName = appName
     }
 
-    private func flushCurrentSegment() {
+    private func flushCurrentSegment() async {
         guard let segment = currentSegment else { return }
         let now = clock()
         let duration = max(segment.lastSeenAt, now).timeIntervalSince(segment.startedAt)
@@ -357,16 +410,16 @@ final class Autotracker {
                 windowTitle: segment.windowTitle,
                 durationSeconds: duration
             )
-            appRecordStore.insert(record)
+            await appRecordStore.insert(record)
         }
-        recordCount = appRecordStore.recordCount()
+        recordCount = await appRecordStore.recordCount()
         currentSegment = nil
     }
 
     // MARK: - App record queries (for TimelineViewModel)
 
-    func records(for date: Date) -> [AppRecord] {
-        appRecordStore.records(for: date)
+    func records(for date: Date) async -> [AppRecord] {
+        await appRecordStore.records(for: date)
     }
 
     /// Earliest date for which the autotracker still retains app records.
@@ -379,9 +432,9 @@ final class Autotracker {
     }
 
     /// Delete app records older than the given number of days from today.
-    func cleanup(olderThanDays days: Int) {
-        appRecordStore.cleanup(olderThan: days)
-        recordCount = appRecordStore.recordCount()
+    func cleanup(olderThanDays days: Int) async {
+        await appRecordStore.cleanup(olderThan: days)
+        recordCount = await appRecordStore.recordCount()
         BreadcrumbTrail.shared.record("Autotracker", "Cleanup: records older than \(days) days removed")
     }
 
@@ -430,7 +483,7 @@ final class Autotracker {
         BreadcrumbTrail.shared.record("Autotracker", "Evaluating \(rules.count) rules")
         let windowTitlesEnabled = settings?.windowTitleTrackingEnabled == true
 
-        let records = appRecordStore.records(for: date)
+        let records = await appRecordStore.records(for: date)
         let blocks = AppUsageBlock.merge(records)
 
         var newSuggestions: [Suggestion] = []
