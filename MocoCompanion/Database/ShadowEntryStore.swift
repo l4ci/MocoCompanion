@@ -6,6 +6,10 @@ actor ShadowEntryStore {
 
     private let database: SQLiteDatabase
 
+    /// Current schema version. Must equal the last `database.userVersion = N`
+    /// in `runMigrations`; bump both together when adding a migration.
+    static let schemaVersion = 3
+
     init(database: SQLiteDatabase) throws {
         self.database = database
         try database.createTable(sql: Self.createTableSQL)
@@ -44,6 +48,7 @@ actor ShadowEntryStore {
             } catch { /* already exists */ }
             database.userVersion = 3
         }
+        assert(database.userVersion == Self.schemaVersion, "schemaVersion out of sync with migrations")
     }
 
     private static let createTableSQL = """

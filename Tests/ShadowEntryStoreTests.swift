@@ -211,8 +211,7 @@ struct ShadowEntryStoreTests {
     func userVersionAfterMigration() async throws {
         let store = try makeStore()
         let version = await store.databaseUserVersion
-        // Bump alongside the last `database.userVersion = N` in ShadowEntryStore.runMigrations.
-        #expect(version == 3)
+        #expect(version == ShadowEntryStore.schemaVersion)
     }
 
     @Test("markConflict sets conflict flag")
