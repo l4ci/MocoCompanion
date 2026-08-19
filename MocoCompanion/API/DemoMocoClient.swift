@@ -147,7 +147,7 @@ final class DemoMocoClient: MocoClientProtocol, @unchecked Sendable {
     }
 
     func startTimer(activityId: Int) async throws -> MocoActivity {
-        if var activity = Self.todayActivities().first(where: { $0.id == activityId }) {
+        if let activity = Self.todayActivities().first(where: { $0.id == activityId }) {
             return MocoActivity(
                 id: activity.id, date: activity.date, hours: activity.hours,
                 seconds: activity.seconds, workedSeconds: activity.workedSeconds,

@@ -1,3 +1,6 @@
+// Vendored from https://github.com/soffes/HotKey (MIT License, see LICENSE in this directory).
+// Local modifications: none.
+
 #if !targetEnvironment(macCatalyst) && canImport(AppKit) && canImport(Carbon)
 import AppKit
 import Carbon

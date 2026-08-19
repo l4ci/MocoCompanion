@@ -168,10 +168,9 @@ final class StatusItemController {
 
     @objc private func menuOpenBrowser() {
         let subdomain = appState.settings.subdomain
-        guard !subdomain.isEmpty else { return }
-        if let url = URL(string: "https://\(subdomain).mocoapp.com") {
-            NSWorkspace.shared.open(url)
-        }
+        guard MocoClient.isValidSubdomain(subdomain),
+              let url = URL(string: "https://\(subdomain).mocoapp.com") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func menuQuit() {

@@ -73,12 +73,32 @@ actor AppLogger {
     // MARK: - Convenience
 
     func apiRequest(method: String, url: String, statusCode: Int? = nil, duration: TimeInterval? = nil, error: String? = nil) {
-        var parts = ["\(method) \(url)"]
+        // Redact query strings and truncate error bodies unless the most verbose
+        // level is active — request URLs and 4xx/5xx bodies can carry customer
+        // data (search terms, filters, validation messages) that shouldn't sit
+        // unredacted in a log file at default verbosity.
+        let loggedURL = apiLogLevel <= .debug ? url : Self.stripQueryString(url)
+        var parts = ["\(method) \(loggedURL)"]
         if let code = statusCode { parts.append("→ \(code)") }
         if let dur = duration { parts.append(String(format: "%.0fms", dur * 1000)) }
-        if let err = error { parts.append("ERROR: \(err)") }
+        if let err = error {
+            let loggedError = apiLogLevel <= .debug ? err : Self.truncated(err, maxLength: 300)
+            parts.append("ERROR: \(loggedError)")
+        }
         let level: LogLevel = error != nil ? .error : (statusCode.map { $0 >= 400 } ?? false) ? .warning : .info
         write(category: .api, level: level, message: parts.joined(separator: " "))
+    }
+
+    /// Strip everything from `?` onward, keeping scheme/host/path only.
+    private static func stripQueryString(_ urlString: String) -> String {
+        guard let qIndex = urlString.firstIndex(of: "?") else { return urlString }
+        return String(urlString[..<qIndex])
+    }
+
+    /// Truncate a string to `maxLength` characters, marking truncation with an ellipsis.
+    private static func truncated(_ string: String, maxLength: Int) -> String {
+        guard string.count > maxLength else { return string }
+        return String(string.prefix(maxLength)) + "…"
     }
 
     // MARK: - File management

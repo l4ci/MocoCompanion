@@ -86,7 +86,7 @@ final class InMemoryBackend: StorageBackend, @unchecked Sendable {
 private enum PersistedValueConstants {
     static let encoder = JSONEncoder()
     static let decoder = JSONDecoder()
-    static let logger = Logger(subsystem: "com.mococompanion.app", category: "PersistedValue")
+    static let logger = Logger(category: "PersistedValue")
 }
 
 struct PersistedValue<T: Codable> {

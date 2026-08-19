@@ -6,6 +6,9 @@ enum DateUtilities {
     // MARK: - Cached Formatters
 
     /// ISO8601 formatter with fractional seconds.
+    /// `nonisolated(unsafe)` is safe here: Foundation's ISO8601DateFormatter is
+    /// documented thread-safe for concurrent reads (`date(from:)`/`string(from:)`),
+    /// and these instances are never mutated after initialization.
     nonisolated(unsafe) private static let iso8601Fractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -13,6 +16,7 @@ enum DateUtilities {
     }()
 
     /// ISO8601 formatter without fractional seconds (fallback).
+    /// See `iso8601Fractional` above re: thread-safety of concurrent reads.
     nonisolated(unsafe) private static let iso8601Standard: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
