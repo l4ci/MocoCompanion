@@ -325,12 +325,24 @@ final class Autotracker {
         // screensDidSleep + sessionDidResignActive), so unordered per-event
         // Tasks could interleave and flush or clobber the same segment twice.
         self.workspace.handler = { [weak self] event in
-            guard let self else { return }
-            let previous = self.eventChain
-            self.eventChain = Task { @MainActor [weak self] in
-                await previous?.value
+            self?.enqueue { [weak self] in
                 await self?.handleWorkspaceEvent(event)
             }
+        }
+    }
+
+    /// Chains `work` onto the tail of the serialized workspace-event queue
+    /// (`eventChain`) so it can never interleave with a workspace-event
+    /// handler, or with another unit of work enqueued this way. Used by the
+    /// workspace-event handler above and by `scheduleDebouncedAppChange`'s
+    /// debounce task — the latter previously called `processAppChange`
+    /// directly, off the chain, so it could land concurrently with a
+    /// chained flush/wake and clobber a segment either had just started.
+    private func enqueue(_ work: @escaping @MainActor () async -> Void) {
+        let previous = eventChain
+        eventChain = Task { @MainActor in
+            await previous?.value
+            await work()
         }
     }
 
@@ -370,6 +382,13 @@ final class Autotracker {
             Self.atLogger.debug("Paused for sleep/session resign")
         case .wake:
             guard isRecording else { return }
+            // A debounced app-change scheduled before sleep (or a stray
+            // activation delivered while "asleep") must not fire after wake
+            // with stale app info — this path already reads currentFrontmost
+            // itself, so any pending debounce is redundant at best and a
+            // clobber at worst.
+            pendingAppChangeTask?.cancel()
+            pendingAppChangeTask = nil
             if let frontmost = workspace.currentFrontmost {
                 await processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
@@ -379,13 +398,20 @@ final class Autotracker {
 
     /// Collapse rapid app activations into one processAppChange call. Each
     /// new event cancels the previous pending task and schedules a fresh
-    /// one; only the last event in a burst actually runs.
+    /// one; only the last event in a burst actually runs. The delayed work
+    /// is routed through `enqueue` (rather than calling `processAppChange`
+    /// directly) so it's serialized with the eventChain — this task runs
+    /// independently of that chain while it's sleeping, and without this it
+    /// could land in the middle of a chained flush/wake and clobber a
+    /// segment either had just started.
     private func scheduleDebouncedAppChange(bundleId: String, appName: String, windowTitle: String?) {
         pendingAppChangeTask?.cancel()
         pendingAppChangeTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: self?.activationDebounce ?? .milliseconds(300))
             guard !Task.isCancelled, let self else { return }
-            await self.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            self.enqueue { [weak self] in
+                await self?.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            }
         }
     }
 
@@ -426,9 +452,14 @@ final class Autotracker {
                 windowTitle: segment.windowTitle,
                 durationSeconds: duration
             )
-            await appRecordStore.insert(record)
+            // Maintained incrementally rather than re-querying
+            // `SELECT COUNT(*)` on every app/window switch — this runs on
+            // every flush, so an O(rows) count would scale with history size
+            // at the app's highest-frequency event.
+            if await appRecordStore.insert(record) {
+                recordCount += 1
+            }
         }
-        recordCount = await appRecordStore.recordCount()
     }
 
     // MARK: - App record queries (for TimelineViewModel)
@@ -448,8 +479,8 @@ final class Autotracker {
 
     /// Delete app records older than the given number of days from today.
     func cleanup(olderThanDays days: Int) async {
-        await appRecordStore.cleanup(olderThan: days)
-        recordCount = await appRecordStore.recordCount()
+        let deleted = await appRecordStore.cleanup(olderThan: days)
+        recordCount = max(0, recordCount - deleted)
         BreadcrumbTrail.shared.record("Autotracker", "Cleanup: records older than \(days) days removed")
     }
 
@@ -457,8 +488,8 @@ final class Autotracker {
     /// settings "Clear tracked app history" action and by the full-app
     /// "Reset Everything" flow.
     func deleteAllRecords() async {
-        await appRecordStore.deleteAll()
-        recordCount = await appRecordStore.recordCount()
+        let deleted = await appRecordStore.deleteAll()
+        recordCount = max(0, recordCount - deleted)
         BreadcrumbTrail.shared.record("Autotracker", "All app activity records deleted")
     }
 

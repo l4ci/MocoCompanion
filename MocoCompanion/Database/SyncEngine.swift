@@ -54,6 +54,8 @@ actor SyncEngine {
         pendingDates.formUnion(dates)
 
         if let task = drainTask {
+            // Awaiting `.value` intentionally ignores this call's own
+            // cancellation — see the note below.
             await task.value
             return
         }
@@ -67,6 +69,8 @@ actor SyncEngine {
             drainTask = nil
         }
         drainTask = task
+        // A started drain always runs to completion regardless of whether
+        // this call gets cancelled, so pending entries are never left half-pushed.
         await task.value
     }
 

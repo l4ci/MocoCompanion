@@ -42,8 +42,12 @@ actor AppRecordStore {
 
     // MARK: - Writes
 
-    func insert(_ record: AppRecord) {
-        insertMany([record])
+    /// - Returns: `true` if the record was actually persisted. Lets callers
+    ///   (Autotracker) maintain a running `recordCount` incrementally
+    ///   instead of re-querying `SELECT COUNT(*)` after every flush.
+    @discardableResult
+    func insert(_ record: AppRecord) -> Bool {
+        insertMany([record]) == 1
     }
 
     /// Insert one or more records in a single SQLite transaction. Using a
@@ -53,8 +57,14 @@ actor AppRecordStore {
     /// writes in Autotracker. A single record's insert failure is logged
     /// and skipped so one bad row doesn't drop the rest of the batch; only
     /// a failure to begin or commit the transaction rolls back everything.
-    func insertMany(_ records: [AppRecord]) {
-        guard !records.isEmpty else { return }
+    ///
+    /// - Returns: The number of records actually committed — 0 if the
+    ///   transaction itself failed to commit (everything rolled back),
+    ///   otherwise however many of `records` didn't hit a per-row error.
+    @discardableResult
+    func insertMany(_ records: [AppRecord]) -> Int {
+        guard !records.isEmpty else { return 0 }
+        var inserted = 0
         do {
             try database.transaction {
                 for record in records {
@@ -66,6 +76,7 @@ actor AppRecordStore {
                             record.windowTitle,
                             record.durationSeconds,
                         ])
+                        inserted += 1
                     } catch {
                         Self.logger.error("Failed to insert record: \(error)")
                     }
@@ -73,7 +84,9 @@ actor AppRecordStore {
             }
         } catch {
             Self.logger.error("Failed to commit batch insert: \(error)")
+            return 0
         }
+        return inserted
     }
 
     // MARK: - Reads
@@ -109,21 +122,32 @@ actor AppRecordStore {
 
     /// Delete every recorded app-activity row. Used by the "Clear tracked app
     /// history" settings action and by the full "Reset Everything" flow.
-    func deleteAll() {
+    ///
+    /// - Returns: How many rows were deleted (`sqlite3_changes`), so callers
+    ///   can adjust a cached count without re-querying.
+    @discardableResult
+    func deleteAll() -> Int {
         do {
             try database.execute("DELETE FROM app_records")
+            return database.changes
         } catch {
             Self.logger.error("Failed to delete all records: \(error)")
+            return 0
         }
     }
 
-    func cleanup(olderThan days: Int) {
-        guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date.now) else { return }
+    /// - Returns: How many rows were deleted (`sqlite3_changes`), so callers
+    ///   can adjust a cached count without re-querying.
+    @discardableResult
+    func cleanup(olderThan days: Int) -> Int {
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date.now) else { return 0 }
         let cutoffStr = Self.dateFormatter.string(from: cutoff)
         do {
             try database.execute("DELETE FROM app_records WHERE timestamp < ?", params: [cutoffStr])
+            return database.changes
         } catch {
             Self.logger.error("Failed to execute cleanup: \(error)")
+            return 0
         }
     }
 

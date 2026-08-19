@@ -34,8 +34,7 @@ final class EntryQueue {
     }
 
     private static var appSupportDir: URL {
-        URL.applicationSupportDirectory
-            .appendingPathComponent("MocoCompanion", isDirectory: true)
+        DatabasePaths.applicationSupportDirectory
     }
 
     /// Queue an entry for later sync.

@@ -7,10 +7,9 @@ enum ProjectCache {
     private static let logger = Logger(category: "ProjectCache")
 
     private static var cacheURL: URL {
-        let dir = URL.applicationSupportDirectory
-            .appendingPathComponent("MocoCompanion", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("projects-cache.json")
+        // DatabasePaths redirects to a temp dir under XCTest so the test host
+        // never overwrites the real cache.
+        DatabasePaths.applicationSupportDirectory.appendingPathComponent("projects-cache.json")
     }
 
     /// Save projects to disk. Called after each successful fetchProjects.

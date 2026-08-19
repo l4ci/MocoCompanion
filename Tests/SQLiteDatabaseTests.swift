@@ -104,4 +104,52 @@ struct SQLiteDatabaseTests {
             #expect(quarantined.isEmpty)
         }
     }
+
+    @Test("openRecovering does not quarantine a healthy file that's locked by another connection")
+    func openRecoveringLeavesLockedHealthyFileAlone() throws {
+        try withTempDatabasePath { path in
+            // Connection A: create the file, then grab an OS-level exclusive
+            // lock that outlives any single transaction, so a second
+            // connection's queries hit SQLITE_BUSY. (A plain `BEGIN
+            // EXCLUSIVE` does NOT achieve this under WAL — WAL readers use
+            // snapshot isolation and aren't blocked by a writer's exclusive
+            // transaction; `PRAGMA locking_mode=EXCLUSIVE` is what actually
+            // locks out other connections, verified empirically.)
+            let connectionA = try SQLiteDatabase(path: path)
+            try connectionA.execute("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            try connectionA.execute("PRAGMA locking_mode=EXCLUSIVE")
+            try connectionA.execute("INSERT INTO t (id) VALUES (1)")
+
+            // A short busy timeout keeps this test fast instead of waiting
+            // out the real 2s default.
+            #expect(throws: DatabaseError.self) {
+                _ = try SQLiteDatabase.openRecovering(
+                    atPath: path,
+                    logger: Logger(category: "SQLiteDatabaseTests"),
+                    label: "test.db",
+                    busyTimeoutMillis: 50
+                )
+            }
+
+            connectionA.close()
+
+            // The file was NOT quarantined — it's healthy, just contended.
+            let dir = (path as NSString).deletingLastPathComponent
+            let fileName = (path as NSString).lastPathComponent
+            let quarantined = (try? FileManager.default.contentsOfDirectory(atPath: dir))?
+                .filter { $0.hasPrefix("\(fileName).corrupt-") } ?? []
+            #expect(quarantined.isEmpty)
+            #expect(FileManager.default.fileExists(atPath: path))
+
+            // Now that the lock is released, the original healthy file opens
+            // fine and still has the table connection A created.
+            let db = try SQLiteDatabase.openRecovering(
+                atPath: path,
+                logger: Logger(category: "SQLiteDatabaseTests"),
+                label: "test.db"
+            )
+            let rows = try db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='t'")
+            #expect(rows.count == 1)
+        }
+    }
 }
