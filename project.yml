@@ -3,7 +3,7 @@ options:
   bundleIdPrefix: com.mococompanion
   deploymentTarget:
     macOS: "26.0"
-  xcodeVersion: "26.4"
+  xcodeVersion: "26.6"
   generateEmptyDirectories: false
 
 settings:
