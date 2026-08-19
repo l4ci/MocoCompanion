@@ -18,6 +18,44 @@ struct AppRecorderTests {
         )
     }
 
+    /// Scriptable workspace: tests push events through `handler` directly.
+    @MainActor
+    private final class FakeWorkspace: WorkspaceMonitor {
+        var handler: ((WorkspaceEvent) -> Void)?
+        var currentFrontmost: (bundleId: String, appName: String, windowTitle: String?)?
+        func start() {}
+        func stop() {}
+    }
+
+    @Test("Back-to-back sleep events flush the segment exactly once")
+    func duplicateSleepEventsFlushOnce() async throws {
+        let shadowDb = try SQLiteDatabase(path: ":memory:")
+        let shadowStore = try ShadowEntryStore(database: shadowDb)
+        let rulesDb = try SQLiteDatabase(path: ":memory:")
+        let ruleStore = try RuleStore(database: rulesDb)
+        let store = try AppRecordStore(inMemory: true)
+        let workspace = FakeWorkspace()
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let tracker = Autotracker(
+            shadowEntryStore: shadowStore,
+            appRecordStore: store,
+            ruleStore: ruleStore,
+            workspace: workspace,
+            clock: { now }
+        )
+        await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA")
+        now = now.addingTimeInterval(30)
+
+        // macOS fires screensDidSleep + sessionDidResignActive together on
+        // lock; both map to .sleep. Without serialized handling these two
+        // interleave and insert the same segment twice.
+        workspace.handler?(.sleep)
+        workspace.handler?(.sleep)
+        await tracker.stop()
+
+        #expect(await store.recordCount() == 1)
+    }
+
     @Test func coalescingSameApp() async throws {
         let tracker = try makeTracker()
         await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA")

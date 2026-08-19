@@ -261,6 +261,8 @@ final class Autotracker {
     /// gets recorded.
     private let activationDebounce: Duration = .milliseconds(300)
     private var pendingAppChangeTask: Task<Void, Never>?
+    /// Tail of the serialized workspace-event chain (see init).
+    private var eventChain: Task<Void, Never>?
 
     private static let systemFilteredBundleIds: Set<String> = [
         "com.apple.loginwindow",
@@ -317,8 +319,16 @@ final class Autotracker {
             }
         }
 
+        // Events are processed strictly in order: each one waits for the
+        // previous to finish. handleWorkspaceEvent suspends on store IO, and
+        // macOS can deliver several notifications for one transition (e.g.
+        // screensDidSleep + sessionDidResignActive), so unordered per-event
+        // Tasks could interleave and flush or clobber the same segment twice.
         self.workspace.handler = { [weak self] event in
-            Task { @MainActor [weak self] in
+            guard let self else { return }
+            let previous = self.eventChain
+            self.eventChain = Task { @MainActor [weak self] in
+                await previous?.value
                 await self?.handleWorkspaceEvent(event)
             }
         }
@@ -337,6 +347,9 @@ final class Autotracker {
     }
 
     func stop() async {
+        // Let queued workspace events settle so none starts a segment after
+        // the final flush below.
+        await eventChain?.value
         pendingAppChangeTask?.cancel()
         pendingAppChangeTask = nil
         await flushCurrentSegment()
@@ -398,7 +411,10 @@ final class Autotracker {
     }
 
     private func flushCurrentSegment() async {
+        // Take ownership before the first suspension so a concurrent caller
+        // (debounced app change vs. sleep flush) can't flush the same segment.
         guard let segment = currentSegment else { return }
+        currentSegment = nil
         let now = clock()
         let duration = max(segment.lastSeenAt, now).timeIntervalSince(segment.startedAt)
         if duration > 0 {
@@ -413,7 +429,6 @@ final class Autotracker {
             await appRecordStore.insert(record)
         }
         recordCount = await appRecordStore.recordCount()
-        currentSegment = nil
     }
 
     // MARK: - App record queries (for TimelineViewModel)
