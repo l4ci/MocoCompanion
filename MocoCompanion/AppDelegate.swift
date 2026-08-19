@@ -35,9 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // Center to resolve and display the app icon in notification banners.
         NSApp.setActivationPolicy(.accessory)
 
-        // Enforce single instance
+        // Enforce single instance. Skipped under XCTest: the test host would otherwise
+        // terminate whenever the installed app is running, before XCTest can connect.
+        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let runningInstances = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
-        if runningInstances.count > 1 {
+        if !isRunningTests && runningInstances.count > 1 {
             for app in runningInstances where app != NSRunningApplication.current {
                 app.activate()
             }
