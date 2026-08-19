@@ -101,7 +101,7 @@ private struct PanelContentInner: View {
     var body: some View {
         VStack(spacing: 0) {
             if !appState.networkMonitor.isOnline {
-                OfflineBannerView(queuedCount: appState.entryQueue.count)
+                OfflineBannerView(queuedCount: appState.syncState.pendingChanges)
             }
 
             if showFirstUseHint {

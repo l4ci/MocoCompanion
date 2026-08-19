@@ -29,8 +29,6 @@ final class AppState {
     let budgetService: BudgetService
     let monitorEngine: MonitorEngine
     let networkMonitor: NetworkMonitor
-    let entryQueue: EntryQueue
-    let offlineSyncService: OfflineSyncService
     let shadowEntryStore: ShadowEntryStore
     let syncEngine: SyncEngine
     let syncState: SyncState
@@ -172,8 +170,6 @@ final class AppState {
         )
         self.monitorEngine = monitoring.monitorEngine
         self.networkMonitor = monitoring.networkMonitor
-        self.entryQueue = monitoring.entryQueue
-        self.offlineSyncService = monitoring.offlineSyncService
         self.autotracker = monitoring.autotracker
         self.yesterdayService = monitoring.yesterdayService
         self.calendarService = monitoring.calendarService
@@ -202,13 +198,18 @@ final class AppState {
         // immediately recompute the warning without waiting for the 10-minute poll.
         tracking.activityService.yesterdayService = monitoring.yesterdayService
 
-        // Wire network reconnect: sync queued entries + refresh data
+        // Wire network reconnect: push/pull any pendingCreate/dirty shadow
+        // rows (including offline manual bookings) + refresh data. Same
+        // date set as AppDelegate's periodic sync.
         monitoring.networkMonitor.onReconnect = { [weak self] in
             guard let self else { return }
             await self.fetchSession()
             await self.fetchProjects()
             await self.timerService.sync()
-            await self.syncQueuedEntries()
+            let today = DateUtilities.todayString()
+            var dates = [today]
+            if let yesterday = DateUtilities.yesterdayString() { dates.append(yesterday) }
+            await self.syncEngine.sync(dates: dates)
         }
 
         // Auto-detect "description required" from Moco validation errors.
@@ -396,8 +397,6 @@ final class AppState {
     private struct MonitoringPhase {
         let monitorEngine: MonitorEngine
         let networkMonitor: NetworkMonitor
-        let entryQueue: EntryQueue
-        let offlineSyncService: OfflineSyncService
         let autotracker: Autotracker
         let yesterdayService: YesterdayService
         let calendarService: CalendarService
@@ -416,8 +415,6 @@ final class AppState {
         // Monitor engine — centralized polling, dedup, and dispatch for background monitors
         let engine = MonitorEngine(dispatcher: dispatcher)
         let networkMonitor = NetworkMonitor()
-        let entryQueue = EntryQueue()
-        let offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
 
         let recordStore: AppRecordStore
         let rStore: RuleStore
@@ -463,8 +460,6 @@ final class AppState {
         return MonitoringPhase(
             monitorEngine: engine,
             networkMonitor: networkMonitor,
-            entryQueue: entryQueue,
-            offlineSyncService: offlineSyncService,
             autotracker: autotracker,
             yesterdayService: yesterdaySvc,
             calendarService: calendarService
@@ -485,20 +480,5 @@ final class AppState {
             dispatcher: notificationDispatcher
         )
         _searchEntriesBox.value = catalog.searchEntries
-    }
-
-    /// Sync queued entries after reconnecting. Deduplicates against existing activities.
-    func syncQueuedEntries() async {
-        guard let userId = session.currentUserId else { return }
-        await offlineSyncService.sync(
-            queue: entryQueue,
-            userId: userId,
-            onSynced: { [weak self] syncedCount in
-                guard let self else { return }
-                let message = String(localized: "offline.synced \(syncedCount)")
-                self.notificationDispatcher.send(.projectsRefreshed, message: message)
-                await self.activityService.refreshTodayStats()
-            }
-        )
     }
 }

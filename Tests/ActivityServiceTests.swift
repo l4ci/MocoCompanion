@@ -151,6 +151,7 @@ struct ActivityServiceTests {
 
         let result = await service.bookManualEntry(
             date: "2026-04-01", projectId: 100, taskId: 200,
+            projectName: "Booked Project", taskName: "Task", customerName: "Customer",
             description: "manual", seconds: 1800
         )
 
@@ -174,6 +175,7 @@ struct ActivityServiceTests {
         let (service, _) = makeService(api: api)
         let result = await service.bookManualEntry(
             date: "2026-04-01", projectId: 100, taskId: 200,
+            projectName: "Project", taskName: "Task", customerName: "Customer",
             description: "test", seconds: 3600
         )
 
@@ -184,6 +186,63 @@ struct ActivityServiceTests {
             break // expected
         }
         #expect(service.todayActivities.isEmpty)
+    }
+
+    @Test("bookManualEntry queues a pendingCreate row and succeeds when offline")
+    @MainActor func bookManualEntryOffline() async throws {
+        var api = MockActivityAPI()
+        api.createActivityHandler = { _, _, _, _, _, _ in
+            throw MocoError.networkError(URLError(.notConnectedToInternet))
+        }
+
+        let store = try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:"))
+        let syncState = SyncState()
+        // nonisolated(unsafe) suppresses the sending diagnostic — safe because
+        // these closures capture no state (mirrors AppState.buildStorage).
+        nonisolated(unsafe) let noClient: () -> (any ActivityAPI & TimerAPI)? = { nil }
+        nonisolated(unsafe) let fixedUserId: () -> Int? = { 42 }
+        let syncEngine = SyncEngine(
+            store: store,
+            clientFactory: noClient,
+            userIdProvider: fixedUserId,
+            syncState: syncState
+        )
+
+        let (service, _) = makeService(api: api)
+        service.syncEngine = syncEngine
+
+        let result = await service.bookManualEntry(
+            date: "2026-04-01", projectId: 100, taskId: 200,
+            projectName: "Offline Project", taskName: "Offline Task", customerName: "Offline Customer",
+            description: "manual #TICKET-1", seconds: 1800
+        )
+
+        guard case .success(let entry) = result else {
+            Issue.record("Expected success, got \(result)")
+            return
+        }
+        #expect(entry.localId != nil)
+        #expect(entry.id == nil)
+        #expect(entry.sync.status == .pendingCreate)
+        #expect(entry.description == "manual")
+        #expect(entry.tag == "TICKET-1")
+        #expect(entry.projectName == "Offline Project")
+
+        // Appears in today's list immediately (optimistic local update).
+        #expect(service.todayActivities.count == 1)
+        #expect(service.todayActivities.first?.sync.status == .pendingCreate)
+
+        // Persisted to the shadow store as a dirty (pendingCreate) row, ready
+        // for SyncEngine.pushDirty() to pick up on the next sync.
+        let dirty = try await store.dirtyEntries()
+        #expect(dirty.count == 1)
+        #expect(dirty.first?.sync.status == .pendingCreate)
+        #expect(dirty.first?.projectId == 100)
+        #expect(dirty.first?.tag == "TICKET-1")
+
+        // The offline banner's pending count is updated immediately, not
+        // just after the next sync cycle.
+        #expect(syncState.pendingChanges == 1)
     }
 
     // MARK: - duplicateToToday

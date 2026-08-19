@@ -95,7 +95,6 @@
 		7230A1A293725C0604219C97 /* TodayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4160D0019BA6014BDAFCC87 /* TodayViewModelTests.swift */; };
 		7577075485A39F41BA5BEC5C /* TodayEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD4F63924DB4A2978661182 /* TodayEmptyState.swift */; };
 		78AC96CCF33BF54D054A8BB3 /* DedupLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3568C7B05EF74C4486C575DF /* DedupLedger.swift */; };
-		78E77753543F2E2ED0503527 /* OfflineSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */; };
 		790B32F7F8BA74CE06DF3F3C /* StatusPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C2E7B0503AAC6679A4B804 /* StatusPopoverView.swift */; };
 		792BF98FAD94EBD8FE00F1E9 /* ProjectTaskRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830513740374C08D5E534785 /* ProjectTaskRef.swift */; };
 		79E7F4B38E6BD9A3915D0B1E /* ProjectPickerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F25191C59D81EFD6F5A9E5 /* ProjectPickerRow.swift */; };
@@ -129,7 +128,6 @@
 		99DA72D0C90207BB51C92A30 /* QuickEntryStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2C8A401A2238AC425BB6DE /* QuickEntryStateMachineTests.swift */; };
 		9B9964032CCB385C6FA594E3 /* TimelineWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE23E7BB04E6B5E42EE1E3E /* TimelineWindow.swift */; };
 		9C9A376F9EB962A35CF81603 /* Suggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAF74456D79B37B2297E1CE /* Suggestion.swift */; };
-		9D97044DF3117A9C6C5BF32A /* OfflineSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */; };
 		9F783D67EAAA25F000D14065 /* BudgetDepletionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E711995E777F152C7FE6981 /* BudgetDepletionMonitor.swift */; };
 		A21E70EFA52719A54390639E /* ProjectsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7AF3BB61B72EF6538994BC /* ProjectsSettingsTab.swift */; };
 		A2EE040BD8DE6FEC171CED05 /* TimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FFEC6CB04C5A81D1B85FCA /* TimerState.swift */; };
@@ -141,7 +139,6 @@
 		A49550582285D68A6E703CC7 /* AboutSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6AAF1A7122E86D8B018993 /* AboutSettingsTab.swift */; };
 		A60540232EF6ECBE07ADEDDA /* EntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7920563D8DACABBBDEC8892C /* EntryRow.swift */; };
 		A6BEE81E03F3E085106C3697 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7FBFFE8C2F878C02B6BE6DF7 /* Assets.xcassets */; };
-		A7109E76E8E3AB2B124D79CD /* EntryQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011B6721B43C2268A3D0C31E /* EntryQueue.swift */; };
 		A7AE1FACA62C403054FC315A /* RuleEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD8FA186D23756850CE8C10 /* RuleEditorSheet.swift */; };
 		A96F0191EC0917A2EED7A63B /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DE3813688601F145EE7C4 /* StatusItemController.swift */; };
 		AC06679248047DEE5547D1A7 /* MockActivityAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */; };
@@ -228,7 +225,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		011B6721B43C2268A3D0C31E /* EntryQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryQueue.swift; sourceTree = "<group>"; };
 		013BC31FD68DE0BE154BE283 /* MockTimerAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimerAPI.swift; sourceTree = "<group>"; };
 		01457F0F93FA241A0015FC12 /* DedupLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupLedgerTests.swift; sourceTree = "<group>"; };
 		03756D43024EC11D0F4BDF73 /* AccountSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsTab.swift; sourceTree = "<group>"; };
@@ -297,7 +293,6 @@
 		53712E974F5F6D7CFA756E1F /* TimerHintSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerHintSection.swift; sourceTree = "<group>"; };
 		53AE67DA8B29FE1C7048611F /* MockActivityAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockActivityAPI.swift; sourceTree = "<group>"; };
 		542F69EC4669870DF22A52B3 /* NowLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowLineView.swift; sourceTree = "<group>"; };
-		546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncServiceTests.swift; sourceTree = "<group>"; };
 		5495A26BD186E5668A49CAD4 /* DemoMocoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoMocoClient.swift; sourceTree = "<group>"; };
 		54CA7B6B62279BC2D5F0B2A7 /* ProjectColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColorPalette.swift; sourceTree = "<group>"; };
 		569A62F9AF8E4E9AEE8A8ACA /* AbsenceStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsenceStyle.swift; sourceTree = "<group>"; };
@@ -319,7 +314,6 @@
 		6CAF74456D79B37B2297E1CE /* Suggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Suggestion.swift; sourceTree = "<group>"; };
 		6D81BA9C846C72408FFE1B04 /* TagExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagExtractor.swift; sourceTree = "<group>"; };
 		6DE89601DC5DF284CA0CB730 /* RuleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleStoreTests.swift; sourceTree = "<group>"; };
-		715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineSyncService.swift; sourceTree = "<group>"; };
 		71A8122A4BBDF607F61D362D /* MenuBarDisplayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDisplayStateTests.swift; sourceTree = "<group>"; };
 		72295BCC7A05744D102D54C5 /* UndoToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToastView.swift; sourceTree = "<group>"; };
 		723D2135ABB70229C213D0AE /* MocoClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MocoClientTests.swift; sourceTree = "<group>"; };
@@ -484,7 +478,6 @@
 				89FC1F07E55A30CC5E09D08F /* MonitorEngineTests.swift */,
 				CBB6288871F9E164F553D855 /* NotificationDispatcherTests.swift */,
 				1391BF2696100387D44C4C4A /* NSWorkspaceMonitorTests.swift */,
-				546AAB2648AEDB7E584D2AC0 /* OfflineSyncServiceTests.swift */,
 				47F2C32C5D7A4811F6E4574C /* PanelDismissPolicyTests.swift */,
 				FBDB9DA98944E5F891048B21 /* PanelVisibilityTests.swift */,
 				D39B9F896C7417F0FBFFFCE8 /* PlanningStoreTests.swift */,
@@ -531,7 +524,6 @@
 				BA248C4ED37DB0CF81DCDB6D /* DeleteUndoManager.swift */,
 				DB67C9BF94CA9E55B76E7403 /* DescriptionMatcher.swift */,
 				CEC0065706C321F573697AB9 /* DescriptionStore.swift */,
-				011B6721B43C2268A3D0C31E /* EntryQueue.swift */,
 				F928D6D8C41DE29919D0FE04 /* FavoritesManager.swift */,
 				6791FBBF9B027DB800C35494 /* FocusedWindowObserver.swift */,
 				801EF96E2F82D125D110E142 /* IdleReminderMonitor.swift */,
@@ -539,7 +531,6 @@
 				A3451464A94CF321FD4B56BF /* NetworkMonitor.swift */,
 				BD6C1E09B23D8A8D26821D7D /* NotificationCatalog.swift */,
 				3206CE65199144879E51EA48 /* NotificationDispatcher.swift */,
-				715A3B39CB23EE86CBC7D183 /* OfflineSyncService.swift */,
 				2BB18FCF8315AA2D9B0CB29B /* PanelDismissPolicy.swift */,
 				DDE2C71787D6ACC4DE903D5B /* PanelVisibility.swift */,
 				D3EBE167F89E6B5F55A168C1 /* PlanningStore.swift */,
@@ -921,7 +912,6 @@
 				35A84AB923D02624568F7C8A /* DescriptionMatcher.swift in Sources */,
 				ED34548F2AFA3BBEFDC097FC /* DescriptionStore.swift in Sources */,
 				B21B10E1FBA8F53207E64B73 /* EntryBlockView.swift in Sources */,
-				A7109E76E8E3AB2B124D79CD /* EntryQueue.swift in Sources */,
 				A60540232EF6ECBE07ADEDDA /* EntryRow.swift in Sources */,
 				D2805D04239D4D770A8AE8FB /* EntryStatusIcons.swift in Sources */,
 				E7A2F1510719C6720F9B1DE8 /* FavoritesManager.swift in Sources */,
@@ -962,7 +952,6 @@
 				B50DE05C488BBB2EABEC74E9 /* NotificationsSettingsTab.swift in Sources */,
 				C1CDE8EA66EFAB4C9CE2D14F /* NowLineView.swift in Sources */,
 				5E075D2D85D9CA132E0B39AE /* OfflineBannerView.swift in Sources */,
-				78E77753543F2E2ED0503527 /* OfflineSyncService.swift in Sources */,
 				1F4DFDB934DB37FE1F7693AC /* PanelContentView.swift in Sources */,
 				E80CC1D361139172B07EE02C /* PanelController.swift in Sources */,
 				F9CEA892429B87DB7E14F171 /* PanelDismissPolicy.swift in Sources */,
@@ -1074,7 +1063,6 @@
 				F86776B2F41AAE54D1121EBF /* MonitorEngineTests.swift in Sources */,
 				C7A2A35C308E114375EB1508 /* NSWorkspaceMonitorTests.swift in Sources */,
 				A41228181FD57B065E7A0576 /* NotificationDispatcherTests.swift in Sources */,
-				9D97044DF3117A9C6C5BF32A /* OfflineSyncServiceTests.swift in Sources */,
 				CB17EF42AB72F09364C6572D /* PanelDismissPolicyTests.swift in Sources */,
 				E5B1E2CCB195F7D08AF282CB /* PanelVisibilityTests.swift in Sources */,
 				F7349612CD66027955DF7822 /* PlanningStoreTests.swift in Sources */,

@@ -302,6 +302,18 @@ actor SyncEngine {
         try await store.insert(entry)
     }
 
+    /// Insert a local-only draft with `sync.status == .pendingCreate` — a booking
+    /// made while offline. The row shows up immediately in the shadow store (and
+    /// therefore the UI) and is pushed to Moco by the next `pushDirty()`, exactly
+    /// like an Autotracker create-mode row. Recomputes `syncState.pendingChanges`
+    /// from the store so the offline banner reflects the new row immediately
+    /// instead of waiting for the next sync cycle.
+    func insertPendingCreate(_ entry: ShadowEntry) async throws {
+        try await store.insert(entry)
+        let pending = try await store.dirtyEntries().count
+        await MainActor.run { syncState.setPendingChanges(pending) }
+    }
+
     /// Sync the given date and return entries mapped to MocoActivity.
     /// Sync the given date and return entries from the local store.
     func refresh(date: String) async -> [ShadowEntry] {

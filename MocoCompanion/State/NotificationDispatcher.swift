@@ -174,6 +174,12 @@ extension NotificationDispatcher {
         send(.manualEntry, message: "Booked \(formatted) for \(projectName)")
     }
 
+    /// A manual booking made while offline — queued locally as a `.pendingCreate`
+    /// shadow row and pushed to Moco once connectivity returns.
+    func manualEntryOffline() {
+        send(.manualEntry, message: String(localized: "notification.manualEntryOffline"))
+    }
+
     func entryDuplicated(projectName: String, hours: Double) {
         let formatted = "\(hours.formatted(.number.precision(.fractionLength(1))))h"
         send(.activityDuplicated, message: "Duplicated \(formatted) for \(projectName)")

@@ -257,7 +257,9 @@ final class ActivityService: ActivitySyncing {
     }
 
     func bookManualEntry(
-        date: String, projectId: Int, taskId: Int, description: String, seconds: Int
+        date: String, projectId: Int, taskId: Int,
+        projectName: String, taskName: String, customerName: String,
+        description: String, seconds: Int
     ) async -> Result<ShadowEntry, MocoError> {
         guard let client = clientFactory() else { return .failure(.invalidConfiguration) }
 
@@ -276,8 +278,33 @@ final class ActivityService: ActivitySyncing {
             notificationDispatcher.manualEntry(projectName: entry.projectName, hours: Double(seconds) / 3600.0)
             return .success(entry)
         } catch {
+            let mocoError = MocoError.from(error)
+
+            // No connectivity (as opposed to a 4xx/5xx the server actively
+            // rejected) — queue the booking locally as a pendingCreate row
+            // (same shape Autotracker uses) instead of failing outright.
+            // SyncEngine pushes it to Moco once the network returns.
+            if mocoError.isNetworkError, let syncEngine {
+                let entry = Self.makeOfflinePendingEntry(
+                    date: date, projectId: projectId, taskId: taskId,
+                    projectName: projectName, taskName: taskName, customerName: customerName,
+                    description: apiDescription, tag: tag, seconds: seconds,
+                    userId: userIdProvider()
+                )
+                do {
+                    try await syncEngine.insertPendingCreate(entry)
+                } catch {
+                    logger.error("bookManualEntry offline insert failed: \(error.localizedDescription)")
+                    Task { await AppLogger.shared.app("bookManualEntry offline insert failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
+                }
+                appendToday(entry)
+                usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)
+                notificationDispatcher.manualEntryOffline()
+                return .success(entry)
+            }
+
             handleError(error, label: "bookManualEntry")
-            return .failure(MocoError.from(error))
+            return .failure(mocoError)
         }
     }
 
@@ -401,6 +428,59 @@ final class ActivityService: ActivitySyncing {
         notificationDispatcher.apiError(mocoError)
         logger.error("\(label) failed: \(error.localizedDescription)")
         Task { await AppLogger.shared.app("\(label) failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
+    }
+
+    /// Build a local-only shadow row for a manual booking made while offline.
+    /// Mirrors `Autotracker.atMakeShadowEntry`: a UUID `localId`, `sync.status
+    /// == .pendingCreate`, and the same description/tag split the online path
+    /// sends to the API (`description` here is already tag-stripped), so
+    /// `SyncEngine.pushDirty()` later produces the identical server entry the
+    /// online path would have created. Project/task billable flags aren't
+    /// known locally, so — like Autotracker — this assumes billable, which
+    /// only affects today's local billable-percentage stat until the real
+    /// values arrive on the next pull.
+    private static func makeOfflinePendingEntry(
+        date: String, projectId: Int, taskId: Int,
+        projectName: String, taskName: String, customerName: String,
+        description: String, tag: String?, seconds: Int, userId: Int?
+    ) -> ShadowEntry {
+        let now = ISO8601DateFormatter().string(from: Date.now)
+        return ShadowEntry(
+            id: nil,
+            localId: UUID().uuidString,
+            date: date,
+            hours: Double(seconds) / 3600.0,
+            seconds: seconds,
+            workedSeconds: seconds,
+            description: description,
+            billed: false,
+            billable: true,
+            tag: tag ?? "",
+            projectId: projectId,
+            projectName: projectName,
+            projectBillable: true,
+            taskId: taskId,
+            taskName: taskName,
+            taskBillable: true,
+            customerId: 0,
+            customerName: customerName,
+            userId: userId ?? 0,
+            userFirstname: "",
+            userLastname: "",
+            hourlyRate: 0,
+            timerStartedAt: nil,
+            startTime: nil,
+            locked: false,
+            createdAt: now,
+            updatedAt: now,
+            sync: ShadowEntry.SyncMeta(
+                status: .pendingCreate,
+                localUpdatedAt: now,
+                serverUpdatedAt: now,
+                conflictFlag: false
+            ),
+            origin: ShadowEntry.Origin()
+        )
     }
 
     /// Mirror a freshly-created server entry into the local shadow store.

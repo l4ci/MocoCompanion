@@ -40,6 +40,18 @@ enum MocoError: Error, LocalizedError, Sendable {
         }
     }
 
+    /// True when the failure is a transport-level problem (no route, timed
+    /// out, not connected) rather than the server responding at all. Unlike
+    /// a 4xx/5xx response — which means Moco actively rejected the request —
+    /// this is safe to treat as "offline": the write can be queued locally
+    /// and retried once connectivity returns.
+    var isNetworkError: Bool {
+        switch self {
+        case .networkError: return true
+        default: return false
+        }
+    }
+
     var requiresUserReauthentication: Bool {
         switch self {
         case .unauthorized, .invalidConfiguration:

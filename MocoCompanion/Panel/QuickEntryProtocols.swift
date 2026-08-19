@@ -37,6 +37,7 @@ final class LiveQuickEntryCommands: QuickEntryCommands {
         let result = await activityService.bookManualEntry(
             date: DateUtilities.todayString(),
             projectId: entry.projectId, taskId: entry.taskId,
+            projectName: entry.projectName, taskName: entry.taskName, customerName: entry.customerName,
             description: description, seconds: seconds
         )
         switch result {

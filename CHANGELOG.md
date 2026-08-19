@@ -10,10 +10,11 @@ Audit pass: security, performance, concurrency and test-hygiene reviews, with fi
 
 - **Clear tracked app history** button in Settings → Timeline → Tracking. Deletes every recorded app/window segment after a confirmation; independent of the age-based retention.
 - **Demo badge.** While Demo Mode is on, a small "Demo" pill sits next to the greeting in the panel header so it can't be left on by accident.
-- **Corrupt-database recovery.** If `shadow.db`, `rules.sqlite` or `app_records.sqlite` fails to open or fails SQLite's integrity check, the file (plus `-wal`/`-shm`) is moved aside as `*.corrupt-<timestamp>` and a fresh database is created. Previously this crashed on every launch.
+- **Corrupt-database recovery.** If `shadow.db`, `rules.sqlite` or `app_records.sqlite` turns out to be corrupt (SQLite reports CORRUPT/NOTADB/FORMAT on open, probe, or `quick_check`), the file (plus `-wal`/`-shm`) is moved aside as `*.corrupt-<timestamp>` and a fresh database is created. A locked or unreadable file is left alone. Previously this crashed on every launch.
 
 ### Fixed
 
+- **Manual bookings made offline are kept** and pushed when the connection returns, instead of failing with an error. The unused second offline queue is gone; the offline banner now shows the real number of entries waiting to sync.
 - **Duplicate bookings under overlapping syncs.** Several code paths could run a sync at the same time; two overlapping runs could both push the same pending entry and create it twice on Moco. Syncs are now coalesced into one queue.
 - **Reset all data** left the offline queue, rules and window-title history on disk. It now clears all three.
 - **Autotracker double-counting on sleep/lock.** macOS sends more than one notification per sleep/lock; the same segment could be written twice. Events are now processed strictly in order.
