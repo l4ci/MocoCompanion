@@ -453,6 +453,25 @@ final class Autotracker {
         BreadcrumbTrail.shared.record("Autotracker", "Cleanup: records older than \(days) days removed")
     }
 
+    /// Delete all recorded app-activity history. Used by the Autotracker
+    /// settings "Clear tracked app history" action and by the full-app
+    /// "Reset Everything" flow.
+    func deleteAllRecords() async {
+        await appRecordStore.deleteAll()
+        recordCount = await appRecordStore.recordCount()
+        BreadcrumbTrail.shared.record("Autotracker", "All app activity records deleted")
+    }
+
+    /// Delete all automation rules. Used by the full-app "Reset Everything" flow.
+    func deleteAllRules() async {
+        do {
+            try await ruleStore.deleteAll()
+        } catch {
+            Self.atLogger.error("Failed to delete all rules: \(error)")
+        }
+        BreadcrumbTrail.shared.record("Autotracker", "All automation rules deleted")
+    }
+
     // MARK: - Rule Evaluation
 
     func evaluate(

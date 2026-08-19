@@ -58,6 +58,18 @@ struct DateUtilitiesTests {
         #expect(DateUtilities.parseHours("hello world") == nil)
     }
 
+    @Test("parseHours rejects non-finite values")
+    func parseHoursRejectsNonFinite() {
+        #expect(DateUtilities.parseHours("1e308") == nil)
+    }
+
+    @Test("parseHours rejects a value over 24 hours, and accepts exactly 24")
+    func parseHoursRejectsOverADay() {
+        #expect(DateUtilities.parseHours("25") == nil)
+        #expect(DateUtilities.parseHours("24") == 24)
+        #expect(DateUtilities.parseHours("23.5") == 23.5)
+    }
+
     // MARK: - formatElapsedCompact
 
     @Test("formatElapsedCompact shows seconds")

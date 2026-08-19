@@ -23,16 +23,8 @@ actor AppRecordStore {
     ///   actor port — `Application Support/MocoCompanion/app_records.sqlite`
     ///   — so existing installs keep their history.
     init(inMemory: Bool = false) throws {
-        let path: String
-        if inMemory {
-            path = ":memory:"
-        } else {
-            let dir = URL.applicationSupportDirectory
-                .appendingPathComponent("MocoCompanion", isDirectory: true)
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            path = dir.appendingPathComponent("app_records.sqlite").path
-        }
-        database = try SQLiteDatabase(path: path)
+        let path = inMemory ? ":memory:" : DatabasePaths.appRecords.path
+        database = try SQLiteDatabase.openRecovering(atPath: path, logger: Self.logger, label: "app_records.sqlite")
         try database.createTable(sql: Self.createTableSQL)
         try database.execute("CREATE INDEX IF NOT EXISTS idx_app_records_timestamp ON app_records(timestamp)")
     }
@@ -114,6 +106,16 @@ actor AppRecordStore {
     }
 
     // MARK: - Cleanup
+
+    /// Delete every recorded app-activity row. Used by the "Clear tracked app
+    /// history" settings action and by the full "Reset Everything" flow.
+    func deleteAll() {
+        do {
+            try database.execute("DELETE FROM app_records")
+        } catch {
+            Self.logger.error("Failed to delete all records: \(error)")
+        }
+    }
 
     func cleanup(olderThan days: Int) {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date.now) else { return }

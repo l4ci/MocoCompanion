@@ -82,6 +82,7 @@ struct AccountSettingsTab: View {
         .alert(String(localized: "settings.resetConfirmTitle"), isPresented: $showingResetConfirmation) {
             Button(String(localized: "settings.resetConfirmButton"), role: .destructive) {
                 settings.resetAllData()
+                Task { await appState?.clearAllLocalData() }
             }
             Button(String(localized: "settings.resetCancel"), role: .cancel) {}
         } message: {

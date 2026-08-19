@@ -1061,6 +1061,54 @@
         }
       }
     },
+    "autotracker.clearHistory" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfasste App-Aktivität löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Tracked App History"
+          }
+        }
+      }
+    },
+    "autotracker.clearHistory.confirmMessage" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle erfassten App-Aktivitäten werden unwiderruflich gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All recorded app activity will be permanently deleted."
+          }
+        }
+      }
+    },
+    "autotracker.clearHistory.confirmTitle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfasste App-Aktivität löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Tracked App History?"
+          }
+        }
+      }
+    },
     "autotracker.currentApp" : {
       "localizations" : {
         "de" : {
@@ -4827,6 +4875,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Synchronisierung ausstehend"
+          }
+        }
+      }
+    },
+    "panel.demoBadge" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo"
           }
         }
       }

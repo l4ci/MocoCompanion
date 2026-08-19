@@ -102,6 +102,11 @@ actor RuleStore {
         try database.execute("DELETE FROM tracking_rules WHERE id = ?", params: [id])
     }
 
+    /// Delete every automation rule. Used by the full "Reset Everything" flow.
+    func deleteAll() throws {
+        try database.execute("DELETE FROM tracking_rules")
+    }
+
     func allRules() throws -> [TrackingRule] {
         let rows = try database.query("SELECT * FROM tracking_rules ORDER BY name")
         return rows.map(Self.ruleFromRow)

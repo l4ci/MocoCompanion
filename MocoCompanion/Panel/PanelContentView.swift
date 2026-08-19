@@ -187,6 +187,10 @@ private struct PanelContentInner: View {
                 .font(.system(size: 24 + fontBoost, weight: .regular))
                 .foregroundStyle(theme.textPrimary)
 
+            if appState.settings.demoMode {
+                demoBadge
+            }
+
             Spacer()
 
             if let onShowAutotracker {
@@ -206,6 +210,19 @@ private struct PanelContentInner: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
+    }
+
+    /// Quiet indicator that the panel is running against `DemoMocoClient`
+    /// rather than the real Moco API — otherwise the only sign of demo mode
+    /// is a toggle buried in Settings > Debug.
+    private var demoBadge: some View {
+        Text(String(localized: "panel.demoBadge"))
+            .font(.system(size: Theme.FontSize.caption + fontBoost, weight: .medium))
+            .foregroundStyle(theme.textTertiary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(theme.textTertiary.opacity(0.12), in: Capsule())
+            .accessibilityLabel(String(localized: "panel.demoBadge"))
     }
 
     @ViewBuilder

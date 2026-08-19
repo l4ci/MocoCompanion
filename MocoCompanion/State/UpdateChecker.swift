@@ -46,7 +46,7 @@ actor UpdateChecker {
 
             let remoteVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
 
-            if isNewerVersion(remote: remoteVersion, current: currentVersion) {
+            if Self.isNewerVersion(remote: remoteVersion, current: currentVersion) {
                 logger.info("Update available: \(remoteVersion) (current: \(currentVersion))")
                 return Release(version: remoteVersion, url: updateGuideURL)
             } else {
@@ -59,15 +59,59 @@ actor UpdateChecker {
         }
     }
 
-    private func isNewerVersion(remote: String, current: String) -> Bool {
-        let remoteParts = remote.split(separator: ".").compactMap { Int($0) }
-        let currentParts = current.split(separator: ".").compactMap { Int($0) }
-        let count = max(remoteParts.count, currentParts.count)
+    /// Parses a `MAJOR[.MINOR[.PATCH]]` version, with an optional leading
+    /// `v`/`V` and an optional `-prerelease` suffix (e.g. `"v1.2.0-beta1"`).
+    /// `nil` for anything that doesn't fit that shape — a non-numeric
+    /// component, an empty string, or more than three numeric components.
+    private struct ParsedVersion {
+        let numeric: [Int]
+        let isPrerelease: Bool
+
+        init?(_ raw: String) {
+            var stripped = raw.trimmingCharacters(in: .whitespaces)
+            if stripped.hasPrefix("v") || stripped.hasPrefix("V") {
+                stripped.removeFirst()
+            }
+            guard !stripped.isEmpty else { return nil }
+
+            let dashIndex = stripped.firstIndex(of: "-")
+            let numericPart = dashIndex.map { String(stripped[stripped.startIndex..<$0]) } ?? stripped
+            isPrerelease = dashIndex != nil
+
+            let parts = numericPart.split(separator: ".", omittingEmptySubsequences: false)
+            guard !parts.isEmpty, parts.count <= 3 else { return nil }
+
+            var values: [Int] = []
+            for part in parts {
+                guard let value = Int(part), value >= 0 else { return nil }
+                values.append(value)
+            }
+            numeric = values
+        }
+    }
+
+    /// Compares two version strings numerically (`"1.10.0" > "1.9.0"`), not
+    /// lexicographically. A pre-release (`"1.2.0-beta1"`) is treated as
+    /// older than the same numeric version without a suffix (`"1.2.0"`).
+    /// Returns `false` — never crashes — when either string doesn't parse.
+    static func isNewerVersion(remote: String, current: String) -> Bool {
+        guard let remoteVersion = ParsedVersion(remote), let currentVersion = ParsedVersion(current) else {
+            return false
+        }
+
+        let count = max(remoteVersion.numeric.count, currentVersion.numeric.count)
         for i in 0..<count {
-            let r = i < remoteParts.count ? remoteParts[i] : 0
-            let c = i < currentParts.count ? currentParts[i] : 0
+            let r = i < remoteVersion.numeric.count ? remoteVersion.numeric[i] : 0
+            let c = i < currentVersion.numeric.count ? currentVersion.numeric[i] : 0
             if r != c { return r > c }
         }
+
+        if remoteVersion.isPrerelease != currentVersion.isPrerelease {
+            // Same numeric version, different prerelease status: the release
+            // (non-prerelease) side is newer.
+            return !remoteVersion.isPrerelease
+        }
+
         return false
     }
 }

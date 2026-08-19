@@ -111,9 +111,21 @@ enum DateUtilities {
 
     // MARK: - Hours Parsing
 
+    /// A single time entry can't exceed a calendar day.
+    private static let maxParsedHours: Double = 24
+
+    /// Rejects non-finite values (e.g. "1e308", "inf", "nan") and anything
+    /// outside `0...maxParsedHours` — a single entry can't be negative or
+    /// exceed a day. Shared by every branch of `parseHours` below.
+    private static func validatedHours(_ value: Double) -> Double? {
+        guard value.isFinite, value >= 0, value <= maxParsedHours else { return nil }
+        return value
+    }
+
     /// Parse a flexible hours string into total hours.
     /// Supports: "1.5", "1,5", "1h", "30m", "1h 30m", "1h30m", "90m", "1h 4m".
-    /// Returns nil if the string can't be parsed.
+    /// Returns nil if the string can't be parsed, or parses to a value
+    /// outside `0...24`.
     static func parseHours(_ input: String) -> Double? {
         let trimmed = input.trimmingCharacters(in: .whitespaces).lowercased()
         guard !trimmed.isEmpty else { return nil }
@@ -131,9 +143,9 @@ enum DateUtilities {
                 if let mRange = matched.range(of: #"(\d+)\s*m"#, options: .regularExpression) {
                     let mStr = String(matched[mRange]).replacing("m", with: "").trimmingCharacters(in: .whitespaces)
                     let m = Double(mStr) ?? 0
-                    return h + m / 60.0
+                    return validatedHours(h + m / 60.0)
                 }
-                return h
+                return validatedHours(h)
             }
         }
 
@@ -141,7 +153,7 @@ enum DateUtilities {
         let mPattern = #"^(\d+)\s*m$"#
         if let match = trimmed.range(of: mPattern, options: .regularExpression) {
             let mStr = String(trimmed[match]).replacing("m", with: "").trimmingCharacters(in: .whitespaces)
-            if let m = Double(mStr) { return m / 60.0 }
+            if let m = Double(mStr) { return validatedHours(m / 60.0) }
         }
 
         // Try plain number (with comma or dot decimal)
@@ -149,7 +161,7 @@ enum DateUtilities {
             .replacing("h", with: "")
             .replacing(",", with: ".")
             .trimmingCharacters(in: .whitespaces)
-        if let value = Double(plain), value >= 0 { return value }
+        if let value = Double(plain) { return validatedHours(value) }
 
         return nil
     }

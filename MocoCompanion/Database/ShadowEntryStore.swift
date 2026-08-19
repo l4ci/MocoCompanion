@@ -118,6 +118,11 @@ actor ShadowEntryStore {
         try database.execute("DELETE FROM shadow_entries WHERE local_id = ?", params: [localId])
     }
 
+    /// Delete every shadow entry. Used by the full "Reset Everything" flow.
+    func deleteAll() throws {
+        try database.execute("DELETE FROM shadow_entries")
+    }
+
     // MARK: - Queries
 
     func entries(forDate date: String) throws -> [ShadowEntry] {

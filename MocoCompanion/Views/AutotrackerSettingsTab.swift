@@ -12,6 +12,7 @@ struct AutotrackerSettingsTab: View {
     @Environment(\.theme) private var theme
     @State private var showRuleList = false
     @State private var ruleCount: Int = 0
+    @State private var showingClearHistoryConfirmation = false
 
     private let retentionOptions = [7, 14, 30]
 
@@ -49,6 +50,14 @@ struct AutotrackerSettingsTab: View {
                     settings: settings
                 )
             }
+        }
+        .alert(String(localized: "autotracker.clearHistory.confirmTitle"), isPresented: $showingClearHistoryConfirmation) {
+            Button(String(localized: "Delete"), role: .destructive) {
+                Task { await autotracker?.deleteAllRecords() }
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "autotracker.clearHistory.confirmMessage"))
         }
     }
 
@@ -151,6 +160,18 @@ struct AutotrackerSettingsTab: View {
                             }
                         }
                     }
+                }
+
+                HStack {
+                    Button(role: .destructive) {
+                        showingClearHistoryConfirmation = true
+                    } label: {
+                        Text(String(localized: "autotracker.clearHistory"))
+                    }
+                    .controlSize(.small)
+                    .disabled((autotracker?.recordCount ?? 0) == 0)
+
+                    Spacer()
                 }
             }
         }

@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SQLite3
 
 enum DatabaseError: Error, LocalizedError {
@@ -162,6 +163,71 @@ final class SQLiteDatabase {
     }
 
     // MARK: - Private
+
+    // MARK: - Recovery
+
+    /// `PRAGMA quick_check` cheaply verifies the file is a well-formed,
+    /// readable SQLite database (catches garbage bytes, truncation, or a
+    /// corrupt header) without doing a full `integrity_check` scan. It does
+    /// not replace each store's own schema migrations.
+    fileprivate var passesQuickCheck: Bool {
+        (try? query("PRAGMA quick_check"))?.first?["quick_check"] as? String == "ok"
+    }
+
+    /// Opens the database at `path`, recovering automatically instead of
+    /// crashing when the file is corrupt. A corrupt file left in place would
+    /// otherwise crash the app on every launch (the store's `init` throws,
+    /// which callers previously turned into `fatalError`).
+    ///
+    /// If the file can't be opened, or opens but fails `PRAGMA quick_check`,
+    /// it — along with any `-wal`/`-shm` siblings — is renamed aside with a
+    /// `.corrupt-<yyyyMMdd-HHmmss>` suffix, logged via `Logger` and
+    /// `BreadcrumbTrail`, and a fresh database is opened at the original
+    /// path. Only throws if even a fresh database can't be created there
+    /// (e.g. the directory is unwritable) — that case is truly unrecoverable
+    /// and callers should still treat it as fatal.
+    ///
+    /// - Parameters:
+    ///   - path: On-disk path, or `":memory:"` (never corrupt; passed through).
+    ///   - logger: Category-scoped logger for the owning store.
+    ///   - label: Short name identifying the database in logs/breadcrumbs
+    ///     (e.g. `"shadow.db"`).
+    static func openRecovering(atPath path: String, logger: Logger, label: String) throws -> SQLiteDatabase {
+        if let db = try? SQLiteDatabase(path: path), db.passesQuickCheck {
+            return db
+        }
+
+        logger.error("\(label): database at \(path) is missing or corrupt — quarantining and starting fresh")
+        quarantineCorruptFiles(atPath: path, logger: logger, label: label)
+
+        return try SQLiteDatabase(path: path)
+    }
+
+    private static func quarantineCorruptFiles(atPath path: String, logger: Logger, label: String) {
+        guard path != ":memory:" else { return }
+        let fm = FileManager.default
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let suffix = formatter.string(from: .now)
+
+        var quarantinedAny = false
+        for candidate in [path, path + "-wal", path + "-shm"] {
+            guard fm.fileExists(atPath: candidate) else { continue }
+            let quarantined = "\(candidate).corrupt-\(suffix)"
+            try? fm.removeItem(atPath: quarantined)
+            do {
+                try fm.moveItem(atPath: candidate, toPath: quarantined)
+                quarantinedAny = true
+                logger.error("\(label): moved \(candidate) aside to \(quarantined)")
+            } catch {
+                logger.error("\(label): failed to quarantine \(candidate): \(error)")
+            }
+        }
+
+        if quarantinedAny {
+            BreadcrumbTrail.shared.record(label, "Corrupt database recovered: quarantined and reopened fresh")
+        }
+    }
 
     private func bind(_ stmt: OpaquePointer, params: [Any?]) {
         for (index, param) in params.enumerated() {

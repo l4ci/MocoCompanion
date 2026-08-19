@@ -9,6 +9,9 @@ import os
 @MainActor
 final class AppState {
     private let logger = Logger(category: "AppState")
+    /// Static counterpart of `logger` for use inside the `static func build*`
+    /// phase helpers, which run before `self` exists.
+    private static let dbLogger = Logger(category: "AppState")
 
     let catalog: ProjectCatalog
     let session: SessionManager
@@ -74,6 +77,32 @@ final class AppState {
     func makeClient() -> (any MocoClientProtocol)? {
         guard settings.isConfigured else { return nil }
         return MocoClient(subdomain: settings.subdomain, apiKey: settings.apiKey, rateGate: _rateGate)
+    }
+
+    /// Clears every locally-persisted row (shadow entries, automation rules,
+    /// app-activity history) without touching the database files on disk.
+    /// Paired with `SettingsStore.resetAllData()` by the "Reset Everything"
+    /// flow in Account settings.
+    ///
+    /// The app keeps running after a reset — clearing `settings.subdomain`/
+    /// `apiKey` just flips `isConfigured` to false, which makes AppDelegate
+    /// show the setup wizard in place; there is no relaunch. That means the
+    /// three SQLite actors (`shadowEntryStore`, and the rule/record stores
+    /// inside `autotracker`) keep their file handles open for the rest of
+    /// this run. Deleting the files out from under those live connections
+    /// would silently orphan them: the actor would keep writing to the
+    /// now-unlinked file, invisible on disk, until the app quits — losing
+    /// any activity recorded between reset and the next launch. Deleting
+    /// the *rows* through the same open connections keeps in-session state
+    /// and on-disk state consistent instead.
+    func clearAllLocalData() async {
+        do {
+            try await shadowEntryStore.deleteAll()
+        } catch {
+            logger.error("Failed to clear shadow entries during reset: \(error)")
+        }
+        await autotracker.deleteAllRecords()
+        await autotracker.deleteAllRules()
     }
 
     init(
@@ -227,13 +256,14 @@ final class AppState {
         }
         let userIdProvider: () -> Int? = { userIdBox.value }
 
-        let appSupportURL = URL.applicationSupportDirectory
-            .appendingPathComponent("MocoCompanion")
-        try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
         let sState = SyncState()
         let shadowStore: ShadowEntryStore
         do {
-            let db = try SQLiteDatabase(path: appSupportURL.appendingPathComponent("shadow.db").path)
+            let db = try SQLiteDatabase.openRecovering(
+                atPath: DatabasePaths.shadowEntries.path,
+                logger: dbLogger,
+                label: "shadow.db"
+            )
             shadowStore = try ShadowEntryStore(database: db)
         } catch {
             fatalError("Failed to initialize database: \(error)")
@@ -389,13 +419,15 @@ final class AppState {
         let entryQueue = EntryQueue()
         let offlineSyncService = OfflineSyncService(clientFactory: clientFactory)
 
-        let appSupportURL = URL.applicationSupportDirectory
-            .appendingPathComponent("MocoCompanion")
         let recordStore: AppRecordStore
         let rStore: RuleStore
         do {
             recordStore = try AppRecordStore()
-            let rulesDb = try SQLiteDatabase(path: appSupportURL.appendingPathComponent("rules.sqlite").path)
+            let rulesDb = try SQLiteDatabase.openRecovering(
+                atPath: DatabasePaths.rules.path,
+                logger: dbLogger,
+                label: "rules.sqlite"
+            )
             rStore = try RuleStore(database: rulesDb)
         } catch {
             fatalError("Failed to initialize database: \(error)")
