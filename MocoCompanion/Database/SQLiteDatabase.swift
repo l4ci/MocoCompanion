@@ -277,7 +277,7 @@ final class SQLiteDatabase {
     /// opposed to a transient condition — most notably `SQLITE_BUSY`/
     /// `SQLITE_LOCKED` from another connection holding a lock — which must
     /// leave a perfectly healthy file alone.
-    private static func isCorruption(code: Int32, atPath path: String) -> Bool {
+    private static func isCorruption(code: Int32) -> Bool {
         // SQLITE_CANTOPEN is deliberately excluded: it covers permission
         // denials, sandbox refusals and disk-full on journal creation —
         // none of which a fresh file at the same path would fix, and
@@ -297,8 +297,7 @@ final class SQLiteDatabase {
     ///
     /// If the file can't be opened, or opens but fails the health check, and
     /// the failure's sqlite result code indicates genuine corruption
-    /// (`SQLITE_CORRUPT`/`SQLITE_NOTADB`/`SQLITE_FORMAT`, or `SQLITE_CANTOPEN`
-    /// with the file present but unreadable as a database) — it, along with
+    /// (`SQLITE_CORRUPT`/`SQLITE_NOTADB`/`SQLITE_FORMAT`) — it, along with
     /// any `-wal`/`-shm` siblings, is renamed aside with a
     /// `.corrupt-<yyyyMMdd-HHmmss>` suffix, logged via `Logger` and
     /// `BreadcrumbTrail`, and a fresh database is opened at the original
@@ -330,7 +329,7 @@ final class SQLiteDatabase {
         case .success(let db):
             return db
         case .failure(let error):
-            guard isCorruption(code: error.sqliteCode, atPath: path) else {
+            guard isCorruption(code: error.sqliteCode) else {
                 throw error
             }
             logger.error("\(label): database at \(path) is corrupt (sqlite code \(error.sqliteCode)) — quarantining and starting fresh")

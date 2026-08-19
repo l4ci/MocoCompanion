@@ -210,6 +210,10 @@ final class AppState {
             var dates = [today]
             if let yesterday = DateUtilities.yesterdayString() { dates.append(yesterday) }
             await self.syncEngine.sync(dates: dates)
+            // pushDirty replaces pendingCreate rows with server rows in
+            // SQLite only; reload the in-memory Today list so it doesn't
+            // keep showing the stale local row.
+            await self.activityService.refreshTodayStats()
         }
 
         // Auto-detect "description required" from Moco validation errors.

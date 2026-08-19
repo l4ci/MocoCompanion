@@ -213,6 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             var dates = [today]
             if let yesterday = DateUtilities.yesterdayString() { dates.append(yesterday) }
             await self.appState.syncEngine.sync(dates: dates)
+            await self.appState.activityService.refreshTodayStats()
             logger.info("Periodic background sync completed")
         }
 

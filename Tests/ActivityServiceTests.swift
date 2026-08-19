@@ -245,6 +245,52 @@ struct ActivityServiceTests {
         #expect(syncState.pendingChanges == 1)
     }
 
+    @Test("Offline booking is reconciled into today's list after reconnect sync")
+    @MainActor func offlineBookingReconciledAfterSync() async throws {
+        let today = DateUtilities.todayString()
+        var api = MockActivityAPI()
+        api.createActivityHandler = { _, _, _, _, _, _ in
+            throw MocoError.networkError(URLError(.notConnectedToInternet))
+        }
+
+        let store = try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:"))
+        let syncState = SyncState()
+
+        // Switchable client: nil while "offline", a working mock after "reconnect".
+        final class ClientBox: @unchecked Sendable { var client: (any ActivityAPI & TimerAPI)? }
+        let box = ClientBox()
+        nonisolated(unsafe) let factory: () -> (any ActivityAPI & TimerAPI)? = { box.client }
+        nonisolated(unsafe) let fixedUserId: () -> Int? = { 42 }
+        let syncEngine = SyncEngine(store: store, clientFactory: factory, userIdProvider: fixedUserId, syncState: syncState)
+
+        let (service, _) = makeService(api: api)
+        service.syncEngine = syncEngine
+
+        let result = await service.bookManualEntry(
+            date: today, projectId: 100, taskId: 200,
+            projectName: "P", taskName: "T", customerName: "C",
+            description: "offline work", seconds: 1800
+        )
+        guard case .success = result else { Issue.record("Expected success, got \(result)"); return }
+        #expect(service.todayActivities.first?.id == nil)
+
+        // Reconnect: server accepts the create and returns it on fetch.
+        let server = TestFactories.makeActivity(id: 999, date: today, seconds: 1800, description: "offline work")
+        var online = MockMocoClient()
+        online.createActivityHandler = { _, _, _, _, _, _ in server }
+        online.fetchActivitiesHandler = { _, _, _ in [server] }
+        box.client = online
+
+        // Same sequence as AppState's reconnect hook.
+        await syncEngine.sync(dates: [today])
+        await service.refreshTodayStats()
+
+        #expect(service.todayActivities.count == 1)
+        #expect(service.todayActivities.first?.id == 999)
+        #expect(service.todayActivities.first?.sync.status == .synced)
+        #expect(try await store.dirtyEntries().isEmpty)
+    }
+
     // MARK: - duplicateToToday
 
     @Test("duplicateToToday creates activity with today's date")
