@@ -17,7 +17,7 @@ struct QuickEntrySuccessView: View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-                .font(.system(size: 22 + fontBoost))
+                .font(.system(size: Theme.FontSize.largeTitle + fontBoost))
                 .scaleEffect(appeared ? 1.0 : 0.3)
                 .opacity(appeared ? 1.0 : 0)
 
@@ -30,7 +30,7 @@ struct QuickEntrySuccessView: View {
         .padding(20)
         .transition(.opacity)
         .onAppear {
-            animateAccessibly(reduceMotion, .easeOut(duration: 0.3)) {
+            animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.slow)) {
                 appeared = true
             }
         }
@@ -51,7 +51,7 @@ struct QuickEntryErrorView: View {
             HStack(spacing: 12) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
-                    .font(.system(size: 22 + fontBoost))
+                    .font(.system(size: Theme.FontSize.largeTitle + fontBoost))
                 Text(message)
                     .font(.system(size: 15 + fontBoost, weight: .medium))
                     .foregroundStyle(theme.textPrimary)
@@ -93,11 +93,11 @@ struct QuickEntryNoResultsView: View {
                     .foregroundStyle(theme.textTertiary.opacity(0.5))
 
                 Text(String(localized: "search.noResults"))
-                    .font(.system(size: 14 + fontBoost, weight: .medium))
+                    .font(.system(size: Theme.FontSize.callout + fontBoost, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
 
                 Text(Self.tips[tipIndex])
-                    .font(.system(size: 12 + fontBoost))
+                    .font(.system(size: Theme.FontSize.subhead + fontBoost))
                     .foregroundStyle(theme.textTertiary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -147,7 +147,7 @@ struct QuickEntryNotConfiguredView: View {
                     .font(.system(size: 20 + fontBoost, weight: .light))
                     .foregroundStyle(isConfigured ? .orange.opacity(0.7) : theme.textTertiary.opacity(0.6))
                 Text(isConfigured ? String(localized: "search.failedToLoad") : String(localized: "search.configureApi"))
-                    .font(.system(size: 13 + fontBoost))
+                    .font(.system(size: Theme.FontSize.body + fontBoost))
                     .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -157,7 +157,7 @@ struct QuickEntryNotConfiguredView: View {
                         onRetry()
                     } label: {
                         Text(String(localized: "action.retry"))
-                            .font(.system(size: 13 + fontBoost, weight: .medium))
+                            .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct QuickEntrySubmittingView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(String(localized: "action.creating"))
-                    .font(.system(size: 13 + fontBoost, weight: .medium))
+                    .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
             }
             .padding(.vertical, 12)

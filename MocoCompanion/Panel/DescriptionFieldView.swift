@@ -19,7 +19,7 @@ struct DescriptionFieldView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var bodySize: CGFloat { 15 + fontBoost }
-    private var captionSize: CGFloat { 12 + fontBoost }
+    private var captionSize: CGFloat { Theme.FontSize.subhead + fontBoost }
 
     var body: some View {
         VStack(spacing: 0) {

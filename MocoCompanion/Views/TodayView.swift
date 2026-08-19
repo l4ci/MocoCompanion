@@ -268,8 +268,13 @@ struct TodayView: View {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 10 + fontBoost, weight: .medium))
                     .foregroundStyle(theme.textTertiary)
-                    .rotationEffect(vm.isRefreshing ? .degrees(360) : .zero)
-                    .animation(vm.isRefreshing ? .linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: vm.isRefreshing)
+                    .opacity(reduceMotion && vm.isRefreshing ? 0.5 : 1)
+                    .rotationEffect(reduceMotion ? .zero : (vm.isRefreshing ? .degrees(360) : .zero))
+                    .accessibleAnimation(
+                        reduceMotion,
+                        .linear(duration: 0.8).repeatForever(autoreverses: false),
+                        value: vm.isRefreshing
+                    )
             }
             .buttonStyle(.plain)
             .disabled(vm.isRefreshing)

@@ -194,7 +194,7 @@ private struct PanelContentInner: View {
                     onShowAutotracker()
                 } label: {
                     Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 14 + fontBoost))
+                        .font(.system(size: Theme.FontSize.callout + fontBoost))
                         .foregroundStyle(theme.textTertiary)
                 }
                 .buttonStyle(.plain)
@@ -223,7 +223,7 @@ private struct PanelContentInner: View {
                 .font(.system(size: 16 + fontBoost, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(width: avatarSize, height: avatarSize)
-                .background(Circle().fill(Color.accentColor.gradient))
+                .background(Circle().fill(Color.accentColor))
         } else {
             // Not logged in — show app icon
             Image("AppIconImage")

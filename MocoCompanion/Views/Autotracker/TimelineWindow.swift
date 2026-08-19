@@ -95,6 +95,7 @@ struct TimelineWindow: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        // 0.2s doesn't match a Theme.Motion token (0.18 standard / 0.30 slow) — left as-is rather than retuning.
         .animation(.easeInOut(duration: 0.2), value: deleteUndoManager?.pendingDelete?.activity.id)
         .onKeyPress(.leftArrow) {
             viewModel.selectPreviousDay()

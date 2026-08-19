@@ -80,7 +80,7 @@ struct SearchFieldView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(theme.textTertiary)
-                        .font(.system(size: 18 + fontBoost))
+                        .font(.system(size: Theme.FontSize.title + fontBoost))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "a11y.clearSearch"))
@@ -101,7 +101,7 @@ struct SearchFieldView: View {
                     .font(.system(size: 16 + fontBoost, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: avatarSize, height: avatarSize)
-                    .background(Circle().fill(Color.accentColor.gradient))
+                    .background(Circle().fill(Color.accentColor))
             } else {
                 // Not logged in — show app icon
                 Image("AppIconImage")

@@ -87,7 +87,7 @@ struct SearchResultsListView: View {
         if let title {
             HStack {
                 Text(title)
-                    .font(.system(size: 12 + fontBoost, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.subhead + fontBoost, weight: .semibold))
                     .foregroundStyle(theme.textTertiary)
                     .textCase(.uppercase)
                     .tracking(0.3)

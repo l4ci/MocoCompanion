@@ -89,7 +89,7 @@ struct StatusActivityRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.Radius.medium, style: .continuous)
                 .fill(isRunning ? Color.green.opacity(0.06) :
                       isHovered ? Color.primary.opacity(0.04) : Color.primary.opacity(0.015))
         )

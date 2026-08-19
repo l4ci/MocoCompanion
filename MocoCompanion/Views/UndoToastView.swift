@@ -41,6 +41,7 @@ struct UndoToastView: View {
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
         .onAppear {
+            // 0.2s doesn't match a Theme.Motion token (0.18 standard / 0.30 slow) — left as-is rather than retuning.
             animateAccessibly(reduceMotion, .easeOut(duration: 0.2)) {
                 appeared = true
             }

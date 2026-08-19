@@ -68,18 +68,18 @@ struct TimerHintSection: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let liveSecs = baseSecs + context.date.timeIntervalSince(startDate)
                     Text(DateUtilities.formatElapsedCompact(liveSecs))
-                        .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
+                        .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium, design: .monospaced))
                         .foregroundStyle(isFocused ? theme.selectedTextTertiary : .green)
                 }
             } else {
                 let liveSecs = baseSecs + Date().timeIntervalSince(startDate)
                 Text(DateUtilities.formatElapsedCompact(liveSecs))
-                    .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
+                    .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium, design: .monospaced))
                     .foregroundStyle(isFocused ? theme.selectedTextTertiary : .green)
             }
         } else if let activity = currentActivity {
             Text(DateUtilities.formatHoursCompact(Double(activity.seconds) / 3600.0))
-                .font(.system(size: 13 + fontBoost, weight: .medium, design: .monospaced))
+                .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium, design: .monospaced))
                 .foregroundStyle(isFocused ? theme.selectedTextTertiary : .secondary)
         }
     }

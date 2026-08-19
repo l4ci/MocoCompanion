@@ -18,12 +18,12 @@ struct SelectedEntryBannerView: View {
             HStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                    .font(.system(size: 18 + fontBoost))
+                    .font(.system(size: Theme.FontSize.title + fontBoost))
 
                 VStack(alignment: .leading, spacing: 4) {
                     if !entry.customerName.isEmpty {
                         Text(entry.customerName)
-                            .font(.system(size: 13 + fontBoost, weight: .medium))
+                            .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
                             .foregroundStyle(theme.textSecondary)
                             .lineLimit(1)
                     }
@@ -46,7 +46,7 @@ struct SelectedEntryBannerView: View {
                 } label: {
                     Image(systemName: isFav ? "star.fill" : "star")
                         .foregroundStyle(isFav ? Color.yellow : theme.textTertiary)
-                        .font(.system(size: 14 + fontBoost))
+                        .font(.system(size: Theme.FontSize.callout + fontBoost))
                 }
                 .buttonStyle(.plain)
                 .help(isFav ? String(localized: "a11y.removeFavorite") : String(localized: "a11y.addFavorite"))

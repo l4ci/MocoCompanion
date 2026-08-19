@@ -23,12 +23,17 @@ struct StatusTimerSection: View {
 
         case .running(_, let projectName):
             HStack(spacing: 10) {
-                Circle()
-                    .fill(.green)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: .green.opacity(0.4), radius: 3)
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                        .shadow(color: .green.opacity(0.4), radius: 3)
+                        .accessibilityHidden(true)
 
-                ElapsedTimeText(activity: currentActivity)
+                    ElapsedTimeText(activity: currentActivity)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(projectName), \(String(localized: "a11y.timerRunning"))")
 
                 Spacer()
 
