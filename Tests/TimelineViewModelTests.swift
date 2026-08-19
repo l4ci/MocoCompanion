@@ -237,6 +237,62 @@ struct TimelineViewModelTests {
         #expect(vm.unpositionedEntries[0].id == 2)
     }
 
+    // MARK: - Positioned Entry Layout Caching
+
+    @Test("positionedEntryLayouts returns an equal value across repeated reads without mutation")
+    @MainActor
+    func positionedEntryLayoutsStableAcrossRepeatedReads() async throws {
+        let store = try makeShadowEntryStore()
+        let today = TimelineGeometry.dateString(from: Date())
+        let entry = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
+        try await store.insert(entry)
+
+        let vm = try makeViewModel(shadowEntryStore: store)
+        await vm.loadData()
+
+        let first = vm.positionedEntryLayouts
+        let second = vm.positionedEntryLayouts
+
+        #expect(first == second)
+        #expect(first.count == 1)
+        #expect(first[0].columnIndex == 0)
+        #expect(first[0].columnCount == 1)
+    }
+
+    @Test("positionedEntryLayouts invalidates its cache when loadData() changes positionedEntries")
+    @MainActor
+    func positionedEntryLayoutsInvalidatesOnLoadData() async throws {
+        let store = try makeShadowEntryStore()
+        let today = TimelineGeometry.dateString(from: Date())
+        let entry1 = TestFactories.makeShadowEntry(id: 1, date: today, seconds: 3600, startTime: "09:00")
+        try await store.insert(entry1)
+
+        let vm = try makeViewModel(shadowEntryStore: store)
+        await vm.loadData()
+
+        // Prime the cache with the single-entry layout (non-overlapping,
+        // one column).
+        let before = vm.positionedEntryLayouts
+        #expect(before.count == 1)
+        #expect(before[0].columnCount == 1)
+
+        // A second entry overlapping the first (09:00-10:00 vs 09:15-10:15)
+        // is inserted directly into the store and picked up by a fresh
+        // loadData() — the mutation site that repopulates
+        // `positionedEntries` and must invalidate the cache. If the stale
+        // cached value from `before` were returned, this would still
+        // report 1 entry / 1 column.
+        let entry2 = TestFactories.makeShadowEntry(id: 2, date: today, seconds: 3600, startTime: "09:15")
+        try await store.insert(entry2)
+        await vm.loadData()
+
+        let after = vm.positionedEntryLayouts
+        #expect(after.count == 2)
+        #expect(after.allSatisfy { $0.columnCount == 2 })
+        #expect(Set(after.map(\.columnIndex)) == [0, 1])
+        #expect(after != before)
+    }
+
     // MARK: - Snap Helpers
 
     @Test("snapToGrid rounds to nearest 5 minutes")

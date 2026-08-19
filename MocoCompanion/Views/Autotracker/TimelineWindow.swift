@@ -23,7 +23,6 @@ struct TimelineWindow: View {
     /// body only reaches child view structs, not `self` properties.
     private var theme: Theme { Theme(colorScheme: colorScheme) }
     @State private var showRuleList = false
-    @State private var syncLabelTick = Date.now
 
     init(shadowEntryStore: ShadowEntryStore, syncState: SyncState, projectCatalog: ProjectCatalog, autotracker: Autotracker, workdayStartHour: Int = 8, workdayEndHour: Int = 17, descriptionRequired: Bool = false, onEntryChanged: (() async -> Void)? = nil) {
         let vm = TimelineViewModel(
@@ -113,20 +112,7 @@ struct TimelineWindow: View {
         .withTheme(colorScheme: colorScheme)
         .toolbar {
             ToolbarItem(placement: .automatic) {
-                let _ = syncLabelTick
-                Group {
-                    if let lastSync = viewModel.lastSyncedAt {
-                        Text(Self.relativeTimeString(since: lastSync))
-                            .font(.system(size: Theme.FontSize.footnote + fontBoost))
-                            .foregroundStyle(theme.textSecondary)
-                            .monospacedDigit()
-                    } else {
-                        Text(String(localized: "Not synced"))
-                            .font(.system(size: Theme.FontSize.footnote + fontBoost))
-                            .foregroundStyle(theme.textSecondary)
-                    }
-                }
-                .padding(.leading, 8)
+                SyncStatusLabel(lastSyncedAt: viewModel.lastSyncedAt)
             }
             ToolbarItem(placement: .automatic) {
                 Button {
@@ -169,19 +155,14 @@ struct TimelineWindow: View {
             await viewModel.refreshData()
         }
         .task {
-            // Tick the sync label every second + auto-refresh app
-            // activity every 60 seconds so the timeline stays current
-            // while the window is open.
-            var tickCount = 0
+            // Auto-refresh app activity every 60 seconds so the timeline
+            // stays current while the window is open. The "synced Ns ago"
+            // toolbar label ticks independently inside SyncStatusLabel, so
+            // this loop no longer needs a 1-second cadence.
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(1)) }
+                do { try await Task.sleep(for: .seconds(60)) }
                 catch { break }
-                syncLabelTick = .now
-                tickCount += 1
-                if tickCount >= 60 {
-                    tickCount = 0
-                    await viewModel.loadData()
-                }
+                await viewModel.loadData()
             }
         }
         .onChange(of: viewModel.selectedDate) {
@@ -191,7 +172,7 @@ struct TimelineWindow: View {
         }
     }
 
-    private static func relativeTimeString(since date: Date) -> String {
+    fileprivate static func relativeTimeString(since date: Date) -> String {
         let seconds = Int(Date.now.timeIntervalSince(date))
         if seconds < 5 { return String(localized: "sync.now") }
         if seconds < 60 { return "\(seconds)s" }
@@ -282,4 +263,49 @@ struct TimelineWindow: View {
         )
     }
 
+}
+
+// MARK: - Sync Status Label
+
+/// Toolbar label showing "synced N s ago". Owns its own 1-second
+/// periodic timer so only this Text re-renders each tick — isolated
+/// from `TimelineWindow.body`, which previously held the tick in a
+/// `@State` var read via `let _ = syncLabelTick`, forcing the entire
+/// window body (including `TimelinePaneView`'s layout computation) to
+/// re-render every second just to keep this label current.
+private struct SyncStatusLabel: View {
+    let lastSyncedAt: Date?
+
+    @Environment(\.theme) private var theme
+    @Environment(\.entryFontSizeBoost) private var fontBoost
+    @Environment(\.timelineActive) private var timelineActive
+
+    var body: some View {
+        Group {
+            if let lastSyncedAt {
+                if timelineActive {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        label(TimelineWindow.relativeTimeString(since: lastSyncedAt))
+                    }
+                } else {
+                    // Static fallback when the host window is hidden —
+                    // prevents TimelineView from driving infinite
+                    // view-graph updates in the background.
+                    label(TimelineWindow.relativeTimeString(since: lastSyncedAt))
+                }
+            } else {
+                Text(String(localized: "Not synced"))
+                    .font(.system(size: Theme.FontSize.footnote + fontBoost))
+                    .foregroundStyle(theme.textSecondary)
+            }
+        }
+        .padding(.leading, 8)
+    }
+
+    private func label(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: Theme.FontSize.footnote + fontBoost))
+            .foregroundStyle(theme.textSecondary)
+            .monospacedDigit()
+    }
 }

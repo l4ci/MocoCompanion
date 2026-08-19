@@ -84,7 +84,9 @@ import os
     private(set) var appRecords: [AppRecord] = []
     /* internal for test */ var appUsageBlocks: [AppUsageBlock] = []
     private(set) var timeSlots: [TimeSlot] = []
-    private(set) var positionedEntries: [ShadowEntry] = []
+    private(set) var positionedEntries: [ShadowEntry] = [] {
+        didSet { cachedPositionedEntryLayouts = nil }
+    }
     private(set) var unpositionedEntries: [ShadowEntry] = []
     private(set) var calendarEvents: [CalendarEvent] = []
     private(set) var isLoading: Bool = false
@@ -215,37 +217,26 @@ import os
 
         let dateString = TimelineGeometry.dateString(from: selectedDate)
 
-        do {
-            let entries = try await shadowEntryStore.entries(forDate: dateString)
-            let filtered = entries.filter { $0.sync.status != .pendingDelete }
-            shadowEntries = filtered
-            positionedEntries = filtered.filter { $0.startTime != nil }
-            unpositionedEntries = filtered.filter { $0.startTime == nil }
-        } catch {
-            Self.logger.error("Failed to load shadow entries for \(dateString): \(error)")
-            shadowEntries = []
-            positionedEntries = []
-            unpositionedEntries = []
-        }
+        // Shadow entries, app records, and calendar events come from
+        // independent actors (ShadowEntryStore, Autotracker/AppRecordStore,
+        // CalendarService) — fetch them concurrently instead of awaiting
+        // each in turn. Each source keeps its own error handling so a
+        // failure in one doesn't drop the results of the others.
+        async let entriesResult = fetchShadowEntries(dateString: dateString)
+        async let records = autotracker.records(for: selectedDate)
+        async let events = fetchCalendarEvents()
 
-        let records = await autotracker.records(for: selectedDate)
-        appRecords = records
-        appUsageBlocks = AppUsageBlock.merge(records)
-        timeSlots = TimeSlot.aggregate(records)
+        let (filtered, positioned, unpositioned) = await entriesResult
+        shadowEntries = filtered
+        positionedEntries = positioned
+        unpositionedEntries = unpositioned
 
-        // Calendar events — only fetched when the feature is enabled and
-        // a calendar is picked. `requestAccessIfNeeded` is idempotent and
-        // cheap when access is already established.
-        if settings?.calendarEnabled == true, let svc = calendarService {
-            _ = await svc.requestAccessIfNeeded()
-            if svc.hasReadAccess, let calId = settings?.selectedCalendarId {
-                calendarEvents = svc.fetchEvents(for: selectedDate, selectedCalendarId: calId)
-            } else {
-                calendarEvents = []
-            }
-        } else {
-            calendarEvents = []
-        }
+        let fetchedRecords = await records
+        appRecords = fetchedRecords
+        appUsageBlocks = AppUsageBlock.merge(fetchedRecords)
+        timeSlots = TimeSlot.aggregate(fetchedRecords)
+
+        calendarEvents = await events
         recomputeCalendarLayouts()
 
         Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.timeSlots.count) time slots, \(self.calendarEvents.count) calendar events for \(dateString)")
@@ -253,6 +244,31 @@ import os
         // Evaluate rules against loaded data
         let isTimerRunning = shadowEntries.contains { $0.timerStartedAt != nil }
         await autotracker.evaluate(for: selectedDate, existingEntries: shadowEntries, timerRunning: isTimerRunning)
+    }
+
+    /// Fetches and filters shadow entries for `dateString`. Split out of
+    /// `loadData()` so it can be run concurrently (`async let`) alongside
+    /// app records and calendar events. A failure here only empties the
+    /// entries result — it doesn't affect the other two sources.
+    private func fetchShadowEntries(dateString: String) async -> (all: [ShadowEntry], positioned: [ShadowEntry], unpositioned: [ShadowEntry]) {
+        do {
+            let entries = try await shadowEntryStore.entries(forDate: dateString)
+            let filtered = entries.filter { $0.sync.status != .pendingDelete }
+            return (filtered, filtered.filter { $0.startTime != nil }, filtered.filter { $0.startTime == nil })
+        } catch {
+            Self.logger.error("Failed to load shadow entries for \(dateString): \(error)")
+            return ([], [], [])
+        }
+    }
+
+    /// Fetches calendar events for the selected date, only when the
+    /// feature is enabled and a calendar is picked. `requestAccessIfNeeded`
+    /// is idempotent and cheap when access is already established.
+    private func fetchCalendarEvents() async -> [CalendarEvent] {
+        guard settings?.calendarEnabled == true, let svc = calendarService else { return [] }
+        _ = await svc.requestAccessIfNeeded()
+        guard svc.hasReadAccess, let calId = settings?.selectedCalendarId else { return [] }
+        return svc.fetchEvents(for: selectedDate, selectedCalendarId: calId)
     }
 
     // MARK: - Autotracker Passthrough
@@ -972,12 +988,21 @@ import os
     /// 0-based and `columnCount` is the total number of columns used by
     /// this entry's overlap cluster. A non-overlapping entry has
     /// `columnIndex == 0` and `columnCount == 1`.
-    struct EntryLayout: Identifiable {
+    struct EntryLayout: Identifiable, Equatable {
         let entry: ShadowEntry
         let columnIndex: Int
         let columnCount: Int
         var id: String { TimelineViewModel.entryKey(for: entry) }
     }
+
+    /// Cached result of `positionedEntryLayouts`. `nil` means "needs
+    /// recompute" — invalidated via `positionedEntries`'s `didSet`
+    /// whenever its only input changes (set in `loadData()` and patched
+    /// in `applyInPlace(_:)`). Without this cache, every SwiftUI body
+    /// pass — including every pixel of an in-flight drag gesture, which
+    /// mutates unrelated `gesturePreview` state in the same view scope —
+    /// re-ran `ClusterColumns.assign`'s sort+sweep for no reason.
+    private var cachedPositionedEntryLayouts: [EntryLayout]?
 
     /// Calendar-style column assignment for positioned entries. Groups
     /// transitively-overlapping entries into clusters and lays each
@@ -986,6 +1011,7 @@ import os
     /// cluster share the same `columnCount` so their rendered widths line
     /// up.
     var positionedEntryLayouts: [EntryLayout] {
+        if let cached = cachedPositionedEntryLayouts { return cached }
         let timed: [(entry: ShadowEntry, start: Int, end: Int)] = positionedEntries.compactMap { entry in
             guard let ts = entry.startTime,
                   let start = TimelineGeometry.minutesSinceMidnight(from: ts)
@@ -994,9 +1020,11 @@ import os
             return (entry, start, end)
         }
         let assignments = ClusterColumns.assign(timed.map { ($0.start, $0.end) })
-        return zip(timed, assignments).map { item, a in
+        let layouts = zip(timed, assignments).map { item, a in
             EntryLayout(entry: item.entry, columnIndex: a.columnIndex, columnCount: a.columnCount)
         }
+        cachedPositionedEntryLayouts = layouts
+        return layouts
     }
 
     // MARK: - Overlap Detection
