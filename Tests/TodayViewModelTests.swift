@@ -743,7 +743,8 @@ struct TodayViewModelTests {
             return
         }
         #expect(description == "My work")
-        #expect(hours == "2.50")
+        // Locale-aware: "2.50" in en, "2,50" in de. parseHours accepts both.
+        #expect(hours == 2.5.formatted(.number.precision(.fractionLength(2))))
     }
 
     @Test("'e' with no activities returns .handled")
@@ -1042,7 +1043,7 @@ struct TodayViewModelTests {
         let payload = vm.editPayload()
         #expect(payload != nil)
         #expect(payload?.description == "Design review")
-        #expect(payload?.hours == "3.75")
+        #expect(payload?.hours == 3.75.formatted(.number.precision(.fractionLength(2))))
     }
 
     @Test("editPayload returns nil when no activities exist")

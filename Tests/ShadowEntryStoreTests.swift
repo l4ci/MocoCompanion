@@ -207,11 +207,12 @@ struct ShadowEntryStoreTests {
         #expect(fetched?.startTime == "09:00") // preserved
     }
 
-    @Test("PRAGMA user_version is 1 after migration")
+    @Test("PRAGMA user_version matches latest migration")
     func userVersionAfterMigration() async throws {
         let store = try makeStore()
         let version = await store.databaseUserVersion
-        #expect(version == 1)
+        // Bump alongside the last `database.userVersion = N` in ShadowEntryStore.runMigrations.
+        #expect(version == 3)
     }
 
     @Test("markConflict sets conflict flag")

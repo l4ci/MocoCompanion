@@ -201,7 +201,8 @@ struct QuickEntryStateMachineTests {
     @Test("clearing searchText via ✕ while describing returns to searching")
     @MainActor func clearSearchTextDuringDescribingResets() {
         let ds = MockQuickEntryDataSource()
-        ds.favorites = [makeFavorite()]
+        // searchText "foo" (>= 2 chars) lists search results, not favorites.
+        ds.searchResults = [FuzzyMatcher.Match(entry: makeEntry(), score: 1.0, matchedIndices: [])]
         let (sm, _, _) = makeSM(dataSource: ds)
 
         sm.searchText = "foo"
