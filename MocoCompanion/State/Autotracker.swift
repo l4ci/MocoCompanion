@@ -387,6 +387,10 @@ final class Autotracker {
             // with stale app info — this path already reads currentFrontmost
             // itself, so any pending debounce is redundant at best and a
             // clobber at worst.
+            // Residual gap: if the 300ms deadline and this wake land in the
+            // same scheduling window, the debounce may pass its cancellation
+            // check first. It then enqueues behind this event, so the worst
+            // case is a brief stale segment, not a lost or duplicated one.
             pendingAppChangeTask?.cancel()
             pendingAppChangeTask = nil
             if let frontmost = workspace.currentFrontmost {

@@ -288,9 +288,10 @@ private struct SyncStatusLabel: View {
                         label(TimelineWindow.relativeTimeString(since: lastSyncedAt))
                     }
                 } else {
-                    // Static fallback when the host window is hidden —
-                    // prevents TimelineView from driving infinite
-                    // view-graph updates in the background.
+                    // Static fallback when the host sets timelineActive to
+                    // false (the panel does; the standalone Timeline window
+                    // currently leaves it at the default `true`, so here the
+                    // periodic branch runs whenever the window exists).
                     label(TimelineWindow.relativeTimeString(since: lastSyncedAt))
                 }
             } else {

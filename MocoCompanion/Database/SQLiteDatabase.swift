@@ -245,6 +245,12 @@ final class SQLiteDatabase {
             try db.probeReadable()
             return .success(db)
         } catch let probeError as DatabaseError {
+            // A lock is not corruption; don't spend another busy-timeout on
+            // quick_check only to reach the same conclusion.
+            if probeError.sqliteCode == SQLITE_BUSY || probeError.sqliteCode == SQLITE_LOCKED {
+                db.close()
+                return .failure(probeError)
+            }
             do {
                 if try db.quickCheckPasses() {
                     // quick_check overrides the probe failure — it's the more
@@ -272,14 +278,13 @@ final class SQLiteDatabase {
     /// `SQLITE_LOCKED` from another connection holding a lock — which must
     /// leave a perfectly healthy file alone.
     private static func isCorruption(code: Int32, atPath path: String) -> Bool {
+        // SQLITE_CANTOPEN is deliberately excluded: it covers permission
+        // denials, sandbox refusals and disk-full on journal creation —
+        // none of which a fresh file at the same path would fix, and
+        // quarantining would destroy a healthy database.
         switch code {
         case SQLITE_CORRUPT, SQLITE_NOTADB, SQLITE_FORMAT:
             return true
-        case SQLITE_CANTOPEN:
-            // CANTOPEN also covers an unwritable/missing directory, which
-            // isn't corruption — only quarantine when the file itself
-            // exists but sqlite still couldn't open it as a database.
-            return path != ":memory:" && FileManager.default.fileExists(atPath: path)
         default:
             return false
         }
@@ -313,7 +318,15 @@ final class SQLiteDatabase {
     ///     (e.g. `"shadow.db"`).
     ///   - busyTimeoutMillis: Forwarded to `SQLiteDatabase.init`; see there.
     static func openRecovering(atPath path: String, logger: Logger, label: String, busyTimeoutMillis: Int32 = 2000) throws -> SQLiteDatabase {
-        switch attemptOpen(atPath: path, busyTimeoutMillis: busyTimeoutMillis) {
+        var result = attemptOpen(atPath: path, busyTimeoutMillis: busyTimeoutMillis)
+        // A lock at launch (e.g. a previous instance still shutting down) is
+        // transient; try once more before giving up rather than crashing.
+        if case .failure(let error) = result,
+           error.sqliteCode == SQLITE_BUSY || error.sqliteCode == SQLITE_LOCKED {
+            Thread.sleep(forTimeInterval: 0.5)
+            result = attemptOpen(atPath: path, busyTimeoutMillis: busyTimeoutMillis)
+        }
+        switch result {
         case .success(let db):
             return db
         case .failure(let error):
