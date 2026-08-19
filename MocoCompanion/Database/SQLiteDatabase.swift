@@ -34,6 +34,19 @@ final class SQLiteDatabase {
             db = nil
             throw DatabaseError.openFailed("Failed to open database: \(msg)")
         }
+
+        // WAL lets readers and a writer proceed concurrently instead of the
+        // default rollback journal's exclusive-writer lock, and NORMAL
+        // synchronous is the safe pairing with WAL (still durable across app
+        // crashes, only risks losing the last few transactions on a full OS
+        // crash/power loss). Skipped for in-memory databases (used in tests):
+        // WAL is a no-op there since SQLite keeps ":memory:" pages entirely
+        // in memory regardless of journal mode, but issuing the PRAGMA is
+        // still harmless if it were ever hit.
+        if path != ":memory:" {
+            try execute("PRAGMA journal_mode=WAL")
+            try execute("PRAGMA synchronous=NORMAL")
+        }
     }
 
     deinit {
