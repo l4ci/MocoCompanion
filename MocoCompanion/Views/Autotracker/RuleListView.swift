@@ -225,7 +225,7 @@ struct RuleListView: View {
 
     private var footer: some View {
         HStack {
-            Text("\(rules.count) rule\(rules.count == 1 ? "" : "s")")
+            Text("\(rules.count) rules")
                 .font(.system(size: Theme.FontSize.caption))
                 .foregroundStyle(theme.textTertiary)
             Spacer()

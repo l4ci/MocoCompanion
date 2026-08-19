@@ -170,12 +170,42 @@
         }
       }
     },
-    "%lld rule%@" : {
+    "%lld rules" : {
       "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Regel"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Regeln"
+                }
+              }
+            }
+          }
+        },
         "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld rule%2$@"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rule"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rules"
+                }
+              }
+            }
           }
         }
       }
@@ -1561,7 +1591,14 @@
       }
     },
     "Create entry from this slot…" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag aus diesem Slot erstellen…"
+          }
+        }
+      }
     },
     "Create Rule" : {
       "localizations" : {
@@ -6453,7 +6490,20 @@
       }
     },
     "setup.invalidCredentials" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung fehlgeschlagen. Prüfe Subdomain und API-Key."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't connect. Check your subdomain and API key."
+          }
+        }
+      }
     },
     "setup.invalidSubdomain" : {
       "localizations" : {
