@@ -40,7 +40,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mococompanion.app
         PRODUCT_NAME: "$(TARGET_NAME)"
-        MARKETING_VERSION: "0.7.0"
+        MARKETING_VERSION: "0.8.0"
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_FILE: MocoCompanion/Info.plist
