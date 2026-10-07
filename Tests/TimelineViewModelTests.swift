@@ -731,4 +731,74 @@ struct TimelineViewModelTests {
             durationSeconds: duration
         )
     }
+
+    // MARK: - Duplicate Entry
+
+    @Test("duplicateStartTime places copy at original end, snapped, clamped, nil-preserving")
+    @MainActor
+    func duplicateStartTimePlacement() {
+        func start(_ st: String?, seconds: Int) -> String? {
+            TimelineViewModel.duplicateStartTime(
+                for: TestFactories.makeShadowEntry(seconds: seconds, startTime: st))
+        }
+        #expect(start("09:00", seconds: 3600) == "10:00")
+        #expect(start("09:00", seconds: 2700) == "09:45")
+        // 09:10 + 45m = 09:55 -> snaps to 10:00
+        #expect(start("09:10", seconds: 2700) == "10:00")
+        // 23:00 + 2h would end at 25:00 -> copy ends at 24:00
+        #expect(start("23:00", seconds: 7200) == "22:00")
+        // original already ends at 24:00 -> same start
+        #expect(start("23:00", seconds: 3600) == "23:00")
+        #expect(start(nil, seconds: 3600) == nil)
+    }
+
+    @Test("duplicateEntry creates a pending-create copy and leaves the original untouched")
+    @MainActor
+    func duplicateEntryCreatesCopy() async throws {
+        let store = try makeShadowEntryStore()
+        let today = TimelineGeometry.dateString(from: Date())
+        let original = TestFactories.makeShadowEntry(
+            id: 7, date: today, projectId: 111, projectName: "P", taskId: 222, taskName: "T",
+            customerName: "C", seconds: 5400, hours: 1.5, description: "Standup",
+            locked: true, startTime: "09:00", syncStatus: .synced)
+        try await store.insert(original)
+        let vm = try makeViewModel(shadowEntryStore: store)
+        await vm.loadData()
+
+        await vm.duplicateEntry(original)
+
+        let entries = try await store.entries(forDate: today)
+        #expect(entries.count == 2)
+        let copy = try #require(entries.first { $0.id != 7 })
+        #expect(copy.sync.status == .pendingCreate)
+        #expect(copy.localId != nil)
+        #expect(copy.startTime == "10:30")
+        #expect(copy.seconds == 5400)
+        #expect(copy.projectId == 111)
+        #expect(copy.taskId == 222)
+        #expect(copy.customerName == "C")
+        #expect(copy.description == "Standup")
+        #expect(copy.locked == false)
+        let orig = try #require(entries.first { $0.id == 7 })
+        #expect(orig.sync.status == .synced)
+        #expect(orig.startTime == "09:00")
+    }
+
+    @Test("duplicateEntry keeps a missing start time missing")
+    @MainActor
+    func duplicateEntryWithoutStartTime() async throws {
+        let store = try makeShadowEntryStore()
+        let today = TimelineGeometry.dateString(from: Date())
+        let original = TestFactories.makeShadowEntry(id: 8, date: today)
+        try await store.insert(original)
+        let vm = try makeViewModel(shadowEntryStore: store)
+        await vm.loadData()
+
+        await vm.duplicateEntry(original)
+
+        let entries = try await store.entries(forDate: today)
+        let copy = try #require(entries.first { $0.id != 8 })
+        #expect(copy.startTime == nil)
+        #expect(copy.sync.status == .pendingCreate)
+    }
 }

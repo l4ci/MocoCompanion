@@ -110,6 +110,13 @@ struct TimelinePaneView: View {
             entryPendingDelete = entry
             return .handled
         }
+        .onKeyPress(characters: ["d"], phases: .down) { press in
+            guard press.modifiers == .command,
+                  pendingCreation == nil, editingEntry == nil,
+                  let entry = viewModel.selectedEntry else { return .ignored }
+            Task { await viewModel.duplicateEntry(entry) }
+            return .handled
+        }
         .confirmationDialog(
             "Delete this entry?",
             isPresented: Binding(
@@ -729,6 +736,7 @@ struct TimelinePaneView: View {
                     projectCatalog: projectCatalog,
                     isHighlighted: viewModel.isEntryHighlighted(entry),
                     onEdit: { e in editingEntry = EditingEntryWrapper(entry: e) },
+                    onDuplicate: { e in Task { await viewModel.duplicateEntry(e) } },
                     onDelete: { e in Task { await viewModel.deleteEntry(e) } },
                     onSelect: { viewModel.toggleEntrySelection(entry) },
                     columnCount: layout.columnCount

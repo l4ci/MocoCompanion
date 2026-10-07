@@ -9,6 +9,7 @@ struct EntryBlockView: View {
     let projectCatalog: ProjectCatalog
     var isHighlighted: Bool = false
     var onEdit: ((ShadowEntry) -> Void)? = nil
+    var onDuplicate: ((ShadowEntry) -> Void)? = nil
     var onDelete: ((ShadowEntry) -> Void)? = nil
     var onSelect: (() -> Void)? = nil
     var columnCount: Int = 1
@@ -314,6 +315,11 @@ struct EntryBlockView: View {
                 Button("Edit entry…") {
                     onEdit?(entry)
                 }
+            }
+            Button("Duplicate") {
+                onDuplicate?(entry)
+            }
+            if !entry.isReadOnly {
                 Divider()
                 Button(role: .destructive) {
                     showDeleteConfirm = true

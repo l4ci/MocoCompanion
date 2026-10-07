@@ -855,7 +855,7 @@ import os
 
     func createEntry(
         date: String,
-        startTime: String,
+        startTime: String?,
         durationSeconds: Int,
         projectId: Int,
         taskId: Int,
@@ -915,7 +915,7 @@ import os
 
         do {
             try await shadowEntryStore.insert(entry)
-            Self.logger.info("Entry created via timeline drag: \(startTime), \(durationSeconds)s, project \(projectId)")
+            Self.logger.info("Entry created via timeline: \(startTime ?? "no start"), \(durationSeconds)s, project \(projectId)")
             await loadData()
             await onEntryChanged?()
             // Push to Moco immediately so the local-only row gets a server ID
@@ -927,6 +927,38 @@ import os
         } catch {
             Self.logger.error("Failed to create entry: \(error)")
         }
+    }
+
+    // MARK: - Duplicate Entry
+
+    /// Start time for a duplicate of `entry`: the original's end, snapped to the
+    /// grid. If the copy would run past 24:00 it is moved earlier so it ends at
+    /// 24:00. An original that already ends at 24:00 therefore yields a copy at
+    /// the same start time. Returns nil when the original has no start time.
+    static func duplicateStartTime(for entry: ShadowEntry) -> String? {
+        guard let startString = entry.startTime,
+              let start = TimelineGeometry.minutesSinceMidnight(from: startString) else { return nil }
+        let grid = TimelineLayout.snapMinutes
+        let duration = entry.seconds / 60
+        let snappedEnd = Int((Double(start + duration) / Double(grid)).rounded()) * grid
+        let latestStart = (24 * 60 - duration) / grid * grid
+        return TimelineGeometry.timeString(fromMinutes: max(min(snappedEnd, latestStart), 0))
+    }
+
+    /// Create a pending-create copy of `entry` right after it. Works for
+    /// read-only entries too, since the original is not modified.
+    func duplicateEntry(_ entry: ShadowEntry) async {
+        await createEntry(
+            date: entry.date,
+            startTime: Self.duplicateStartTime(for: entry),
+            durationSeconds: entry.seconds,
+            projectId: entry.projectId,
+            taskId: entry.taskId,
+            projectName: entry.projectName,
+            taskName: entry.taskName,
+            customerName: entry.customerName,
+            description: entry.description
+        )
     }
 
     // MARK: - Stats

@@ -7,6 +7,7 @@ All notable changes to MocoCompanion are documented here. The format follows [Ke
 ### New
 
 - **Editable time range when creating or editing a timeline entry.** The sheet now has start, end and duration fields that stay in sync: changing start keeps the duration, changing end recomputes it, changing duration moves the end. Changes apply on Return or when the field loses focus; invalid input reverts. The create and edit sheets share the same controls.
+- **Duplicate entry** in the timeline. Right-click an entry and choose Duplicate, or select it and press ⌘D. The copy has the same project, task, description and duration, and starts where the original ends (snapped to 15 minutes, kept within the day). Works on locked and billed entries too.
 
 ### Fixed
 
