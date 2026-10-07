@@ -349,7 +349,7 @@
 		7CA92E2EC81E86BE31F52514 /* DateUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtilitiesTests.swift; sourceTree = "<group>"; };
 		7CF763622F55B4F2F3B24674 /* PanelContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelContentView.swift; sourceTree = "<group>"; };
 		7D7AF3BB61B72EF6538994BC /* ProjectsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsSettingsTab.swift; sourceTree = "<group>"; };
-		7D9BC313EF240271D61C72A3 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		7D9BC313EF240271D61C72A3 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
 		7DE7D952BF1995D141415F91 /* TimelineGesturePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineGesturePreview.swift; sourceTree = "<group>"; };
 		7E87ABB7C76396D673A5AADB /* TimelineColumnPlaceholders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineColumnPlaceholders.swift; sourceTree = "<group>"; };
 		7EB07AEE415AA108942E8EAB /* APIRateGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRateGateTests.swift; sourceTree = "<group>"; };
@@ -1160,7 +1160,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MocoCompanion/Info.plist;
@@ -1185,7 +1184,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MocoCompanion/Info.plist;
@@ -1208,7 +1206,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1227,7 +1224,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

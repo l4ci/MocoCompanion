@@ -17,9 +17,14 @@ Timeline release. Everything below is about creating and handling entries in the
 - **Project and task names in the picker were cut off**, so two tasks of the same project looked identical. The task now has its own line under the project, both wrap to two lines, and a tooltip shows the full name. The creation sheet is 60pt wider. (#10)
 - **Dragging and double-clicking entries was unreliable.** Four separate causes, all gone. The info popover was its own window: it covered the neighbouring entry in an overlapping cluster and swallowed the second click of a double-click, so it is a tooltip now. The click that brought the timeline window to the front from another app was dropped instead of acting on the entry. A single click deselected the entry under the cursor and outranked the double-click. And the resize handles took 16 of the 22 points of a 15-minute entry, so most drags resized instead of moving; handles now take at most a quarter of the block each.
 
+### General improvements
+
+- A code review pass over the whole app fixed 30 findings around booking integrity, timer state, credentials, notifications and keyboard handling. Overlapping syncs could duplicate a booking or drop a newer local edit, a failed stop could lose a running timer, and a stale response could overwrite the current state. Those paths are now serialized and acknowledged per revision, and 86 regression tests cover them. (#21 to #50)
+
 ### Changed
 
 - The string catalog is stored in Xcode's own format. Builds no longer leave a large diff behind.
+- Project settings updated for Xcode 27: dead-code stripping, script sandboxing, localizability analysis and string catalog symbols.
 
 ## v0.7.0 — 2026-08-19
 

@@ -3,13 +3,19 @@ options:
   bundleIdPrefix: com.mococompanion
   deploymentTarget:
     macOS: "26.0"
-  xcodeVersion: "26.6"
+  xcodeVersion: "27.0"
   generateEmptyDirectories: false
 
 settings:
   base:
     SWIFT_VERSION: "6.0"
     MACOSX_DEPLOYMENT_TARGET: "26.0"
+    # Xcode 27 recommended settings. Kept here so `xcodegen generate`
+    # does not drop them from the generated project.
+    DEAD_CODE_STRIPPING: true
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+    STRING_CATALOG_GENERATE_SYMBOLS: true
   configs:
     Debug:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
