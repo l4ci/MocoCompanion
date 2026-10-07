@@ -1,6 +1,12 @@
 import SwiftUI
 import os
 
+/// Focusable fields shared by the create and edit sheets.
+private enum EntrySheetField: Hashable {
+    case search
+    case description
+}
+
 /// Sheet presented after a drag-to-create gesture completes. Pre-filled with
 /// time data from the drag; user selects project/task, optionally edits
 /// description, then submits to create a ShadowEntry.
@@ -24,7 +30,7 @@ struct TimelineEntryCreationSheet: View {
     @State private var descriptionText: String = ""
     @State private var errorMessage: String?
     @State private var hasInteracted: Bool = false
-    @FocusState private var isSearchFocused: Bool
+    @FocusState private var focus: EntrySheetField?
 
     init(
         date: String,
@@ -72,7 +78,7 @@ struct TimelineEntryCreationSheet: View {
             descriptionText = suggestedDescription
             Task {
                 try? await Task.sleep(for: .milliseconds(50))
-                isSearchFocused = true
+                focus = .search
             }
         }
     }
@@ -92,34 +98,15 @@ struct TimelineEntryCreationSheet: View {
     // MARK: - Project Picker
 
     private var projectPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            TextField("Search projects…", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-                .focused($isSearchFocused)
-
-            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
-            if entries.isEmpty {
-                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.vertical, 4)
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(entries.prefix(20)) { entry in
-                            ProjectPickerRow(
-                                entry: entry,
-                                isSelected: selectedEntry?.projectId == entry.projectId
-                                    && selectedEntry?.taskId == entry.taskId,
-                                onTap: { selectedEntry = entry }
-                            )
-                        }
-                    }
-                }
-                .frame(maxHeight: 220)
-            }
-        }
+        ProjectPickerList(
+            projectCatalog: projectCatalog,
+            favorites: favorites,
+            searchText: $searchText,
+            selectedEntry: $selectedEntry,
+            focus: $focus,
+            searchField: .search,
+            onCommit: { focus = .description }
+        )
     }
 
 
@@ -135,10 +122,13 @@ struct TimelineEntryCreationSheet: View {
                     .font(.system(size: Theme.FontSize.caption, weight: .medium))
                     .foregroundStyle(.red)
             }
-            TextField("Description (required)", text: $descriptionText)
+            TextField("Description (required)", text: $descriptionText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.callout))
+                .lineLimit(3...6)
+                .font(.system(size: Theme.FontSize.body))
+                .focused($focus, equals: .description)
                 .onChange(of: descriptionText) { _, _ in hasInteracted = true }
+                .onSubmit { submit() }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
                     .font(.system(size: Theme.FontSize.caption))
@@ -149,6 +139,25 @@ struct TimelineEntryCreationSheet: View {
 
     // MARK: - Buttons
 
+    private var canSubmit: Bool {
+        selectedEntry != nil && durationMinutes > 0
+            && !descriptionText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func submit() {
+        guard canSubmit, let entry = selectedEntry else { return }
+        onSubmit(
+            entry.projectId,
+            entry.taskId,
+            entry.projectName,
+            entry.taskName,
+            entry.customerName,
+            descriptionText,
+            TimeRangeModel.format(startMinutes),
+            durationMinutes
+        )
+    }
+
     private var buttonRow: some View {
         HStack {
             Button("Cancel") {
@@ -158,22 +167,9 @@ struct TimelineEntryCreationSheet: View {
 
             Spacer()
 
-            Button("Create Entry") {
-                guard let entry = selectedEntry else { return }
-                onSubmit(
-                    entry.projectId,
-                    entry.taskId,
-                    entry.projectName,
-                    entry.taskName,
-                    entry.customerName,
-                    descriptionText,
-                    TimeRangeModel.format(startMinutes),
-                    durationMinutes
-                )
-            }
-            .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || durationMinutes <= 0
-                      || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
+            Button("Create Entry") { submit() }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!canSubmit)
         }
     }
 
@@ -258,7 +254,7 @@ struct TimelineEntryEditSheet: View {
     @State private var selectedEntry: SearchEntry?
     @State private var isProjectPickerExpanded: Bool = false
     @State private var searchText: String = ""
-    @FocusState private var isSearchFocused: Bool
+    @FocusState private var focus: EntrySheetField?
 
     init(
         entry: ShadowEntry,
@@ -353,7 +349,7 @@ struct TimelineEntryEditSheet: View {
             if expanded {
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
-                    isSearchFocused = true
+                    focus = .search
                 }
             }
         }
@@ -474,35 +470,20 @@ struct TimelineEntryEditSheet: View {
                 .foregroundStyle(Color.accentColor)
             }
 
-            TextField("Search projects…", text: $searchText)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.body))
-                .focused($isSearchFocused)
-
-            let entries = projectCatalog.filter(query: searchText, favorites: favorites)
-            if entries.isEmpty {
-                Text(projectCatalog.searchEntries.isEmpty ? "No projects loaded" : "No matches")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.vertical, 4)
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(entries.prefix(20)) { row in
-                            ProjectPickerRow(
-                                entry: row,
-                                isSelected: selectedEntry?.projectId == row.projectId
-                                    && selectedEntry?.taskId == row.taskId,
-                                onTap: {
-                                    selectedEntry = row
-                                    isProjectPickerExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                .frame(maxHeight: 220)
-            }
+            ProjectPickerList(
+                projectCatalog: projectCatalog,
+                favorites: favorites,
+                clearsSelectionOnEmptyQuery: false,
+                searchText: $searchText,
+                selectedEntry: $selectedEntry,
+                focus: $focus,
+                searchField: .search,
+                onCommit: {
+                    isProjectPickerExpanded = false
+                    focus = .description
+                },
+                onPick: { _ in isProjectPickerExpanded = false }
+            )
         }
     }
 
@@ -519,10 +500,13 @@ struct TimelineEntryEditSheet: View {
                     .font(.system(size: Theme.FontSize.caption, weight: .medium))
                     .foregroundStyle(.red)
             }
-            TextField("Description (required)", text: $descriptionText)
+            TextField("Description (required)", text: $descriptionText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: Theme.FontSize.callout))
+                .lineLimit(3...6)
+                .font(.system(size: Theme.FontSize.body))
+                .focused($focus, equals: .description)
                 .onChange(of: descriptionText) { _, _ in hasInteracted = true }
+                .onSubmit { save() }
             if hasInteracted && descriptionText.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(String(localized: "edit.description.required"))
                     .font(.system(size: Theme.FontSize.caption))
@@ -533,6 +517,28 @@ struct TimelineEntryEditSheet: View {
 
     // MARK: - Buttons
 
+    private var canSave: Bool {
+        selectedEntry != nil && durationMinutes > 0
+            && !descriptionText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func save() {
+        guard canSave, let selected = selectedEntry else { return }
+        let dateStr = TimelineGeometry.dateString(from: editedDate)
+        let startTimeStr: String? = TimeRangeModel.format(startMinutes)
+        onSave(EditedEntryFields(
+            projectId: selected.projectId,
+            taskId: selected.taskId,
+            projectName: selected.projectName,
+            taskName: selected.taskName,
+            customerName: selected.customerName,
+            description: descriptionText,
+            date: dateStr,
+            startTime: startTimeStr,
+            durationMinutes: max(durationMinutes, 1)
+        ))
+    }
+
     private var buttonRow: some View {
         HStack {
             Button("Cancel") {
@@ -542,24 +548,9 @@ struct TimelineEntryEditSheet: View {
 
             Spacer()
 
-            Button("Save") {
-                guard let selected = selectedEntry else { return }
-                let dateStr = TimelineGeometry.dateString(from: editedDate)
-                let startTimeStr: String? = TimeRangeModel.format(startMinutes)
-                onSave(EditedEntryFields(
-                    projectId: selected.projectId,
-                    taskId: selected.taskId,
-                    projectName: selected.projectName,
-                    taskName: selected.taskName,
-                    customerName: selected.customerName,
-                    description: descriptionText,
-                    date: dateStr,
-                    startTime: startTimeStr,
-                    durationMinutes: max(durationMinutes, 1)
-                ))
-            }
-            .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || durationMinutes <= 0 || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
+            Button("Save") { save() }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!canSave)
         }
     }
 
