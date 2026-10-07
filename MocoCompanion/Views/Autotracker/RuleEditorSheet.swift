@@ -472,7 +472,7 @@ struct RuleEditorSheet: View {
                         }
                     }
                 }
-                .frame(maxHeight: 150)
+                .frame(maxHeight: 190)
             }
         }
     }

@@ -67,7 +67,7 @@ struct TimelineEntryCreationSheet: View {
             buttonRow
         }
         .padding(16)
-        .frame(width: 380, alignment: .topLeading)
+        .frame(width: 440, alignment: .topLeading)
         .onAppear {
             descriptionText = suggestedDescription
             Task {
@@ -117,7 +117,7 @@ struct TimelineEntryCreationSheet: View {
                         }
                     }
                 }
-                .frame(maxHeight: 180)
+                .frame(maxHeight: 220)
             }
         }
     }
@@ -501,7 +501,7 @@ struct TimelineEntryEditSheet: View {
                         }
                     }
                 }
-                .frame(maxHeight: 180)
+                .frame(maxHeight: 220)
             }
         }
     }
