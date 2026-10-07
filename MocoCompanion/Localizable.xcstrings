@@ -542,6 +542,16 @@
         }
       }
     },
+    "Duplicate": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplizieren"
+          }
+        }
+      }
+    },
     "Edit entry…": {
       "localizations": {
         "de": {
