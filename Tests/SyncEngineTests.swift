@@ -262,8 +262,9 @@ struct SyncEngineTests {
         #expect(await counter.creates == 1)
         // The late caller's date was not dropped — it ran in a coalesced follow-up cycle.
         #expect(await counter.fetchedDates == ["2025-06-01", "2025-06-02"])
+        // The draft row became the server row; it keeps its localId as UI identity.
         let local = try await store.entry(localId: "local-dup")
-        #expect(local == nil)
+        #expect(local?.id == 999)
         #expect(try await store.entry(id: 999) != nil)
     }
 
@@ -293,9 +294,9 @@ struct SyncEngineTests {
 
         try await engine.pushDirty()
 
-        // The local-only entry should be gone, replaced by server entry
+        // The draft became the server row and keeps its localId as UI identity
         let local = try await store.entry(localId: "local-abc")
-        #expect(local == nil)
+        #expect(local?.id == 999)
         let server = try await store.entry(id: 999)
         #expect(server != nil)
         #expect(server?.sync.status == .synced)
@@ -589,7 +590,7 @@ extension SyncEngineTests {
         #expect(await creates.calls == 1)
         #expect(try await store.entry(id: 999)?.description == "B")
         #expect(try await store.entry(id: 999)?.sync.status == .synced)
-        #expect(try await store.entry(localId: "receipt") == nil)
+        #expect(try await store.entry(localId: "receipt")?.id == 999)
     }
 
     private final class CycleCounter: @unchecked Sendable {

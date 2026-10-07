@@ -298,7 +298,23 @@ extension ShadowEntryStoreTests {
         #expect(promoted.sync.status == .dirty)
         #expect(promoted.startTime == "09:00")
         #expect(promoted.origin.appBundleId == "com.test.app")
-        #expect(try await store.entry(localId: "draft") == nil)
+        #expect(promoted.uiIdentity == sent.uiIdentity)
+    }
+
+    @Test("Promotion keeps the row's UI identity so selection survives")
+    func promotionKeepsUIIdentity() async throws {
+        let store = try makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "stable", description: "A", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        let sent = try #require(await store.entry(localId: "stable"))
+        let before = sent.uiIdentity
+        #expect(try await store.promoteDraft(sent: sent, response: TestFactories.makeActivity(id: 100, description: "A")) == false)
+        let promoted = try #require(await store.entry(id: 100))
+        #expect(promoted.uiIdentity == before)
+        // A later server refresh must not drop it either.
+        try await store.mergeFetchedActivity(TestFactories.makeActivity(id: 100, description: "A"))
+        #expect(try await store.entry(id: 100)?.uiIdentity == before)
     }
 
     @Test("Failed promotion rolls back both draft deletion and existing remote deletion")

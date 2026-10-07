@@ -249,7 +249,6 @@ actor ShadowEntryStore {
                 if current.sync.revision != sent.sync.revision || current.sync.status != sent.sync.status {
                     promoted = current
                     promoted.id = response.id
-                    promoted.localId = nil
                     promoted.sync.status = current.sync.status == .pendingDelete ? .pendingDelete : .dirty
                     promoted.sync.serverUpdatedAt = response.updatedAt
                     needsPush = true
@@ -266,6 +265,7 @@ actor ShadowEntryStore {
                 if newer.origin.appBundleId == nil { newer.origin.appBundleId = promoted.origin.appBundleId }
                 if newer.origin.ruleId == nil { newer.origin.ruleId = promoted.origin.ruleId }
                 if newer.origin.calendarEventId == nil { newer.origin.calendarEventId = promoted.origin.calendarEventId }
+                if newer.localId == nil { newer.localId = sent.localId }
                 newer.sync.serverUpdatedAt = response.updatedAt
                 promoted = newer
                 needsPush = newer.sync.status != .pendingDelete || !undoableDeletes.contains(response.id)

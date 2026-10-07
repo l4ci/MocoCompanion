@@ -84,6 +84,8 @@ struct ShadowEntry: Sendable, Equatable {
     mutating func copyLocalOnlyFields(from other: ShadowEntry) {
         self.startTime = other.startTime
         self.origin = other.origin
+        // Keeps a promoted draft's UI identity stable across server refreshes.
+        self.localId = other.localId
     }
 
     /// Whether the timer is currently running on this entry.

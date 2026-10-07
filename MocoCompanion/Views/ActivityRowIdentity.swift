@@ -1,7 +1,8 @@
 import Foundation
 
 extension ShadowEntry {
-    /// Pending drafts have no server id. Keep their local identity through promotion.
+    /// Drafts keep their localId through promotion (and server refreshes), so the row
+    /// identity, and with it list selection, does not change when the server id arrives.
     var uiIdentity: String {
         if let localId { return "loc:\(localId)" }
         return TimelineViewModel.entryKey(for: self)
