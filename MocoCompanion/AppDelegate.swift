@@ -482,11 +482,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             settings: appState.settings
         )
 
-        let hostingView = NSHostingController(rootView: timelineView)
-
-        let window = NSWindow(contentViewController: hostingView)
+        // FirstMouseHostingView: the click that activates this window must
+        // also reach the timeline, otherwise drags and double-clicks that
+        // start from another app are dropped.
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = FirstMouseHostingView(rootView: timelineView)
         window.title = String(localized: "timeline.window.title")
-        window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
         window.setContentSize(NSSize(width: 900, height: 700))
         // Sync AppKit appearance with the user's appearance setting
         // (mirrors PanelController.updatePanelAppearance).

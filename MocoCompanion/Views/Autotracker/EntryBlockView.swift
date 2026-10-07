@@ -178,7 +178,14 @@ struct EntryBlockView: View {
 
     // MARK: - Edge Handle Size
 
-    private static let edgeHandleHeight: CGFloat = 8
+    private static let maxEdgeHandleHeight: CGFloat = 8
+
+    /// Resize handles take at most a quarter of the block each, so at
+    /// least half of every entry (even a 15-minute one at 22.5pt) remains
+    /// a drag-move area. Fixed 8pt handles left 6.5pt on short entries.
+    private var edgeHandleHeight: CGFloat {
+        min(Self.maxEdgeHandleHeight, displayHeight / 4)
+    }
 
     // MARK: - Body
 
@@ -238,7 +245,7 @@ struct EntryBlockView: View {
             if !entry.isReadOnly && !isRunning {
                 // Top edge handle
                 Color.clear
-                    .frame(height: Self.edgeHandleHeight)
+                    .frame(height: edgeHandleHeight)
                     .contentShape(Rectangle())
                     .cursor(.resizeUpDown)
                     .gesture(topResizeGesture)
@@ -247,7 +254,7 @@ struct EntryBlockView: View {
                 VStack {
                     Spacer()
                     Color.clear
-                        .frame(height: Self.edgeHandleHeight)
+                        .frame(height: edgeHandleHeight)
                         .contentShape(Rectangle())
                         .cursor(.resizeUpDown)
                         .gesture(bottomResizeGesture)
@@ -268,14 +275,19 @@ struct EntryBlockView: View {
         }
         .help(tooltipLabel)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
-        .onTapGesture(count: 1) {
-            onSelect?()
-        }
-        .onTapGesture(count: 2) {
-            if !entry.isReadOnly {
-                onEdit?(entry)
+        // No single-click handler: hover already selects, and a click
+        // toggle deselected the hovered entry. The double-tap is high
+        // priority so a few points of jitter between the two clicks does
+        // not hand the sequence to the drag gesture as a zero-length move;
+        // a real drag still wins because a tap fails as soon as the mouse
+        // travels.
+        .highPriorityGesture(
+            TapGesture(count: 2).onEnded {
+                if !entry.isReadOnly {
+                    onEdit?(entry)
+                }
             }
-        }
+        )
         .contextMenu {
             if !entry.isReadOnly {
                 Button("Edit entry…") {
