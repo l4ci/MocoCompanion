@@ -591,4 +591,32 @@ extension SyncEngineTests {
         #expect(try await store.entry(id: 999)?.sync.status == .synced)
         #expect(try await store.entry(localId: "receipt") == nil)
     }
+
+    private final class CycleCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value = 0
+        func bump() -> Int { lock.lock(); defer { lock.unlock() }; value += 1; return value }
+    }
+
+    @Test("Permanently ineligible row does not re-arm the drain loop")
+    func identitylessRowDoesNotSpin() async throws {
+        let store = try Self.makeStore()
+        var corrupt = TestFactories.makeShadowEntry(date: "2025-06-01", syncStatus: .dirty)
+        corrupt.id = nil
+        corrupt.localId = nil
+        try await store.insert(corrupt)
+
+        let cycles = CycleCounter()
+        let mock = MockSyncAPI()
+        // Each cycle asks for a client once. Bail out after a few so a
+        // regression fails the assertion instead of hanging the suite.
+        let engine = SyncEngine(
+            store: store,
+            clientFactory: { [mock] in cycles.bump() > 5 ? nil : mock },
+            userIdProvider: { 42 },
+            syncState: await SyncState()
+        )
+        await engine.sync(dates: [])
+        #expect(cycles.bump() == 2)
+    }
 }

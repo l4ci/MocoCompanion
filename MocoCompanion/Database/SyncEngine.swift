@@ -196,6 +196,12 @@ actor SyncEngine {
         for entry in dirtyEntries {
             if let localId = entry.localId, pendingPromotions[localId] != nil { continue }
             do {
+                // A row with neither server id nor local id can never become
+                // eligible. Re-arming the drain for it would spin forever.
+                guard entry.id != nil || entry.localId != nil else {
+                    logger.error("Skipping unsyncable row without id or localId (status=\(String(describing: entry.sync.status)))")
+                    continue
+                }
                 guard try await store.isUploadEligible(entry) else {
                     pendingPush = true
                     continue
