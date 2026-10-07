@@ -2,7 +2,7 @@
 
 All notable changes to MocoCompanion are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) loosely; versions follow semver.
 
-## Unreleased
+## v0.8.0 — 2026-10-07
 
 Timeline release. Everything below is about creating and handling entries in the timeline window; the panel and sync are unchanged. Prompted by issues #10, #11 and #13 and a manual test pass.
 
