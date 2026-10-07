@@ -15,6 +15,7 @@ struct KeychainRecoveryTests {
         var completed = false
         var events: [String] = []
         var reads = 0
+        var failures = 0
 
         func credentials(defaults: UserDefaults) -> KeychainHelper.CredentialStore {
             KeychainHelper.CredentialStore(service: "test", account: "key", defaults: defaults, backend: .init(
@@ -73,6 +74,10 @@ struct KeychainRecoveryTests {
                         self.source = .notFound
                     }
                     return self.cleanupStatus
+                },
+                recordSourceReadFailure: {
+                    self.failures += 1
+                    return self.failures
                 }
             ))
         }
@@ -210,8 +215,36 @@ struct KeychainRecoveryTests {
         #expect(store.recover() == .destinationConflict)
         #expect(store.source == .value("credential"))
         #expect(store.destination == .value("newer-credential"))
+        // Completed so the conflict is not re-evaluated on every launch.
+        #expect(store.completed)
+        #expect(store.events == ["readDestination", "readSource", "complete"])
+        store.events = []
+        #expect(store.recover() == .alreadyCompleted)
+        #expect(store.events.isEmpty)
+    }
+
+    @Test("A source that stays unreadable is abandoned after the failure budget")
+    func persistentSourceReadFailureIsAbandoned() {
+        let store = Store()
+        store.source = .failure(-34018)
+        for _ in 1..<KeychainHelper.maxSourceReadFailures {
+            #expect(store.recover() == .retry(.readSource, -34018))
+            #expect(!store.completed)
+        }
+        #expect(store.recover() == .abandoned(-34018))
+        #expect(store.completed)
+        #expect(store.recover() == .alreadyCompleted)
+    }
+
+    @Test("A locked keychain never consumes the failure budget")
+    func lockedKeychainIsNotCounted() {
+        let store = Store()
+        store.source = .failure(errSecInteractionNotAllowed)
+        for _ in 0..<(KeychainHelper.maxSourceReadFailures + 2) {
+            #expect(store.recover() == .retry(.readSource, errSecInteractionNotAllowed))
+        }
         #expect(!store.completed)
-        #expect(store.events == ["readDestination", "readSource"])
+        #expect(store.failures == 0)
     }
 
     @Test("Reset suppresses both surviving copies across reload, regardless of cleanup results",

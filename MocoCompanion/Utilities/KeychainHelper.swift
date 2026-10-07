@@ -104,6 +104,8 @@ enum KeychainHelper {
     enum RecoveryStatus: Equatable {
         case skippedForTests, alreadyCompleted, noSource, recovered
         case destinationConflict
+        /// Source stayed unreadable for `maxSourceReadFailures` launches; treated as nothing to recover.
+        case abandoned(OSStatus)
         case retry(RecoveryStep, OSStatus)
     }
 
@@ -116,7 +118,14 @@ enum KeychainHelper {
         var readSource: () -> RecoveryRead
         var saveDestination: (String) -> OSStatus
         var deleteSource: () -> OSStatus
+        /// Persists one more failed source read and returns the running total.
+        /// The default never exhausts, so callers without a counter keep retrying.
+        var recordSourceReadFailure: () -> Int = { 0 }
     }
+
+    /// A data-protection keychain that stays unreadable (for example a missing
+    /// entitlement) must not defer recovery on every launch forever.
+    static let maxSourceReadFailures = 3
 
     /// Failure leaves completion unset, so the next invocation retries. An existing
     /// different destination is never overwritten and its source is never deleted.
@@ -134,15 +143,20 @@ enum KeychainHelper {
             operations.markCompleted()
             return .noSource
         case .failure(let status):
-            return .retry(.readSource, status)
+            return sourceReadFailed(status, operations)
         case .value(let source):
-            guard !source.isEmpty else { return .retry(.readSource, errSecDecode) }
+            guard !source.isEmpty else { return sourceReadFailed(errSecDecode, operations) }
             value = source
         }
 
         switch destination {
         case .value(let existing):
-            guard existing == value else { return .destinationConflict }
+            guard existing == value else {
+                // The login keychain already holds a different credential. Never
+                // overwrite it or delete the source, but stop retrying.
+                operations.markCompleted()
+                return .destinationConflict
+            }
         case .notFound:
             let status = operations.saveDestination(value)
             guard status == errSecSuccess else { return .retry(.saveDestination, status) }
@@ -169,6 +183,16 @@ enum KeychainHelper {
         return .recovered
     }
 
+    /// Interaction-not-allowed means a locked keychain: transient, never counted.
+    private static func sourceReadFailed(_ status: OSStatus, _ operations: RecoveryOperations) -> RecoveryStatus {
+        guard status != errSecInteractionNotAllowed,
+              operations.recordSourceReadFailure() >= maxSourceReadFailures else {
+            return .retry(.readSource, status)
+        }
+        operations.markCompleted()
+        return .abandoned(status)
+    }
+
     /// Raw Keychain boundary. Injected backends never touch Security APIs.
     struct CredentialBackend {
         var readDestination: () -> RecoveryRead
@@ -189,12 +213,14 @@ enum KeychainHelper {
         private let defaults: UserDefaults
         private let recoveryKey: String
         private let resetKey: String
+        private let failureKey: String
         private let backend: CredentialBackend
 
         init(service: String, account: String, defaults: UserDefaults, backend: CredentialBackend? = nil) {
             self.defaults = defaults
             self.recoveryKey = "keychain.recovered.v2.\(service).\(account)"
             self.resetKey = "keychain.explicitReset.\(service).\(account)"
+            self.failureKey = "keychain.recoveryReadFailures.v2.\(service).\(account)"
             self.backend = backend ?? KeychainHelper.credentialBackend(service: service, account: account)
         }
 
@@ -223,7 +249,12 @@ enum KeychainHelper {
                 readDestination: backend.readDestination,
                 readSource: backend.readSource,
                 saveDestination: backend.saveDestination,
-                deleteSource: backend.deleteSource
+                deleteSource: backend.deleteSource,
+                recordSourceReadFailure: {
+                    let count = defaults.integer(forKey: failureKey) + 1
+                    defaults.set(count, forKey: failureKey)
+                    return count
+                }
             ))
             switch status {
             case .recovered:
@@ -231,7 +262,9 @@ enum KeychainHelper {
             case .retry(let step, let code):
                 logger.error("Keychain recovery deferred at \(String(describing: step)): \(code)")
             case .destinationConflict:
-                logger.notice("Keychain recovery deferred: destination differs from source")
+                logger.notice("Keychain recovery skipped: destination differs from source")
+            case .abandoned(let code):
+                logger.error("Keychain recovery abandoned, source unreadable: \(code)")
             default:
                 break
             }
