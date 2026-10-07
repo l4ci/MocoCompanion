@@ -11,15 +11,19 @@ final class MockQuickEntryCommands: QuickEntryCommands {
     var startTimerResult: Result<String, QuickEntryCommandError> = .success("TestProject")
     var bookManualResult: Result<String, QuickEntryCommandError> = .success("TestProject (1.5h)")
     var lastValidationError: String?
+    var bookManualHandler: (() async -> Result<String, QuickEntryCommandError>)?
+    var startTimerHandler: (() async -> Result<String, QuickEntryCommandError>)?
 
     func toggleTimer() async { toggleTimerCalled = true }
 
     func startTimer(entry: SearchEntry, description: String) async -> Result<String, QuickEntryCommandError> {
-        startTimerResult
+        if let startTimerHandler { return await startTimerHandler() }
+        return startTimerResult
     }
 
     func bookManual(entry: SearchEntry, hours: Double, description: String) async -> Result<String, QuickEntryCommandError> {
-        bookManualResult
+        if let bookManualHandler { return await bookManualHandler() }
+        return bookManualResult
     }
 
     func reportValidationError(_ message: String) {
@@ -36,7 +40,7 @@ final class MockQuickEntryDataSource: QuickEntryDataSource {
     var entries: [SearchEntry] = []
     var searchResults: [FuzzyMatcher.Match] = []
 
-    func activeFavorites() -> [FavoritesManager.FavoriteEntry] { favorites }
+    func activeFavorites() -> [FavoritesManager.FavoriteEntry] { favoritesEnabled ? favorites : [] }
     func activeRecents(excludingFavoriteIds: Set<String>) -> [RecentEntriesTracker.RecentEntry] {
         recents.filter { !excludingFavoriteIds.contains($0.id) }
     }
@@ -420,5 +424,102 @@ struct QuickEntryStateMachineTests {
         let recentItems = items.filter { $0.section == .recent }
         #expect(recentItems.count == 1)
         #expect(recentItems[0].entry.projectId == 2)
+    }
+}
+
+@MainActor
+private final class SubmissionGate {
+    private var pending: CheckedContinuation<Result<String, QuickEntryCommandError>, Never>?
+    private var started: CheckedContinuation<Void, Never>?
+    private(set) var calls = 0
+
+    func run() async -> Result<String, QuickEntryCommandError> {
+        calls += 1
+        return await withCheckedContinuation { continuation in
+            pending = continuation
+            started?.resume()
+            started = nil
+        }
+    }
+
+    func waitUntilStarted() async {
+        if pending != nil { return }
+        await withCheckedContinuation { started = $0 }
+    }
+
+    func finish(_ result: Result<String, QuickEntryCommandError> = .success("Project")) {
+        pending?.resume(returning: result)
+        pending = nil
+    }
+}
+
+extension QuickEntryStateMachineTests {
+    @Test("Overlapping submissions dispatch one command", arguments: [true, false])
+    @MainActor func overlappingSubmissions(manual: Bool) async {
+        let (sm, commands, _) = makeSM()
+        let gate = SubmissionGate()
+        commands.bookManualHandler = { await gate.run() }
+        commands.startTimerHandler = { await gate.run() }
+        sm.selectEntry(makeEntry())
+        sm.isManualMode = manual
+        sm.manualHours = "1.5"
+        let first = Task { await sm.submitDescription() }
+        await gate.waitUntilStarted()
+        #expect(sm.isSubmitting)
+        #expect(await sm.submitDescription() == .ignored)
+        #expect(gate.calls == 1)
+        gate.finish(.failure(.apiFailure(.serverError(statusCode: 500, message: "test"))))
+        #expect(await first.value == .apiError)
+        #expect(!sm.isSubmitting)
+        commands.bookManualHandler = nil
+        commands.startTimerHandler = nil
+        #expect(await sm.submitDescription() != .ignored)
+    }
+
+    @Test("An old completion cannot replace a reset flow or clear its in-flight state")
+    @MainActor func resetDuringSubmission() async {
+        let (sm, commands, _) = makeSM()
+        let old = SubmissionGate()
+        commands.startTimerHandler = { await old.run() }
+        sm.selectEntry(makeEntry())
+        let first = Task { await sm.submitDescription() }
+        await old.waitUntilStarted()
+        sm.reset()
+        let current = SubmissionGate()
+        commands.startTimerHandler = { await current.run() }
+        sm.selectEntry(makeEntry(projectId: 2))
+        let second = Task { await sm.submitDescription() }
+        await current.waitUntilStarted()
+        old.finish()
+        #expect(await first.value == .ignored)
+        #expect(sm.phase.isDescribing)
+        #expect(sm.selectedEntry?.projectId == 2)
+        #expect(sm.isSubmitting)
+        current.finish()
+        #expect(await second.value == .success(displayName: "Project"))
+        #expect(!sm.isSubmitting)
+    }
+
+    @Test("Catalog, favorites, recents and search changes update unchanged queries")
+    @MainActor func resultSourcesStayLive() {
+        let (sm, _, data) = makeSM()
+        #expect(sm.displayItems.isEmpty)
+        #expect(sm.searchResults.isEmpty)
+        data.entries = [makeEntry()]
+        #expect(sm.displayItems.count == 1)
+        #expect(sm.searchResults.count == 1)
+        data.favorites = [makeFavorite(projectId: 3)]
+        #expect(sm.displayItems.first?.entry.projectId == 3)
+        #expect(sm.displayItems.first?.section == .favorite)
+        data.favoritesEnabled = false
+        #expect(sm.displayItems.first?.section == .suggestion)
+        data.favorites = []
+        data.recents = [makeRecent(projectId: 4)]
+        #expect(sm.displayItems.first?.entry.projectId == 4)
+        data.recents = []
+        sm.searchText = "project"
+        #expect(sm.searchResults.isEmpty)
+        data.searchResults = [.init(entry: makeEntry(projectId: 5), score: 1, matchedIndices: [])]
+        #expect(sm.searchResults.first?.entry.projectId == 5)
     }
 }

@@ -233,4 +233,29 @@ struct MonitorEngineTests {
 
         #expect(scheduler.cancelAllCalled)
     }
+
+    @Test("Session identity changes rearm once alerts without rearming daily summaries")
+    @MainActor func sessionKeysKeepDailyDedupIndependent() async {
+        let (engine, scheduler, capturing) = makeEngine()
+        let monitor = SpyMonitor(name: "idle")
+        let daily = MonitorAlert(type: .endOfDaySummary, message: "Summary",
+                                 dedupKey: "idle:eod", dedupStrategy: .perDay)
+        engine.register(monitor)
+        for session in ["first", "second"] {
+            monitor.stubbedAlerts = [
+                MonitorAlert(type: .forgottenTimer, message: "Still running",
+                             dedupKey: "idle:forgotten:\(session)", dedupStrategy: .once),
+                daily
+            ]
+            await scheduler.fire(monitorNamed: "idle")
+            await scheduler.fire(monitorNamed: "idle")
+        }
+        #expect(capturing.dispatchedTypes.filter { $0 == .forgottenTimer }.count == 2)
+        #expect(capturing.dispatchedTypes.filter { $0 == .endOfDaySummary }.count == 1)
+        engine.resetSession(for: monitor)
+        await scheduler.fire(monitorNamed: "idle")
+        #expect(capturing.dispatchedTypes.filter { $0 == .forgottenTimer }.count == 3)
+        #expect(capturing.dispatchedTypes.filter { $0 == .endOfDaySummary }.count == 1)
+    }
+
 }

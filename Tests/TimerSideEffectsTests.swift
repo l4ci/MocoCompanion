@@ -35,6 +35,41 @@ struct TimerSideEffectsTests {
         return (sideEffects, box)
     }
 
+    @Test("Production wiring retains side effects after construction and releases them with timer")
+    @MainActor func productionWiringOwnsSideEffects() {
+        let activities = ActivityService(clientFactory: { nil }, notificationDispatcher: NotificationDispatcher { _ in false })
+        var timer: TimerService? = TimerService(clientFactory: { nil })
+        weak var weakSideEffects: TimerSideEffects?
+        let recency = RecencyTracker(backend: InMemoryBackend())
+        let descriptions = DescriptionStore(backend: InMemoryBackend())
+        var notifications: [NotificationCatalog.NotificationType] = []
+        do {
+            let sideEffects = TimerSideEffects(
+                recencyTracker: recency,
+                recentEntriesTracker: RecentEntriesTracker(backend: InMemoryBackend()),
+                descriptionStore: descriptions,
+                settings: SettingsStore(),
+                notificationDispatcher: NotificationDispatcher {
+                    notifications.append($0)
+                    return false
+                },
+                searchEntriesProvider: { [] }
+            )
+            weakSideEffects = sideEffects
+            AppState.connectTimerSideEffects(sideEffects, timerService: timer!, activityService: activities)
+        }
+        #expect(weakSideEffects != nil)
+        #expect(activities.usageRecorder != nil)
+        activities.usageRecorder?.recordUsage(projectId: 12345, taskId: 200, description: "manual booking retained")
+        #expect(recency.recencyScore(projectId: 12345) > 0)
+        #expect(descriptions.suggest(for: "manual booking") == "manual booking retained")
+        timer?.onEvent?(.error(.invalidConfiguration))
+        #expect(notifications == [.apiError])
+        timer = nil
+        #expect(weakSideEffects == nil)
+        #expect(activities.usageRecorder == nil)
+    }
+
     // MARK: - Timer Started
 
     @Test("onTimerStarted dispatches .timerStarted notification")

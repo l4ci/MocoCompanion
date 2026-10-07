@@ -165,4 +165,81 @@ struct BudgetServiceTests {
         #expect(status != .empty)
         #expect(status.projectProgressPercent == 50)
     }
+    @Test("Report refreshes do not extend the five-minute project and contracts TTL")
+    @MainActor func independentCacheFreshness() async {
+        let start = Date(timeIntervalSince1970: 0)
+        var current = start
+        var reports = 0
+        var projects = 0
+        var contracts = 0
+        var api = makePopulatedAPI()
+        api.fetchProjectReportHandler = { _ in
+            reports += 1
+            return TestFactories.makeProjectReport()
+        }
+        api.fetchProjectHandler = { _ in
+            projects += 1
+            return TestFactories.makeFullProject()
+        }
+        api.fetchProjectContractsHandler = { _ in
+            contracts += 1
+            return [TestFactories.makeProjectContract()]
+        }
+        let service = BudgetService(clientFactory: { api }, now: { current })
+        await service.refreshProject(100)
+        #expect(reports == 1 && projects == 1 && contracts == 1)
+
+        current = start.addingTimeInterval(59)
+        await service.refreshProject(100)
+        #expect(reports == 1)
+        for seconds in [60, 120, 180, 240] {
+            current = start.addingTimeInterval(Double(seconds))
+            await service.refreshProject(100)
+        }
+        #expect(reports == 5 && projects == 1 && contracts == 1)
+
+        // Both TTL boundaries are exclusive: 299s still reuses details.
+        current = start.addingTimeInterval(299)
+        await service.refreshProject(100)
+        #expect(reports == 5)
+        current = start.addingTimeInterval(300)
+        await service.refreshProject(100)
+        #expect(reports == 6 && projects == 2 && contracts == 2)
+
+        // Offset report refresh from the next details expiry.
+        current = start.addingTimeInterval(590)
+        await service.refreshProject(100)
+        #expect(reports == 7 && projects == 2 && contracts == 2)
+        current = start.addingTimeInterval(600)
+        await service.refreshProject(100)
+        #expect(reports == 7 && projects == 3 && contracts == 3)
+        current = start.addingTimeInterval(650)
+        await service.refreshProject(100)
+        #expect(reports == 8 && projects == 3 && contracts == 3)
+    }
+
+    @Test("Failed detail refresh retains cached status and retries without renewing freshness")
+    @MainActor func failedDetailsRemainStale() async {
+        var current = Date(timeIntervalSince1970: 0)
+        var projects = 0
+        var fail = false
+        var api = makePopulatedAPI()
+        api.fetchProjectHandler = { _ in
+            projects += 1
+            if fail { throw MocoError.serverError(statusCode: 500, message: "Offline") }
+            return TestFactories.makeFullProject()
+        }
+        let service = BudgetService(clientFactory: { api }, now: { current })
+        await service.refreshProject(100)
+        let cachedStatus = service.status(projectId: 100)
+        current.addTimeInterval(300)
+        fail = true
+        await service.refreshProject(100)
+        #expect(service.status(projectId: 100) == cachedStatus)
+        #expect(projects == 2)
+        fail = false
+        await service.refreshProject(100)
+        #expect(projects == 3)
+    }
+
 }

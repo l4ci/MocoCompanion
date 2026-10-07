@@ -14,6 +14,9 @@ struct QuickEntryView: View {
     /// State machine owning all quick-entry state and computed properties.
     /// Created once per view identity via @State, initialized in onAppear.
     @State private var sm: QuickEntryStateMachine
+    @State private var submissionTask: Task<Void, Never>?
+    @State private var submissionID: UUID?
+    @Environment(\.panelDismissalScope) private var dismissalScope
 
     @FocusState private var focusedField: QuickEntryStateMachine.FocusField?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -55,6 +58,8 @@ struct QuickEntryView: View {
                     focusedField = .search
                 }
             } else {
+                // Fuzzy search runs on every read; evaluate it once per render.
+                let items = sm.displayItems
                 SearchFieldView(
                     searchText: $sm.searchText,
                     selectedIndex: $sm.selectedIndex,
@@ -62,7 +67,7 @@ struct QuickEntryView: View {
                     isSearchEmpty: sm.isSearchEmpty,
                     hasActiveTimer: sm.hasActiveTimer,
                     hasMinSearchChars: sm.hasMinSearchChars,
-                    displayItemCount: sm.displayItems.count,
+                    displayItemCount: items.count,
                     avatarImage: appState.session.cachedAvatarImage,
                     userFirstname: appState.session.currentUserProfile?.firstname,
                     showKeyboardHints: appState.settings.showKeyboardHints,
@@ -94,9 +99,9 @@ struct QuickEntryView: View {
                             Task { await appState.fetchProjects() }
                         }
                     )
-                } else if sm.phase.isSearching && !sm.searchResults.isEmpty {
+                } else if sm.phase.isSearching && !items.isEmpty {
                     SearchResultsListView(
-                        items: sm.displayItems,
+                        items: items,
                         selectedIndex: $sm.selectedIndex,
                         hoveredIndex: $sm.hoveredIndex,
                         favoritesManager: favoritesManager,
@@ -106,7 +111,7 @@ struct QuickEntryView: View {
                     )
                 }
 
-                if sm.phase.isSearching && sm.searchResults.isEmpty && sm.hasMinSearchChars && !appState.catalog.projects.isEmpty {
+                if sm.phase.isSearching && items.isEmpty && sm.hasMinSearchChars && !appState.catalog.projects.isEmpty {
                     QuickEntryNoResultsView()
                 }
 
@@ -131,8 +136,26 @@ struct QuickEntryView: View {
                 }
             }
         }
+        .disabled(sm.isSubmitting)
+        .onChange(of: sm.isSubmitting) { _, submitting in
+            // Disabling the view drops the focused field. After a failed submit
+            // that returns to .describing, give focus back or Enter/Escape are lost.
+            guard !submitting else { return }
+            Task { @MainActor in
+                // Wait until the view is enabled again, then re-check the phase:
+                // Escape may have moved on to the search list in the meantime.
+                try? await Task.sleep(for: .milliseconds(50))
+                if sm.phase.isDescribing {
+                    focusedField = sm.isManualMode ? .hours : .description
+                }
+            }
+        }
         .accessibleAnimation(reduceMotion, value: sm.phase.animationKey)
+        .onDisappear {
+            cancelSubmission()
+        }
         .onAppear {
+            cancelSubmission()
             sm.reset()
             // Pre-selected entry from planned task — go straight to description phase
             if let entry = preSelectedEntry {
@@ -158,6 +181,7 @@ struct QuickEntryView: View {
             }
         }
         .onExitCommand {
+            cancelSubmission()
             if sm.phase.isDescribing {
                 animateAccessibly(reduceMotion) {
                     sm.phase = .searching
@@ -165,7 +189,7 @@ struct QuickEntryView: View {
                 }
                 focusedField = .search
             } else {
-                NSApp.keyWindow?.close()
+                dismissalScope?.makeDismissAction()()
             }
         }
     }
@@ -197,14 +221,34 @@ struct QuickEntryView: View {
         setFocusAfterDelay($focusedField, to: .description)
     }
 
+    private func cancelSubmission() {
+        submissionTask?.cancel()
+        submissionTask = nil
+        submissionID = nil
+        sm.invalidateSubmission()
+    }
+
     private func handleDescriptionSubmit() {
-        Task {
+        guard submissionTask == nil else { return }
+        let dismiss = dismissalScope?.makeDismissAction()
+        let id = UUID()
+        submissionID = id
+        submissionTask = Task {
+            defer {
+                if submissionID == id {
+                    submissionTask = nil
+                    submissionID = nil
+                }
+            }
+            guard !Task.isCancelled, submissionID == id else { return }
             let result = await sm.submitDescription()
             switch result {
             case .success:
-                try? await Task.sleep(for: .milliseconds(600))
-                NSApp.keyWindow?.close()
-            case .validationError, .apiError:
+                do { try await Task.sleep(for: .milliseconds(600)) }
+                catch { return }
+                guard !Task.isCancelled else { return }
+                dismiss?()
+            case .validationError, .apiError, .ignored:
                 break
             }
         }

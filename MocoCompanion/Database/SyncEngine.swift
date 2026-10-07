@@ -29,7 +29,11 @@ actor SyncEngine {
     // Late callers await that same task, so `await sync(dates:)` still means
     // "my dates have been synced" when it returns.
     private var pendingDates: Set<String> = []
-    private var drainTask: Task<Void, Never>?
+    private var drainTask: Task<Void, Error>?
+    private var pendingPush = false
+    // Keep successful POST receipts until their local transaction commits.
+    // A transient SQLite failure must retry promotion, not create remotely again.
+    private var pendingPromotions: [String: (sent: ShadowEntry, response: MocoActivity)] = [:]
 
     init(
         store: ShadowEntryStore,
@@ -51,32 +55,35 @@ actor SyncEngine {
     /// and this call awaits the in-flight drain, which runs follow-up cycles
     /// until the accumulated set (including these dates) is empty.
     func sync(dates: [String]) async {
-        pendingDates.formUnion(dates)
+        do { try await enqueueSync(dates: dates) } catch { /* cycle recorded the error */ }
+    }
 
+    private func enqueueSync(dates: [String]) async throws {
+        pendingDates.formUnion(dates)
+        pendingPush = true
         if let task = drainTask {
-            // Awaiting `.value` intentionally ignores this call's own
-            // cancellation — see the note below.
-            await task.value
+            try await task.value
             return
         }
-
-        let task = Task {
-            while !pendingDates.isEmpty {
-                let batch = pendingDates
+        let task = Task<Void, Error> {
+            var lastError: Error?
+            while pendingPush || !pendingDates.isEmpty {
+                let dates = pendingDates.sorted()
                 pendingDates.removeAll()
-                await runSyncCycle(dates: Array(batch).sorted())
+                pendingPush = false
+                do { try await runSyncCycle(dates: dates) }
+                catch { lastError = error }
             }
             drainTask = nil
+            if let lastError { throw lastError }
         }
         drainTask = task
-        // A started drain always runs to completion regardless of whether
-        // this call gets cancelled, so pending entries are never left half-pushed.
-        await task.value
+        try await task.value
     }
 
     /// One pull+push cycle for the given dates. Broken out of `sync(dates:)`
     /// so the reentrancy guard/coalescing loop can drive multiple cycles.
-    private func runSyncCycle(dates: [String]) async {
+    private func runSyncCycle(dates: [String]) async throws {
         BreadcrumbTrail.shared.record("SyncEngine", "Sync started for dates: \(dates.joined(separator: ", "))")
         await MainActor.run { syncState.setSyncing(true) }
         defer { Task { @MainActor in syncState.setSyncing(false) } }
@@ -85,7 +92,7 @@ actor SyncEngine {
             for date in dates {
                 try await pullRemote(date: date)
             }
-            try await pushDirty()
+            try await pushDirtyWorker()
             await MainActor.run {
                 syncState.setLastSynced(Date.now)
                 syncState.setLastError(nil)
@@ -103,6 +110,7 @@ actor SyncEngine {
             }
             logger.error("Sync failed: \(error.localizedDescription)")
             BreadcrumbTrail.shared.record("SyncEngine", "Sync failed: \(error.localizedDescription)")
+            throw error
         }
     }
 
@@ -134,13 +142,14 @@ actor SyncEngine {
                     var resolved = shadow
                     resolved.sync.conflictFlag = true
                     resolved.sync.status = .synced
-                    try await store.updateFromServer(resolved)
-                    try await store.markConflict(id: activity.id)
-                    conflictCount += 1
+                    if try await store.updateFromServer(resolved, expectedRevision: existing.sync.revision) {
+                        conflictCount += 1
+                    }
                 } else if existing.sync.status == .synced && existing.sync.serverUpdatedAt != activity.updatedAt {
                     // Server updated a synced entry — just update
-                    try await store.updateFromServer(shadow)
-                    pullCount += 1
+                    if try await store.updateFromServer(shadow, expectedRevision: existing.sync.revision) {
+                        pullCount += 1
+                    }
                 }
                 // If updatedAt matches, skip — no change
             } else {
@@ -161,6 +170,10 @@ actor SyncEngine {
 
     /// Push all dirty local entries to the API.
     func pushDirty() async throws {
+        try await enqueueSync(dates: [])
+    }
+
+    private func pushDirtyWorker() async throws {
         guard let client = clientFactory() else { return }
 
         let dirtyEntries = try await store.dirtyEntries()
@@ -168,8 +181,31 @@ actor SyncEngine {
         var failedCount = 0
         var lastError: Error?
 
-        for entry in dirtyEntries {
+        for (localId, promotion) in pendingPromotions {
             do {
+                _ = try await store.promoteDraft(sent: promotion.sent, response: promotion.response)
+                pendingPromotions.removeValue(forKey: localId)
+                pendingPush = true
+                pushCount += 1
+            } catch {
+                lastError = error
+                failedCount += 1
+            }
+        }
+
+        for entry in dirtyEntries {
+            if let localId = entry.localId, pendingPromotions[localId] != nil { continue }
+            do {
+                // A row with neither server id nor local id can never become
+                // eligible. Re-arming the drain for it would spin forever.
+                guard entry.id != nil || entry.localId != nil else {
+                    logger.error("Skipping unsyncable row without id or localId (status=\(String(describing: entry.sync.status)))")
+                    continue
+                }
+                guard try await store.isUploadEligible(entry) else {
+                    pendingPush = true
+                    continue
+                }
                 switch entry.sync.status {
                 case .pendingCreate:
                     let created = try await client.createActivity(
@@ -180,16 +216,9 @@ actor SyncEngine {
                         seconds: entry.seconds,
                         tag: entry.tag.isEmpty ? nil : entry.tag
                     )
-                    // Remove the local-only entry, insert with server ID
-                    if let localId = entry.localId {
-                        try await store.deleteByLocalId(localId)
-                    }
-                    // Preserve local-only metadata across the API round-trip.
-                    // `ShadowEntry.merged(api:preserving:)` does the
-                    // from-then-copy in one step so origin metadata can't
-                    // be silently dropped.
-                    let serverShadow = ShadowEntry.merged(api: created, preserving: entry)
-                    try await store.insert(serverShadow)
+                    if let localId = entry.localId { pendingPromotions[localId] = (entry, created) }
+                    if try await store.promoteDraft(sent: entry, response: created) { pendingPush = true }
+                    if let localId = entry.localId { pendingPromotions.removeValue(forKey: localId) }
                     pushCount += 1
 
                 case .dirty:
@@ -202,7 +231,7 @@ actor SyncEngine {
                         tag: entry.tag.isEmpty ? nil : entry.tag,
                         seconds: entry.seconds
                     )
-                    try await store.markSynced(id: id, serverUpdatedAt: updated.updatedAt)
+                    if try await store.acknowledgeUpdate(sent: entry, response: updated) { pendingPush = true }
                     pushCount += 1
 
                 case .pendingDelete:
@@ -220,7 +249,7 @@ actor SyncEngine {
                         // 403 — locked/billed, can't delete. Revert to synced
                         // so the entry stays visible as read-only.
                         logger.info("Delete \(id): forbidden (locked/billed) — reverting to synced")
-                        try await store.markSynced(id: id, serverUpdatedAt: entry.updatedAt)
+                        try await store.rejectDelete(sent: entry)
                     }
 
                 case .synced:
@@ -234,7 +263,7 @@ actor SyncEngine {
             }
         }
 
-        if failedCount > 0 && pushCount == 0 && !dirtyEntries.isEmpty, let lastError {
+        if failedCount > 0 && pushCount == 0, let lastError {
             logger.error("Push: all \(failedCount) entries failed")
             throw lastError
         } else if failedCount > 0 {
@@ -258,8 +287,11 @@ actor SyncEngine {
             result = try await client.stopTimer(activityId: activityId)
         }
 
-        let shadow = ShadowEntry.from(result)
-        try await store.updateFromServer(shadow)
+        try await store.mergeFetchedActivity(result)
+    }
+
+    func reconcileTimerSnapshot(_ activities: [MocoActivity], forDate date: String) async throws -> [ShadowEntry] {
+        try await store.reconcileTimerSnapshot(activities, forDate: date)
     }
 
     // MARK: - UI Convenience

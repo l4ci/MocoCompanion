@@ -3,7 +3,7 @@ import os
 
 /// Monitors budget thresholds while a timer is running.
 ///
-/// Polls `BudgetService` every 60 seconds during active tracking and emits
+/// Polls `BudgetService` every 120 seconds during active tracking and emits
 /// alerts when budget thresholds are crossed. The MonitorEngine handles dedup —
 /// each threshold fires at most once per tracking session.
 @MainActor
@@ -27,7 +27,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
     }
 
     func check() async -> [MonitorAlert] {
-        guard case .running = timerService.timerState,
+        guard let session = RunningMonitorSession(timerService: timerService),
               let activity = timerService.currentActivity else { return [] }
 
         let projectId = activity.projectId
@@ -36,6 +36,8 @@ final class BudgetDepletionMonitor: PollingMonitor {
 
         // Refresh budget data so we check against latest server state.
         await budgetService.refreshProject(projectId)
+        // A different timer may have started while the request was in flight.
+        guard RunningMonitorSession(timerService: timerService) == session else { return [] }
         let status = budgetService.status(projectId: projectId, taskId: taskId)
         logger.debug("Threshold check: project=\(projectId) badge=\(String(describing: status.effectiveBadge))")
 
@@ -45,7 +47,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetTaskWarning,
                 message: String(localized: "notification.budgetTaskWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:\(projectId):task-critical",
+                dedupKey: "BudgetDepletion:\(session.bookingKey):task-critical",
                 dedupStrategy: .once
             ))
         }
@@ -54,7 +56,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetProjectWarning,
                 message: String(localized: "notification.budgetProjectWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:\(projectId):project-critical",
+                dedupKey: "BudgetDepletion:\(session.bookingKey):project-critical",
                 dedupStrategy: .once
             ))
         }
@@ -63,7 +65,7 @@ final class BudgetDepletionMonitor: PollingMonitor {
             alerts.append(MonitorAlert(
                 type: .budgetProjectWarning,
                 message: String(localized: "notification.budgetProjectWarning") + " " + projectName,
-                dedupKey: "BudgetDepletion:\(projectId):project-warning",
+                dedupKey: "BudgetDepletion:\(session.bookingKey):project-warning",
                 dedupStrategy: .once
             ))
         }

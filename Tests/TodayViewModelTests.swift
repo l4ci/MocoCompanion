@@ -1075,3 +1075,91 @@ struct TodayViewModelTests {
         #expect(!vm.favoritesManager.isFavorite(projectId: 100, taskId: 200))
     }
 }
+
+extension TodayViewModelTests {
+    @Test("Out-of-range shortcuts do not act on the previous selection")
+    @MainActor func unavailableShortcutDoesNothing() async {
+        let (vm, _, _) = await makeViewModelWithActivities([TestFactories.makeActivity(id: 1)])
+        if case .noOp = vm.performShortcutAction(8) {} else {
+            Issue.record("Unavailable shortcut dispatched an action")
+        }
+        let action = vm.handleKeyPress(key: KeyEquivalent("9"), characters: "9", modifiers: .command)
+        if case .handled = action {} else { Issue.record("Unavailable shortcut must not dismiss") }
+        #expect(vm.selectedIndex == 0)
+        #expect(!vm.selectByShortcut(-1))
+    }
+
+    @Test("Tomorrow rows support arrows, Return and number shortcuts; incomplete rows do not act")
+    @MainActor func tomorrowKeyboardActions() async {
+        let first = TestFactories.makePlanningEntry(id: 1, projectId: 101)
+        let second = TestFactories.makePlanningEntry(id: 2, projectId: 102)
+        let incomplete = MocoPlanningEntry(id: 3, title: nil, startsOn: first.startsOn,
+            endsOn: first.endsOn, hoursPerDay: 1, comment: nil, project: nil, task: nil, user: first.user)
+        var api = MockActivityAPI()
+        api.fetchPlanningEntriesHandler = { _, _ in [first, second, incomplete] }
+        let (vm, _, _) = makeViewModel(activityAPI: api)
+        await vm.planningStore.refreshTomorrowPlanning()
+        vm.selectedDay = .tomorrow
+        #expect(vm.totalNavigableCount == 3)
+        _ = vm.handleKeyPress(key: .downArrow, characters: "", modifiers: [])
+        #expect(vm.selectedIndex == 1)
+        let enter = vm.handleKeyPress(key: .return, characters: "", modifiers: [])
+        if case .startEntry(let entry) = enter { #expect(entry.projectId == 102) }
+        else { Issue.record("Return must select tomorrow's second row") }
+        let shortcut = vm.handleKeyPress(key: KeyEquivalent("1"), characters: "1", modifiers: .command)
+        if case .startEntry(let entry) = shortcut { #expect(entry.projectId == 101) }
+        else { Issue.record("Command-1 must select tomorrow's first row") }
+        if case .noOp = vm.performShortcutAction(2) {} else { Issue.record("Incomplete row must not act") }
+        #expect(TodayViewModel.searchEntry(for: incomplete) == nil)
+    }
+
+    @Test("Yesterday totals follow edits, delete and undo without a view-model refresh")
+    @MainActor func yesterdayMutationTotals() {
+        let (vm, _, service) = makeViewModel()
+        let date = DateUtilities.yesterdayString()!
+        let billable = TestFactories.makeActivity(id: 1, date: date, hours: 2, billable: true)
+        let nonbillable = TestFactories.makeActivity(id: 2, date: date, hours: 2, billable: false)
+        service.restoreYesterday(ShadowEntry.from(billable))
+        service.restoreYesterday(ShadowEntry.from(nonbillable))
+        #expect(vm.yesterdayTotalHours == 4)
+        #expect(vm.yesterdayBillablePercentage == 50)
+        let edited = TestFactories.makeActivity(id: 1, date: date, hours: 6, billable: true)
+        let saved = service.upsertActivity(fromServer: edited)
+        #expect(vm.yesterdayTotalHours == 8)
+        #expect(vm.yesterdayBillablePercentage == 75)
+        service.removeLocal(activityId: 1)
+        #expect(vm.yesterdayTotalHours == 2)
+        #expect(vm.yesterdayBillablePercentage == 0)
+        service.restoreYesterday(saved)
+        #expect(vm.yesterdayTotalHours == 8)
+        #expect(vm.yesterdayBillablePercentage == 75)
+        service.removeLocal(activityId: 1)
+        service.removeLocal(activityId: 2)
+        #expect(vm.yesterdayBillablePercentage == 0)
+    }
+
+    @Test("Nil-ID drafts have distinct identities and never match inactive edit/delete state")
+    @MainActor func draftRowIdentityAndSelection() {
+        let (vm, _, service) = makeViewModel()
+        var first = ShadowEntry.from(TestFactories.makeActivity(id: 1))
+        first.id = nil
+        first.localId = "first-draft"
+        var second = first
+        second.localId = "second-draft"
+        #expect(first.uiIdentity != second.uiIdentity)
+        #expect(!first.matchesServerSelection(nil))
+        #expect(!second.matchesServerSelection(nil))
+        service.restoreToday(first)
+        service.restoreToday(second)
+        vm.selectedIndex = 1
+        vm.trackSelectedId()
+        let key = vm.selectedActivityKey
+        service.restoreToday(ShadowEntry.from(TestFactories.makeActivity(id: 3)))
+        vm.syncSelectionAfterDataChange()
+        #expect(vm.selectedActivityKey == key)
+        #expect(vm.sortedActivities[vm.selectedIndex].uiIdentity == key)
+        var promoted = second
+        promoted.id = 42
+        #expect(promoted.uiIdentity == second.uiIdentity)
+    }
+}

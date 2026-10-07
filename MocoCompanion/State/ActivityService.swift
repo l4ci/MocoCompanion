@@ -135,6 +135,30 @@ final class ActivityService: ActivitySyncing {
         logger.info("Today sync: \(activities.count) entries")
     }
 
+    /// Reconcile the timer's already-fetched snapshot without another network request.
+    /// Publication is separate so TimerService can reject obsolete snapshots first.
+    func reconcileTimerSnapshot(_ activities: [MocoActivity], forDate date: String) async throws -> [ShadowEntry] {
+        if let syncEngine {
+            return try await syncEngine.reconcileTimerSnapshot(activities, forDate: date)
+        }
+
+        // Preserve local state even in the API-only configuration.
+        let local = todayActivities.filter { $0.date == date }
+        let byId = Dictionary(local.compactMap { entry in entry.id.map { ($0, entry) } },
+                              uniquingKeysWith: { _, latest in latest })
+        let remoteIds = Set(activities.map(\.id))
+        let merged = activities.compactMap { activity -> ShadowEntry? in
+            guard let existing = byId[activity.id] else { return ShadowEntry.from(activity) }
+            if existing.sync.status == .pendingDelete { return nil }
+            if existing.sync.status != .synced { return existing }
+            return ShadowEntry.merged(api: activity, preserving: existing)
+        }
+        return merged + local.filter {
+            $0.sync.status != .synced && $0.sync.status != .pendingDelete
+                && ($0.id.map { !remoteIds.contains($0) } ?? true)
+        }
+    }
+
     func refreshYesterdayActivities() async {
         if let syncEngine, let yesterday = DateUtilities.yesterdayString() {
             await syncEngine.sync(dates: [yesterday])
@@ -294,8 +318,8 @@ final class ActivityService: ActivitySyncing {
                 do {
                     try await syncEngine.insertPendingCreate(entry)
                 } catch {
-                    logger.error("bookManualEntry offline insert failed: \(error.localizedDescription)")
-                    Task { await AppLogger.shared.app("bookManualEntry offline insert failed: \(error.localizedDescription)", level: .error, context: "ActivityService") }
+                    handleError(error, label: "bookManualEntry offline insert")
+                    return .failure(MocoError.from(error))
                 }
                 appendToday(entry)
                 usageRecorder?.recordUsage(projectId: projectId, taskId: taskId, description: description)

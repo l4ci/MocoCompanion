@@ -66,6 +66,7 @@ final class PanelController {
     private static let logger = Logger(category: "Panel")
 
     private var panel: FloatingPanel?
+    private let dismissalScope = PanelDismissalScope()
     private(set) var isVisible = false
     let appState: AppState
 
@@ -138,6 +139,7 @@ final class PanelController {
         // with keyboard navigation when the panel opens under the cursor.
         NSCursor.setHiddenUntilMouseMoves(true)
 
+        dismissalScope.beginPresentation { [weak panel] in panel?.close() }
         panel.makeKeyAndOrderFront(nil)
 
         // Bring our app to the front just enough to make the panel key,
@@ -161,6 +163,7 @@ final class PanelController {
     /// The `reason` tag flows through logs + breadcrumbs to make
     /// post-mortems easier to read.
     private func handleHide(reason: String) {
+        dismissalScope.invalidate()
         isVisible = false
         PanelVisibility.shared.set(false)
         scheduleStateReset()
@@ -238,7 +241,8 @@ final class PanelController {
     }
 
     private func installHostingView(_ view: PanelContentView, in panel: FloatingPanel) {
-        let hostingView = WindowTrackingHostingView(rootView: view)
+        dismissalScope.invalidate()
+        let hostingView = WindowTrackingHostingView(rootView: view.environment(\.panelDismissalScope, dismissalScope))
         hostingView.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hostingView
     }

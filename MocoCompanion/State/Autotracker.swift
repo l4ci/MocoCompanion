@@ -232,6 +232,7 @@ final class Autotracker {
     private let shadowEntryStore: ShadowEntryStore
     private let workspace: WorkspaceMonitor
     private let clock: () -> Date
+    private let calendar: Calendar
     private let settings: SettingsStore?
     private let declinedDefaults: UserDefaults
 
@@ -261,6 +262,7 @@ final class Autotracker {
     /// gets recorded.
     private let activationDebounce: Duration = .milliseconds(300)
     private var pendingAppChangeTask: Task<Void, Never>?
+    private var appChangeGeneration = 0
     /// Tail of the serialized workspace-event chain (see init).
     private var eventChain: Task<Void, Never>?
 
@@ -277,6 +279,12 @@ final class Autotracker {
 
     private var declinedSuggestionIds: Set<String> = []
     private var loadedDeclinedDate: String?
+    private var evaluationGeneration = 0
+
+#if DEBUG
+    /// Deterministic suspension point for overlapping-evaluation regressions.
+    var _testBeforeRuleEvaluation: ((Date) async -> Void)?
+#endif
 
     /// Called after entries are inserted into the shadow store (create-mode rules
     /// or approved suggestions). Allows AppState to refresh the Today panel.
@@ -291,6 +299,7 @@ final class Autotracker {
         settings: SettingsStore? = nil,
         workspace: WorkspaceMonitor? = nil,
         clock: @escaping () -> Date = Date.init,
+        calendar: Calendar = .current,
         declinedDefaults: UserDefaults = .standard
     ) {
         self.shadowEntryStore = shadowEntryStore
@@ -300,6 +309,7 @@ final class Autotracker {
         let resolvedWorkspace = workspace ?? NSWorkspaceMonitor()
         self.workspace = resolvedWorkspace
         self.clock = clock
+        self.calendar = calendar
         self.declinedDefaults = declinedDefaults
 
         // AppRecordStore is an actor — its recordCount() can't be awaited
@@ -362,8 +372,7 @@ final class Autotracker {
         // Let queued workspace events settle so none starts a segment after
         // the final flush below.
         await eventChain?.value
-        pendingAppChangeTask?.cancel()
-        pendingAppChangeTask = nil
+        cancelPendingAppChange()
         await flushCurrentSegment()
         workspace.stop()
         isRecording = false
@@ -374,10 +383,15 @@ final class Autotracker {
     private func handleWorkspaceEvent(_ event: WorkspaceEvent) async {
         switch event {
         case .appActivated(let bundleId, let appName, let windowTitle):
-            scheduleDebouncedAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            if filteredBundleIds.contains(bundleId) {
+                // Exclusion is an immediate recording boundary, even when a
+                // tracked activation is still waiting for its debounce.
+                await processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            } else {
+                scheduleDebouncedAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
+            }
         case .sleep:
-            pendingAppChangeTask?.cancel()
-            pendingAppChangeTask = nil
+            cancelPendingAppChange()
             await flushCurrentSegment()
             Self.atLogger.debug("Paused for sleep/session resign")
         case .wake:
@@ -387,12 +401,9 @@ final class Autotracker {
             // with stale app info — this path already reads currentFrontmost
             // itself, so any pending debounce is redundant at best and a
             // clobber at worst.
-            // Residual gap: if the 300ms deadline and this wake land in the
-            // same scheduling window, the debounce may pass its cancellation
-            // check first. It then enqueues behind this event, so the worst
-            // case is a brief stale segment, not a lost or duplicated one.
-            pendingAppChangeTask?.cancel()
-            pendingAppChangeTask = nil
+            // Generation validation also invalidates debounce work that has
+            // already been enqueued behind this event.
+            cancelPendingAppChange()
             if let frontmost = workspace.currentFrontmost {
                 await processAppChange(bundleId: frontmost.bundleId, appName: frontmost.appName, windowTitle: frontmost.windowTitle)
             }
@@ -409,20 +420,40 @@ final class Autotracker {
     /// could land in the middle of a chained flush/wake and clobber a
     /// segment either had just started.
     private func scheduleDebouncedAppChange(bundleId: String, appName: String, windowTitle: String?) {
-        pendingAppChangeTask?.cancel()
+        cancelPendingAppChange()
+        let generation = appChangeGeneration
         pendingAppChangeTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: self?.activationDebounce ?? .milliseconds(300))
             guard !Task.isCancelled, let self else { return }
-            self.enqueue { [weak self] in
-                await self?.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
-            }
+            self.enqueueDebouncedAppChange(bundleId: bundleId, appName: appName,
+                                           windowTitle: windowTitle, generation: generation)
+        }
+    }
+
+    private func cancelPendingAppChange() {
+        appChangeGeneration += 1
+        pendingAppChangeTask?.cancel()
+        pendingAppChangeTask = nil
+    }
+
+    private func enqueueDebouncedAppChange(bundleId: String, appName: String, windowTitle: String?, generation: Int) {
+        enqueue { [weak self] in
+            // Cancellation can happen after the timer fires but before this
+            // queued work executes (e.g. exclusion while a flush awaits IO).
+            guard let self, self.appChangeGeneration == generation else { return }
+            await self.processAppChange(bundleId: bundleId, appName: appName, windowTitle: windowTitle)
         }
     }
 
     // MARK: - Coalescing (internal for testing)
 
     func processAppChange(bundleId: String, appName: String, windowTitle: String? = nil) async {
-        guard !filteredBundleIds.contains(bundleId) else { return }
+        guard !filteredBundleIds.contains(bundleId) else {
+            cancelPendingAppChange()
+            await flushCurrentSegment()
+            currentAppName = nil
+            return
+        }
         let now = clock()
 
         if currentSegment == nil {
@@ -446,30 +477,31 @@ final class Autotracker {
         guard let segment = currentSegment else { return }
         currentSegment = nil
         let now = clock()
-        let duration = max(segment.lastSeenAt, now).timeIntervalSince(segment.startedAt)
-        if duration > 0 {
-            let record = AppRecord(
+        let end = max(segment.lastSeenAt, now)
+        var start = segment.startedAt
+        var records: [AppRecord] = []
+        // Calendar boundaries, rather than 86,400-second offsets, also work
+        // for the 23- and 25-hour days around daylight-saving transitions.
+        while start < end {
+            guard let day = calendar.dateInterval(of: .day, for: start), day.end > start else { break }
+            let pieceEnd = min(end, day.end)
+            records.append(AppRecord(
                 id: nil,
-                timestamp: segment.startedAt,
+                timestamp: start,
                 appBundleId: segment.bundleId,
                 appName: segment.appName,
                 windowTitle: segment.windowTitle,
-                durationSeconds: duration
-            )
-            // Maintained incrementally rather than re-querying
-            // `SELECT COUNT(*)` on every app/window switch — this runs on
-            // every flush, so an O(rows) count would scale with history size
-            // at the app's highest-frequency event.
-            if await appRecordStore.insert(record) {
-                recordCount += 1
-            }
+                durationSeconds: pieceEnd.timeIntervalSince(start)
+            ))
+            start = pieceEnd
         }
+        recordCount += await appRecordStore.insertMany(records)
     }
 
     // MARK: - App record queries (for TimelineViewModel)
 
     func records(for date: Date) async -> [AppRecord] {
-        await appRecordStore.records(for: date)
+        await appRecordStore.records(for: date, calendar: calendar)
     }
 
     /// Earliest date for which the autotracker still retains app records.
@@ -509,54 +541,68 @@ final class Autotracker {
 
     // MARK: - Rule Evaluation
 
+    /// Returns this invocation's result even if a newer evaluation supersedes
+    /// it. Only the latest invocation may publish the shared suggestions.
+    @discardableResult
     func evaluate(
         for date: Date,
         existingEntries: [ShadowEntry],
         events: [CalendarEvent] = [],
         timerRunning: Bool
-    ) async {
+    ) async -> [Suggestion] {
+        evaluationGeneration += 1
+        let generation = evaluationGeneration
+        var newSuggestions: [Suggestion] = []
+        defer {
+            if generation == evaluationGeneration {
+                suggestions = newSuggestions
+            }
+        }
         BreadcrumbTrail.shared.record("Autotracker", "Rule evaluation started")
         guard settings?.rulesEnabled == true else {
             Self.atLogger.debug("evaluate skipped — rulesEnabled is false")
-            suggestions = []
-            return
+            return []
         }
 
         // Rules only apply to today and future dates — never create
         // suggestions or auto-entries for past days.
-        let startOfToday = Calendar.current.startOfDay(for: clock())
+        let startOfToday = calendar.startOfDay(for: clock())
         guard date >= startOfToday else {
             Self.atLogger.debug("evaluate skipped — date is in the past")
-            suggestions = []
-            return
+            return []
         }
 
         let dateString = Self.atDateString(from: date)
         loadDeclinedIds(for: dateString)
+        // Another date's evaluation may run while store IO is suspended.
+        let declinedIds = declinedSuggestionIds
 
         let rules: [TrackingRule]
         do {
             rules = try await ruleStore.enabledRules()
         } catch {
             Self.atLogger.error("Failed to load enabled rules: \(error)")
-            suggestions = []
-            return
+            return []
         }
 
         guard !rules.isEmpty else {
             Self.atLogger.info("No enabled rules — skipping evaluation")
-            suggestions = []
-            return
+            return []
         }
 
         BreadcrumbTrail.shared.record("Autotracker", "Evaluating \(rules.count) rules")
         let windowTitlesEnabled = settings?.windowTitleTrackingEnabled == true
 
-        let records = await appRecordStore.records(for: date)
+        let records = await appRecordStore.records(for: date, calendar: calendar)
         let blocks = AppUsageBlock.merge(records)
 
-        var newSuggestions: [Suggestion] = []
+#if DEBUG
+        await _testBeforeRuleEvaluation?(date)
+#endif
         var entriesCreated = 0
+        var occupiedBookings = Set(existingEntries.filter { $0.sync.status != .pendingDelete }.map {
+            BookingKey(date: $0.date, projectId: $0.projectId, taskId: $0.taskId, startTime: $0.startTime)
+        })
         let nowDate = clock()
 
         await atEvaluateAppRules(
@@ -568,6 +614,8 @@ final class Autotracker {
             date: date,
             dateString: dateString,
             timerRunning: timerRunning,
+            declinedIds: declinedIds,
+            occupiedBookings: &occupiedBookings,
             entriesCreated: &entriesCreated,
             newSuggestions: &newSuggestions
         )
@@ -579,25 +627,27 @@ final class Autotracker {
                 existingEntries: existingEntries,
                 now: nowDate,
                 timerRunning: timerRunning,
+                declinedIds: declinedIds,
+                occupiedBookings: &occupiedBookings,
                 entriesCreated: &entriesCreated,
                 newSuggestions: &newSuggestions
             )
         }
 
-        suggestions = newSuggestions
         BreadcrumbTrail.shared.record("Autotracker", "Evaluation done: \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
         Self.atLogger.info("Evaluation complete: \(rules.count) rules, \(newSuggestions.count) suggestions, \(entriesCreated) entries created")
 
         if entriesCreated > 0 {
             await onEntryCreated?()
         }
+        return newSuggestions
     }
 
     // MARK: - Rule Evaluation Helpers
 
     /// Runs the app-block pass of the rule engine. Iterates over
     /// `appUsageBlocks`, filters `.app`-type rules, dedupes via
-    /// `atIsDuplicate`, and mutates the accumulators for entries
+    /// shared occupied booking keys, and mutates the accumulators for entries
     /// created or suggestions added. Called from `evaluate()`.
     private func atEvaluateAppRules(
         rules: [TrackingRule],
@@ -608,6 +658,8 @@ final class Autotracker {
         date: Date,
         dateString: String,
         timerRunning: Bool,
+        declinedIds: Set<String>,
+        occupiedBookings: inout Set<BookingKey>,
         entriesCreated: inout Int,
         newSuggestions: inout [Suggestion]
     ) async {
@@ -620,9 +672,9 @@ final class Autotracker {
                 let blockStartTime = Self.atTimeString(from: block.startTime)
                 let blockDuration = Int(block.durationSeconds)
 
-                if Self.atIsDuplicate(rule: rule, startTime: blockStartTime, existingEntries: existingEntries) {
-                    continue
-                }
+                let booking = BookingKey(date: dateString, projectId: rule.projectId,
+                                         taskId: rule.taskId, startTime: blockStartTime)
+                guard !occupiedBookings.contains(booking) else { continue }
 
                 switch rule.mode {
                 case .create:
@@ -642,7 +694,9 @@ final class Autotracker {
                             windowTitle: block.windowTitle,
                             now: now
                         )
-                        try await shadowEntryStore.insert(entry)
+                        let inserted = try await shadowEntryStore.insertIfBookingAbsent(entry)
+                        occupiedBookings.insert(booking)
+                        guard inserted else { continue }
                         entriesCreated += 1
                         Self.atLogger.info("Created entry for rule '\(rule.name)' at \(blockStartTime)")
                     } catch {
@@ -651,7 +705,7 @@ final class Autotracker {
 
                 case .suggest:
                     let suggestionId = "\(ruleId)-\(blockStartTime)"
-                    if declinedSuggestionIds.contains(suggestionId) { continue }
+                    if declinedIds.contains(suggestionId) { continue }
                     let resolvedDescription = Self.atResolveDescription(rule.description, appName: block.appName, windowTitle: block.windowTitle)
                     newSuggestions.append(Suggestion(
                         id: suggestionId,
@@ -674,7 +728,7 @@ final class Autotracker {
 
     /// Runs the calendar-event pass of the rule engine. Filters
     /// `.calendar`-type rules, gates each event on isAllDay / acceptance
-    /// / startDate-in-past, dedupes via `atIsDuplicate`, and mutates the
+    /// / startDate-in-past, dedupes via shared occupied booking keys, and mutates the
     /// accumulators. Called from `evaluate()` only when calendarEnabled
     /// and events is non-empty.
     private func atEvaluateCalendarRules(
@@ -683,6 +737,8 @@ final class Autotracker {
         existingEntries: [ShadowEntry],
         now: Date,
         timerRunning: Bool,
+        declinedIds: Set<String>,
+        occupiedBookings: inout Set<BookingKey>,
         entriesCreated: inout Int,
         newSuggestions: inout [Suggestion]
     ) async {
@@ -702,9 +758,9 @@ final class Autotracker {
                 let durationSeconds = max(event.durationMinutes * 60, 60)
                 let eventDateString = Self.atDateString(from: event.startDate)
 
-                if Self.atIsDuplicate(rule: rule, startTime: startTime, existingEntries: existingEntries) {
-                    continue
-                }
+                let booking = BookingKey(date: eventDateString, projectId: rule.projectId,
+                                         taskId: rule.taskId, startTime: startTime)
+                guard !occupiedBookings.contains(booking) else { continue }
 
                 let resolvedDescription = rule.description.isEmpty ? event.title : rule.description
 
@@ -731,7 +787,9 @@ final class Autotracker {
                         if rule.description.isEmpty {
                             entry.description = event.title
                         }
-                        try await shadowEntryStore.insert(entry)
+                        let inserted = try await shadowEntryStore.insertIfBookingAbsent(entry)
+                        occupiedBookings.insert(booking)
+                        guard inserted else { continue }
                         entriesCreated += 1
                         Self.atLogger.info("Created entry for calendar rule '\(rule.name)' at \(startTime)")
                     } catch {
@@ -740,7 +798,7 @@ final class Autotracker {
 
                 case .suggest:
                     let suggestionId = "\(ruleId)-\(startTime)"
-                    if declinedSuggestionIds.contains(suggestionId) { continue }
+                    if declinedIds.contains(suggestionId) { continue }
                     newSuggestions.append(Suggestion(
                         id: suggestionId,
                         ruleId: ruleId,
@@ -810,10 +868,10 @@ final class Autotracker {
         )
 
         do {
-            try await shadowEntryStore.insert(entry)
+            let inserted = try await shadowEntryStore.insertIfBookingAbsent(entry)
             suggestions.removeAll { $0.id == suggestion.id }
             Self.atLogger.info("Approved suggestion \(suggestion.id)")
-            await onEntryCreated?()
+            if inserted { await onEntryCreated?() }
         } catch {
             Self.atLogger.error("Failed to approve suggestion \(suggestion.id): \(error)")
         }
@@ -871,7 +929,8 @@ final class Autotracker {
             }
         }
 
-        if let pattern = rule.windowTitlePattern, !pattern.isEmpty, windowTitlesEnabled {
+        if let pattern = rule.windowTitlePattern, !pattern.isEmpty {
+            guard windowTitlesEnabled else { return false }
             hasAnyCriterion = true
             // A rule that demands a window title requires the block to
             // actually have one captured. Feature disabled → rule skipped.
@@ -894,12 +953,12 @@ final class Autotracker {
         return event.title.localizedCaseInsensitiveContains(pattern)
     }
 
-    private static func atIsDuplicate(rule: TrackingRule, startTime: String, existingEntries: [ShadowEntry]) -> Bool {
-        existingEntries.contains { entry in
-            entry.projectId == rule.projectId
-                && entry.taskId == rule.taskId
-                && entry.startTime == startTime
-        }
+    /// The same identity is checked atomically by ShadowEntryStore on insert.
+    private struct BookingKey: Hashable {
+        var date: String
+        var projectId: Int
+        var taskId: Int
+        var startTime: String?
     }
 
     // MARK: - Description Template
@@ -1017,6 +1076,17 @@ final class Autotracker {
 
 #if DEBUG
 extension Autotracker {
+    /// Simulates a debounce timer expiring and enqueueing its activation,
+    /// without wall-clock sleeps. Exercises the production generation check.
+    func _testEnqueueDebouncedAppChange(bundleId: String, appName: String) {
+        enqueueDebouncedAppChange(bundleId: bundleId, appName: appName,
+                                  windowTitle: nil, generation: appChangeGeneration)
+    }
+
+    func _testDrainWorkspaceEvents() async {
+        await eventChain?.value
+    }
+
     /// Test-only wrapper around the private `atRuleMatches` overload for
     /// calendar events. Exposes the matcher so unit tests can exercise it
     /// without going through the full `evaluate` pipeline. DO NOT use in

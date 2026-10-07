@@ -675,7 +675,7 @@ struct TimelineViewModelTests {
     }
 
     @MainActor
-    private func makeViewModel(shadowEntryStore: ShadowEntryStore? = nil) throws -> TimelineViewModel {
+    private func makeViewModel(shadowEntryStore: ShadowEntryStore? = nil, snapshotLoader: (@MainActor (Date) async -> TimelineViewModel.Snapshot)? = nil, suggestionEvaluator: (@MainActor (Date, TimelineViewModel.Snapshot) async -> [Suggestion])? = nil) throws -> TimelineViewModel {
         let store = try shadowEntryStore ?? makeShadowEntryStore()
         let appRecordStore = try AppRecordStore(inMemory: true)
         let rulesDb = try SQLiteDatabase(path: ":memory:")
@@ -690,7 +690,9 @@ struct TimelineViewModelTests {
         return TimelineViewModel(
             shadowEntryStore: store,
             autotracker: autotracker,
-            syncState: syncState
+            syncState: syncState,
+            snapshotLoader: snapshotLoader,
+            suggestionEvaluator: suggestionEvaluator
         )
     }
 
@@ -800,5 +802,137 @@ struct TimelineViewModelTests {
         let copy = try #require(entries.first { $0.id != 8 })
         #expect(copy.startTime == nil)
         #expect(copy.sync.status == .pendingCreate)
+    }
+}
+
+@MainActor
+private final class TimelineLoadGate<Value: Sendable> {
+    private var pending: [Date: CheckedContinuation<Value, Never>] = [:]
+    private var started: [Date: CheckedContinuation<Void, Never>] = [:]
+
+    func load(_ date: Date) async -> Value {
+        await withCheckedContinuation { continuation in
+            pending[date] = continuation
+            started.removeValue(forKey: date)?.resume()
+        }
+    }
+
+    func waitUntilStarted(_ date: Date) async {
+        if pending[date] != nil { return }
+        await withCheckedContinuation { started[date] = $0 }
+    }
+
+    func finish(_ date: Date, with value: Value) {
+        pending.removeValue(forKey: date)?.resume(returning: value)
+    }
+}
+
+extension TimelineViewModelTests {
+    private func snapshot(date: Date, id: Int) -> TimelineViewModel.Snapshot {
+        let entry = ShadowEntry.from(TestFactories.makeActivity(id: id, date: TimelineGeometry.dateString(from: date)))
+        let record = AppRecord(id: Int64(id), timestamp: date, appBundleId: "app.\(id)",
+            appName: "App \(id)", windowTitle: nil, durationSeconds: 600)
+        let event = CalendarEvent(id: "event-\(id)", calendarItemIdentifier: "item-\(id)",
+            title: "Event \(id)", location: nil, startDate: date, endDate: date.addingTimeInterval(600),
+            isAllDay: false, isAcceptedByUser: true, calendarColorHex: "#336699")
+        return .init(entries: [entry], records: [record], events: [event])
+    }
+
+    @Test("Older date loads cannot replace newer entries, records, events or loading state", arguments: [true, false])
+    @MainActor func overlappingDateLoads(oldFinishesFirst: Bool) async throws {
+        let gate = TimelineLoadGate<TimelineViewModel.Snapshot>()
+        var evaluatedDates: [Date] = []
+        let vm = try makeViewModel(snapshotLoader: { await gate.load($0) }, suggestionEvaluator: { date, _ in
+            evaluatedDates.append(date)
+            return []
+        })
+        let a = Date(timeIntervalSince1970: 1_700_000_000)
+        let b = a.addingTimeInterval(86_400)
+        let firstSnapshot = snapshot(date: a, id: 1)
+        let secondSnapshot = snapshot(date: b, id: 2)
+        vm.selectedDate = a
+        let first = Task { await vm.loadData() }
+        await gate.waitUntilStarted(a)
+        vm.selectedDate = b
+        let second = Task { await vm.loadData() }
+        await gate.waitUntilStarted(b)
+        #expect(vm.isLoading)
+        if oldFinishesFirst {
+            gate.finish(a, with: firstSnapshot)
+            await first.value
+            #expect(vm.isLoading)
+            #expect(vm.shadowEntries.isEmpty)
+            #expect(vm.appRecords.isEmpty)
+            #expect(vm.calendarEvents.isEmpty)
+        }
+        gate.finish(b, with: secondSnapshot)
+        await second.value
+        #expect(!vm.isLoading)
+        if !oldFinishesFirst {
+            gate.finish(a, with: firstSnapshot)
+            await first.value
+        }
+        #expect(vm.shadowEntries == secondSnapshot.entries)
+        #expect(vm.appRecords == secondSnapshot.records)
+        #expect(vm.calendarEvents == secondSnapshot.events)
+        #expect(vm.unpositionedEntries == secondSnapshot.entries)
+        #expect(!vm.isLoading)
+        #expect(evaluatedDates == [b])
+    }
+
+    @Test("Late rule evaluation cannot overwrite the current date's suggestions")
+    @MainActor func overlappingEvaluation() async throws {
+        let gate = TimelineLoadGate<[Suggestion]>()
+        let a = Date(timeIntervalSince1970: 1_700_000_000)
+        let b = a.addingTimeInterval(86_400)
+        let vm = try makeViewModel(snapshotLoader: { _ in .init(entries: [], records: [], events: []) },
+            suggestionEvaluator: { date, _ in await gate.load(date) })
+        func suggestion(_ id: String) -> Suggestion {
+            Suggestion(id: id, ruleId: 1, ruleName: "Rule", startTime: "09:00", durationSeconds: 600,
+                projectId: 1, projectName: "Project", taskId: 1, taskName: "Task",
+                description: "", appName: "App", appBundleId: nil)
+        }
+        vm.selectedDate = a
+        let first = Task { await vm.loadData() }
+        await gate.waitUntilStarted(a)
+        vm.selectedDate = b
+        #expect(vm.suggestions.isEmpty)
+        let second = Task { await vm.loadData() }
+        await gate.waitUntilStarted(b)
+        gate.finish(b, with: [suggestion("b")])
+        await second.value
+        gate.finish(a, with: [suggestion("a")])
+        await first.value
+        #expect(vm.suggestions.map(\.id) == ["b"])
+        #expect(!vm.isLoading)
+    }
+}
+
+extension TimelineViewModelTests {
+    @Test("An older refresh of the same date cannot overwrite the latest snapshot")
+    @MainActor func overlappingSameDateLoads() async throws {
+        let firstGate = TimelineLoadGate<TimelineViewModel.Snapshot>()
+        let secondGate = TimelineLoadGate<TimelineViewModel.Snapshot>()
+        var requests = 0
+        let vm = try makeViewModel(snapshotLoader: { date in
+            requests += 1
+            if requests == 1 { return await firstGate.load(date) }
+            return await secondGate.load(date)
+        }, suggestionEvaluator: { _, _ in [] })
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        vm.selectedDate = date
+        let first = Task { await vm.loadData() }
+        await firstGate.waitUntilStarted(date)
+        let second = Task { await vm.loadData() }
+        await secondGate.waitUntilStarted(date)
+        let latest = snapshot(date: date, id: 2)
+        secondGate.finish(date, with: latest)
+        await second.value
+        firstGate.finish(date, with: snapshot(date: date, id: 1))
+        await first.value
+        #expect(vm.shadowEntries == latest.entries)
+        #expect(vm.appRecords == latest.records)
+        #expect(vm.calendarEvents == latest.events)
+        #expect(!vm.isLoading)
     }
 }

@@ -21,6 +21,95 @@ struct ActivityServiceTests {
         return (service, capturedAPI)
     }
 
+    @Test("Offline persistence failure returns failure without publishing success")
+    @MainActor func offlinePersistenceFailure() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let path = directory.appendingPathComponent("shadow.sqlite").path
+        let store = try ShadowEntryStore(database: SQLiteDatabase(path: path))
+        let connection = try SQLiteDatabase(path: path)
+        try connection.execute("CREATE TRIGGER fail_insert BEFORE INSERT ON shadow_entries BEGIN SELECT RAISE(FAIL, 'injected storage failure'); END")
+        var api = MockActivityAPI()
+        api.createActivityHandler = { _, _, _, _, _, _ in
+            throw MocoError.networkError(URLError(.notConnectedToInternet))
+        }
+        var notifications: [NotificationCatalog.NotificationType] = []
+        let service = ActivityService(clientFactory: { api }, notificationDispatcher: NotificationDispatcher {
+            notifications.append($0)
+            return false
+        }, userIdProvider: { 42 })
+        service.syncEngine = SyncEngine(store: store, clientFactory: { @Sendable in nil }, userIdProvider: { @Sendable in 42 }, syncState: SyncState())
+        let usage = RecordingUsage()
+        service.usageRecorder = usage
+
+        let result = await service.bookManualEntry(date: DateUtilities.todayString(), projectId: 100, taskId: 200,
+                                                  projectName: "Project", taskName: "Task", customerName: "Customer",
+                                                  description: "do not lose this", seconds: 1800)
+        guard case .failure = result else {
+            Issue.record("Booking must fail if its only durable copy could not be saved")
+            return
+        }
+        #expect(service.todayActivities.isEmpty)
+        #expect(service.todayTotalHours == 0)
+        #expect(usage.count == 0)
+        #expect(notifications == [.apiError])
+        #expect(try await store.dirtyEntries().isEmpty)
+    }
+
+    @Test("Timer snapshot preserves local rows and metadata without another API request", arguments: [false, true])
+    @MainActor func timerSnapshotPreservesLocalRows(useStore: Bool) async throws {
+        let today = DateUtilities.todayString()
+        let store = try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:"))
+        let (service, _) = makeService()
+        var draft1 = TestFactories.makeShadowEntry(localId: "draft-one", syncStatus: .pendingCreate)
+        draft1.id = nil
+        var draft2 = TestFactories.makeShadowEntry(localId: "draft-two", syncStatus: .pendingCreate)
+        draft2.id = nil
+        let dirty = TestFactories.makeShadowEntry(id: 20, description: "local edit", syncStatus: .dirty)
+        let tombstone = TestFactories.makeShadowEntry(id: 30, syncStatus: .pendingDelete)
+        var synced = TestFactories.makeShadowEntry(id: 40, startTime: "2026-01-01T10:00:00Z")
+        synced.origin.appBundleId = "com.example.editor"
+        synced.origin.ruleId = 17
+        synced.origin.calendarEventId = "meeting"
+        let deletedRemotely = TestFactories.makeShadowEntry(id: 50)
+        let rows = [draft1, draft2, dirty, tombstone, synced, deletedRemotely]
+        service.applyFetchedTodayActivities(rows)
+        if useStore {
+            for row in rows { try await store.insert(row) }
+            service.syncEngine = SyncEngine(store: store, clientFactory: { @Sendable in nil }, userIdProvider: { @Sendable in 42 }, syncState: SyncState())
+        }
+        var fetchCount = 0
+        var api = MockTimerAPI()
+        api.fetchActivitiesHandler = { from, to, userId in
+            fetchCount += 1
+            #expect(from == today && to == today && userId == 42)
+            return [TestFactories.makeActivity(id: 20, description: "old server edit"),
+                    TestFactories.makeActivity(id: 30),
+                    TestFactories.makeActivity(id: 40, description: "fresh server value", timerStartedAt: "2026-01-01T10:00:00Z")]
+        }
+        let timer = TimerService(clientFactory: { api }, userIdProvider: { 42 }, activitySync: service)
+        await timer.sync()
+
+        #expect(fetchCount == 1)
+        #expect(service.todayActivities.count == 4)
+        #expect(Set(service.todayActivities.compactMap(\.localId)) == ["draft-one", "draft-two"])
+        #expect(service.todayActivities.filter { $0.id == nil }.count == 2)
+        #expect(service.todayActivities.first { $0.id == 20 }?.description == "local edit")
+        #expect(!service.todayActivities.contains { $0.id == 30 || $0.id == 50 })
+        let merged = try #require(service.todayActivities.first { $0.id == 40 })
+        #expect(merged.description == "fresh server value")
+        #expect(merged.origin.appBundleId == synced.origin.appBundleId)
+        #expect(merged.origin.ruleId == synced.origin.ruleId)
+        #expect(merged.origin.calendarEventId == synced.origin.calendarEventId)
+        #expect(merged.startTime == synced.startTime)
+        #expect(timer.currentActivity == merged)
+        if useStore {
+            #expect(try await store.entry(id: 30)?.sync.status == .pendingDelete)
+            #expect(try await store.entry(localId: "draft-one")?.id == nil)
+        }
+    }
+
     // MARK: - refreshTodayStats
 
     @Test("refreshTodayStats populates activities and recomputes hours/billable percentage")
@@ -472,4 +561,10 @@ final class MockTimerStopProvider: TimerStopProvider {
     func stopTimerIfActive(activityId: Int) async {
         stoppedActivityId = activityId
     }
+}
+
+@MainActor
+private final class RecordingUsage: UsageRecording {
+    var count = 0
+    func recordUsage(projectId: Int, taskId: Int, description: String) { count += 1 }
 }

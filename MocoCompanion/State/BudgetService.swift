@@ -30,7 +30,8 @@ final class BudgetService {
         let report: MocoProjectReport
         let fullProject: MocoFullProject
         let contracts: [MocoProjectContract]
-        let fetchedAt: Date
+        let reportFetchedAt: Date
+        let detailsFetchedAt: Date
     }
 
     // MARK: - Test Inspection
@@ -64,13 +65,16 @@ final class BudgetService {
 
     private let clientFactory: () -> (any BudgetAPI)?
     private let userIdProvider: () -> Int?
+    private let now: () -> Date
 
     init(
         clientFactory: @escaping () -> (any BudgetAPI)?,
-        userIdProvider: @escaping () -> Int? = { nil }
+        userIdProvider: @escaping () -> Int? = { nil },
+        now: @escaping () -> Date = { .now }
     ) {
         self.clientFactory = clientFactory
         self.userIdProvider = userIdProvider
+        self.now = now
     }
 
     // MARK: - Public Query API
@@ -122,28 +126,36 @@ final class BudgetService {
     ) async -> Bool {
         do {
             let existingCache = projectCaches[projectId]
-            let cacheAge = existingCache.map { Date.now.timeIntervalSince($0.fetchedAt) } ?? .infinity
-            let reuseDetails = cacheAge < 300  // 5 minutes for project/contracts
+            let current = now()
+            let reportAge = existingCache.map { current.timeIntervalSince($0.reportFetchedAt) } ?? .infinity
+            let detailsAge = existingCache.map { current.timeIntervalSince($0.detailsFetchedAt) } ?? .infinity
+            let reuseReport = reportAge < 60
+            let reuseDetails = detailsAge < 300
 
-            // Skip entirely if the whole cache (including report) is fresh (<60s)
-            // This prevents redundant fetches when multiple triggers fire close together
-            if cacheAge < 60 {
-                logger.debug("Budget cache for project \(projectId) is fresh (\(Int(cacheAge))s) — skipping")
-                return false
+            if reuseReport && reuseDetails { return false }
+
+            let report: MocoProjectReport
+            let reportFetchedAt: Date
+            if reuseReport, let existing = existingCache {
+                report = existing.report
+                reportFetchedAt = existing.reportFetchedAt
+            } else {
+                report = try await client.fetchProjectReport(projectId: projectId)
+                reportFetchedAt = now()
             }
-
-            // Always fetch report (changes frequently) unless very recent
-            let report = try await client.fetchProjectReport(projectId: projectId)
 
             let fullProject: MocoFullProject
             let contracts: [MocoProjectContract]
+            let detailsFetchedAt: Date
 
             if reuseDetails, let existing = existingCache {
                 fullProject = existing.fullProject
                 contracts = existing.contracts
+                detailsFetchedAt = existing.detailsFetchedAt
             } else {
                 fullProject = try await client.fetchProject(id: projectId)
                 contracts = await fetchContractsSafely(projectId: projectId, client: client)
+                detailsFetchedAt = now()
             }
 
             storeCache(
@@ -151,7 +163,8 @@ final class BudgetService {
                     report: report,
                     fullProject: fullProject,
                     contracts: contracts,
-                    fetchedAt: Date.now
+                    reportFetchedAt: reportFetchedAt,
+                    detailsFetchedAt: detailsFetchedAt
                 ),
                 for: projectId
             )

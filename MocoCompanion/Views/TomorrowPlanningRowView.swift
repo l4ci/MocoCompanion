@@ -19,6 +19,18 @@ struct TomorrowPlanningRowView: View {
     private var captionSize: CGFloat { 12 + fontBoost }
 
     var body: some View {
+        Button {
+            guard let searchEntry = TodayViewModel.searchEntry(for: entry) else { return }
+            onStartEntry?(searchEntry)
+        } label: {
+            rowContent
+        }
+        .buttonStyle(.plain)
+        .disabled(TodayViewModel.searchEntry(for: entry) == nil || onStartEntry == nil)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 10) {
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: captionSize))
@@ -70,17 +82,6 @@ struct TomorrowPlanningRowView: View {
         .onHover { hovering in
             isHovered = hovering
             onHover?(hovering)
-        }
-        .onTapGesture {
-            guard let project = entry.project, let task = entry.task else { return }
-            let searchEntry = SearchEntry(
-                projectId: project.id,
-                taskId: task.id,
-                customerName: project.customerName ?? "",
-                projectName: project.name,
-                taskName: task.name
-            )
-            onStartEntry?(searchEntry)
         }
     }
 }

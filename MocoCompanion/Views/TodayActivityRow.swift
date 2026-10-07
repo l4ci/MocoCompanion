@@ -40,8 +40,8 @@ struct TodayActivityRow: View {
     private var captionSize: CGFloat { 12 + fontBoost }
 
     var body: some View {
-        let isEditing = editingActivityId == activity.id
-        let isDeleting = deletingActivityId == activity.id
+        let isEditing = activity.matchesServerSelection(editingActivityId)
+        let isDeleting = activity.matchesServerSelection(deletingActivityId)
 
         VStack(spacing: 0) {
             if isDeleting {

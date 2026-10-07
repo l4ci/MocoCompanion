@@ -49,6 +49,7 @@ struct ShadowEntry: Sendable, Equatable {
         var localUpdatedAt: String
         var serverUpdatedAt: String
         var conflictFlag: Bool
+        var revision: Int = 0
     }
 
     /// Local-only metadata that records where the entry came from when it
@@ -83,6 +84,8 @@ struct ShadowEntry: Sendable, Equatable {
     mutating func copyLocalOnlyFields(from other: ShadowEntry) {
         self.startTime = other.startTime
         self.origin = other.origin
+        // Keeps a promoted draft's UI identity stable across server refreshes.
+        self.localId = other.localId
     }
 
     /// Whether the timer is currently running on this entry.

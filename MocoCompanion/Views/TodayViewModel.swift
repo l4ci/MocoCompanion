@@ -30,10 +30,12 @@ final class TodayViewModel {
         didSet {
             selectedIndex = 0
             selectedActivityId = nil
+            selectedActivityKey = nil
         }
     }
     var selectedIndex = 0
     var selectedActivityId: Int?
+    private(set) var selectedActivityKey: String?
     var hoveredActivityId: Int?
     var editingActivityId: Int?
     var deletingActivityId: Int?
@@ -80,7 +82,6 @@ final class TodayViewModel {
             _plannedHoursMap = nil
         case .yesterday:
             await activityService.refreshYesterdayActivities()
-            recomputeYesterdayStats()
         case .tomorrow:
             await planningStore.refreshAllPlanning()
             _plannedHoursMap = nil
@@ -97,7 +98,6 @@ final class TodayViewModel {
         BreadcrumbTrail.shared.record("TodayViewModel", "Loading from local store")
         await activityService.loadTodayFromStore()
         await activityService.loadYesterdayFromStore()
-        recomputeYesterdayStats()
     }
 
     // MARK: - Full API Refresh
@@ -108,7 +108,6 @@ final class TodayViewModel {
 
     func refreshYesterdayActivities() async {
         await activityService.refreshYesterdayActivities()
-        recomputeYesterdayStats()
     }
 
     func refreshAllPlanning() async {
@@ -182,22 +181,15 @@ final class TodayViewModel {
         return map
     }
 
-    /// Yesterday total hours — cached; recomputed only when yesterdayActivities are refreshed.
-    private(set) var yesterdayTotalHours: Double = 0
+    var yesterdayTotalHours: Double {
+        yesterdayActivities.reduce(0) { $0 + $1.hours }
+    }
 
-    /// Yesterday billable percentage [0, 100] — cached; recomputed only when yesterdayActivities are refreshed.
-    private(set) var yesterdayBillablePercentage: Double = 0
-
-    private func recomputeYesterdayStats() {
-        let activities = activityService.yesterdayActivities
-        yesterdayTotalHours = activities.reduce(0.0) { $0 + $1.hours }
-        var total = 0.0
-        var billable = 0.0
-        for a in activities {
-            total += a.hours
-            if a.billable { billable += a.hours }
-        }
-        yesterdayBillablePercentage = total > 0 ? (billable / total) * 100 : 0
+    /// Derived from observable activities, including local edits, deletes and undo.
+    var yesterdayBillablePercentage: Double {
+        let total = yesterdayTotalHours
+        let billable = yesterdayActivities.reduce(0.0) { $0 + ($1.billable ? $1.hours : 0) }
+        return total > 0 ? billable / total * 100 : 0
     }
 
     // MARK: - Forwarded State (TimerService)
@@ -235,6 +227,7 @@ final class TodayViewModel {
 
     /// Total navigable items (tracked + unplanned on today).
     var totalNavigableCount: Int {
+        if isTomorrow { return tomorrowPlanningEntries.count }
         let base = sortedActivities.count
         if selectedDay == .today { return base + planningStore.unplannedTasks.count }
         return base
@@ -271,15 +264,17 @@ final class TodayViewModel {
         trackSelectedId()
     }
 
-    func selectByShortcut(_ shortcut: Int) {
+    @discardableResult
+    func selectByShortcut(_ shortcut: Int) -> Bool {
         let activeIdx = activeEntryIndex ?? -1
         var mapped = shortcut
         if activeIdx >= 0 && mapped >= activeIdx {
             mapped += 1
         }
-        guard mapped >= 0 && mapped < totalNavigableCount else { return }
+        guard mapped >= 0 && mapped < totalNavigableCount else { return false }
         selectedIndex = mapped
         trackSelectedId()
+        return true
     }
 
     func shortcutIndex(for listIndex: Int) -> Int {
@@ -295,12 +290,16 @@ final class TodayViewModel {
         // Bump version to force re-render even if selectedIndex stays the same
         dataVersion &+= 1
 
-        if let targetId = selectedActivityId,
+        if let key = selectedActivityKey,
+           let newIndex = sortedActivities.firstIndex(where: { $0.uiIdentity == key }) {
+            selectedIndex = newIndex
+            trackSelectedId()
+        } else if let targetId = selectedActivityId,
            let newIndex = sortedActivities.firstIndex(where: { $0.id == targetId }) {
             selectedIndex = newIndex
         } else {
             // Selected entry was deleted or not found — clamp and update
-            selectedIndex = max(0, min(selectedIndex, sortedActivities.count - 1))
+            selectedIndex = max(0, min(selectedIndex, totalNavigableCount - 1))
             trackSelectedId()
         }
     }
@@ -308,6 +307,10 @@ final class TodayViewModel {
     func trackSelectedId() {
         if sortedActivities.indices.contains(selectedIndex) {
             selectedActivityId = sortedActivities[selectedIndex].id
+            selectedActivityKey = sortedActivities[selectedIndex].uiIdentity
+        } else {
+            selectedActivityId = nil
+            selectedActivityKey = nil
         }
     }
 
@@ -316,7 +319,11 @@ final class TodayViewModel {
     /// Primary Enter action — unified logic for all days and selection types.
     /// Returns the action result so the caller can decide on panel dismiss.
     func performEntryAction() -> TimerActionResult {
-        guard !isTomorrow else { return .noOp }
+        if isTomorrow {
+            guard tomorrowPlanningEntries.indices.contains(selectedIndex),
+                  let entry = Self.searchEntry(for: tomorrowPlanningEntries[selectedIndex]) else { return .noOp }
+            return .selectedPlannedEntry(entry)
+        }
 
         // Unplanned task → switch to Track tab with entry pre-selected for description
         if let task = selectedUnplannedTask {
@@ -332,7 +339,7 @@ final class TodayViewModel {
 
         guard sortedActivities.indices.contains(selectedIndex) else { return .noOp }
         let activity = sortedActivities[selectedIndex]
-        selectedActivityId = activity.id
+        trackSelectedId()
 
         if isYesterday {
             Task {
@@ -350,7 +357,7 @@ final class TodayViewModel {
 
     /// ⌘+Zahl shortcut action — select by shortcut index, then perform tracking action.
     func performShortcutAction(_ shortcut: Int) -> TimerActionResult {
-        selectByShortcut(shortcut)
+        guard selectByShortcut(shortcut) else { return .noOp }
         return performEntryAction()
     }
 
@@ -358,7 +365,7 @@ final class TodayViewModel {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
         let activity = sortedActivities[selectedIndex]
-        guard !activity.isReadOnly else { return }
+        guard !activity.isReadOnly, activity.id != nil else { return }
         editingActivityId = activity.id
     }
 
@@ -366,7 +373,7 @@ final class TodayViewModel {
         guard !isTomorrow else { return }
         guard sortedActivities.indices.contains(selectedIndex) else { return }
         let activity = sortedActivities[selectedIndex]
-        guard !activity.isReadOnly else { return }
+        guard !activity.isReadOnly, activity.id != nil else { return }
         deletingActivityId = activity.id
     }
 
@@ -388,6 +395,13 @@ final class TodayViewModel {
         guard sortedActivities.indices.contains(selectedIndex) else { return nil }
         let activity = sortedActivities[selectedIndex]
         return (activity.description, activity.hours.formatted(.number.precision(.fractionLength(2))))
+    }
+
+    static func searchEntry(for planning: MocoPlanningEntry) -> SearchEntry? {
+        guard let project = planning.project, let task = planning.task else { return nil }
+        return SearchEntry(projectId: project.id, taskId: task.id,
+                           customerName: project.customerName ?? "",
+                           projectName: project.name, taskName: task.name)
     }
 
     // MARK: - Private

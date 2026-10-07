@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import MocoCompanion
 
@@ -236,5 +237,181 @@ struct ShadowEntryStoreTests {
                 "updateFromServerSQL must not reference local-only column '\(column)'"
             )
         }
+    }
+}
+
+extension ShadowEntryStoreTests {
+    @Test("Draft server identity remains nil and cannot collide with a remote row")
+    func draftIdentity() async throws {
+        let store = try makeStore()
+        try await store.insert(TestFactories.makeShadowEntry(id: 100))
+        var draft = TestFactories.makeShadowEntry(localId: "draft", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        try await store.insert(TestFactories.makeShadowEntry(id: 101))
+        #expect(try await store.entry(localId: "draft")?.id == nil)
+        #expect(try await store.entry(id: 101)?.localId == nil)
+    }
+
+    @Test("An acknowledgement preserves a newer edit even with the same timestamp")
+    func acknowledgeNewerRevision() async throws {
+        let store = try makeStore()
+        try await store.insert(TestFactories.makeShadowEntry(id: 1, description: "A", syncStatus: .dirty))
+        let sent = try #require(await store.entry(id: 1))
+        var newer = sent
+        newer.description = "B"
+        try await store.update(newer)
+        #expect(try await store.acknowledgeUpdate(sent: sent, response: TestFactories.makeActivity(id: 1, description: "A")))
+        let current = try #require(await store.entry(id: 1))
+        #expect(current.description == "B")
+        #expect(current.sync.status == .dirty)
+        #expect(current.sync.revision > sent.sync.revision)
+    }
+
+    @Test("An acknowledgement cannot erase an undoable deletion")
+    func acknowledgePreservesDelete() async throws {
+        let store = try makeStore()
+        try await store.insert(TestFactories.makeShadowEntry(id: 1, syncStatus: .dirty))
+        let sent = try #require(await store.entry(id: 1))
+        _ = try await store.beginUndoableDelete(id: 1)
+        _ = try await store.acknowledgeUpdate(sent: sent, response: TestFactories.makeActivity(id: 1))
+        #expect(try await store.entry(id: 1)?.sync.status == .pendingDelete)
+        #expect(try await store.dirtyEntries().isEmpty)
+        await store.commitUndoableDelete(id: 1)
+        #expect(try await store.dirtyEntries().count == 1)
+    }
+
+    @Test("Promotion preserves edits made during POST and merges an already-pulled remote row")
+    func promoteEditedDraft() async throws {
+        let store = try makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "draft", description: "A", startTime: "09:00", syncStatus: .pendingCreate)
+        draft.id = nil
+        draft.origin.appBundleId = "com.test.app"
+        try await store.insert(draft)
+        let sent = try #require(await store.entry(localId: "draft"))
+        draft.description = "B"
+        try await store.updateByLocalId(draft)
+        try await store.insert(TestFactories.makeShadowEntry(id: 100))
+        #expect(try await store.promoteDraft(sent: sent, response: TestFactories.makeActivity(id: 100, description: "A")))
+        let promoted = try #require(await store.entry(id: 100))
+        #expect(promoted.description == "B")
+        #expect(promoted.sync.status == .dirty)
+        #expect(promoted.startTime == "09:00")
+        #expect(promoted.origin.appBundleId == "com.test.app")
+        #expect(promoted.uiIdentity == sent.uiIdentity)
+    }
+
+    @Test("Promotion keeps the row's UI identity so selection survives")
+    func promotionKeepsUIIdentity() async throws {
+        let store = try makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "stable", description: "A", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        let sent = try #require(await store.entry(localId: "stable"))
+        let before = sent.uiIdentity
+        #expect(try await store.promoteDraft(sent: sent, response: TestFactories.makeActivity(id: 100, description: "A")) == false)
+        let promoted = try #require(await store.entry(id: 100))
+        #expect(promoted.uiIdentity == before)
+        // A later server refresh must not drop it either.
+        try await store.mergeFetchedActivity(TestFactories.makeActivity(id: 100, description: "A"))
+        #expect(try await store.entry(id: 100)?.uiIdentity == before)
+    }
+
+    @Test("Failed promotion rolls back both draft deletion and existing remote deletion")
+    func promotionRollback() async throws {
+        let db = try SQLiteDatabase(path: ":memory:")
+        let store = try ShadowEntryStore(database: db)
+        var draft = TestFactories.makeShadowEntry(localId: "draft", startTime: "09:00", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        try await store.insert(TestFactories.makeShadowEntry(id: 100, description: "existing"))
+        try await store._testExecute("CREATE TRIGGER reject_promotion BEFORE INSERT ON shadow_entries WHEN NEW.id = 100 BEGIN SELECT RAISE(ABORT, 'forced failure'); END")
+        do {
+            _ = try await store.promoteDraft(sent: draft, response: TestFactories.makeActivity(id: 100))
+            Issue.record("Expected failed promotion")
+        } catch { }
+        #expect(try await store.entry(localId: "draft")?.startTime == "09:00")
+        #expect(try await store.entry(id: 100)?.description == "existing")
+    }
+
+    @Test("Version 3 migration clears synthetic draft IDs and preserves metadata")
+    func migrateLegacyDrafts() async throws {
+        let db = try SQLiteDatabase(path: ":memory:")
+        let legacySchema = ShadowEntryStore.createTableSQL
+            .replacingOccurrences(of: "row_id INTEGER PRIMARY KEY,", with: "")
+            .replacingOccurrences(of: "id INTEGER UNIQUE,", with: "id INTEGER PRIMARY KEY,")
+            .replacingOccurrences(of: "local_revision INTEGER NOT NULL DEFAULT 0,", with: "")
+        try db.execute(legacySchema)
+        try db.execute("PRAGMA user_version = 3")
+        let columns = try db.query("PRAGMA table_info(shadow_entries)")
+        let required = columns.filter { ($0["notnull"] as? Int64) == 1 && $0["dflt_value"] is NSNull }
+        let names = required.compactMap { $0["name"] as? String }
+        let values: [Any?] = required.map { ($0["type"] as? String) == "TEXT" ? "" as Any : 0 as Any }
+        let placeholders = Array(repeating: "?", count: names.count).joined(separator: ",")
+        try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (100, \(placeholders))", params: values)
+        try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (101, \(placeholders))", params: values)
+        try db.execute("UPDATE shadow_entries SET local_id = 'legacy', sync_status = 'pending_create', start_time = '10:30' WHERE id = 101")
+        // A synced row that merely carries a local_id keeps its server id.
+        try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (102, \(placeholders))", params: values)
+        try db.execute("UPDATE shadow_entries SET local_id = 'synced-legacy', sync_status = 'synced' WHERE id = 102")
+        let migrated = try ShadowEntryStore(database: db)
+        #expect(try await migrated.entry(id: 102)?.localId == "synced-legacy")
+        #expect(try await migrated.entry(id: 102)?.sync.status == .synced)
+        #expect(try await migrated.entry(localId: "legacy")?.id == nil)
+        #expect(try await migrated.entry(localId: "legacy")?.startTime == "10:30")
+        #expect(try await migrated.entry(id: 100) != nil)
+        try await migrated.insert(TestFactories.makeShadowEntry(id: 101))
+        #expect(await migrated.databaseUserVersion == ShadowEntryStore.schemaVersion)
+    }
+}
+
+extension ShadowEntryStoreTests {
+    @Test("Promotion retains edits or undoable tombstones on an already-present remote row")
+    func promotePreservesRemoteIntent() async throws {
+        for status in [SyncStatus.dirty, .pendingDelete] {
+            let store = try makeStore()
+            var draft = TestFactories.makeShadowEntry(localId: "draft", startTime: "09:00", syncStatus: .pendingCreate)
+            draft.id = nil
+            try await store.insert(draft)
+            try await store.insert(TestFactories.makeShadowEntry(id: 100, description: "newer remote edit", syncStatus: status))
+            if status == .pendingDelete { _ = try await store.beginUndoableDelete(id: 100) }
+            _ = try await store.promoteDraft(sent: draft, response: TestFactories.makeActivity(id: 100, description: "POST"))
+            let remote = try #require(await store.entry(id: 100))
+            #expect(remote.description == "newer remote edit")
+            #expect(remote.sync.status == status)
+            #expect(remote.startTime == "09:00")
+            if status == .pendingDelete { #expect(try await store.dirtyEntries().isEmpty) }
+        }
+    }
+
+    @Test("Deleting a draft during POST queues deletion of the created server entry")
+    func promotionAfterLocalDelete() async throws {
+        let store = try makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "deleted", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        try await store.deleteByLocalId("deleted")
+        #expect(try await store.promoteDraft(sent: draft, response: TestFactories.makeActivity(id: 100)))
+        #expect(try await store.entry(id: 100)?.sync.status == .pendingDelete)
+    }
+}
+
+extension ShadowEntryStoreTests {
+    @Test("Undoable deletion reserves its booking until commit")
+    func undoableDeleteReservesBooking() async throws {
+        let store = try makeStore()
+        let original = TestFactories.makeShadowEntry(id: 1, startTime: "09:00")
+        try await store.insert(original)
+        _ = try await store.beginUndoableDelete(id: 1)
+        var duplicate = original
+        duplicate.id = nil
+        duplicate.localId = "rule-created"
+        duplicate.sync.status = .pendingCreate
+        #expect(try await store.insertIfBookingAbsent(duplicate) == false)
+        try await store.restoreUndoableDelete(original)
+        #expect(try await store.entries(forDate: original.date).count == 1)
+        _ = try await store.beginUndoableDelete(id: 1)
+        await store.commitUndoableDelete(id: 1)
+        #expect(try await store.insertIfBookingAbsent(duplicate))
     }
 }

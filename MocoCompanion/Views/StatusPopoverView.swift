@@ -63,10 +63,10 @@ struct StatusPopoverView: View {
 
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(sortedActivities, id: \.id) { activity in
+                    ForEach(sortedActivities, id: \.uiIdentity) { activity in
                         StatusActivityRow(
                             activity: activity,
-                            isCurrentActivity: timerService.currentActivity?.id == activity.id,
+                            isCurrentActivity: activity.matchesServerSelection(timerService.currentActivity?.id),
                             editingActivityId: $editingActivityId,
                             descriptionDraft: $descriptionDraft,
                             hoveredActivityId: $hoveredActivityId,

@@ -80,6 +80,25 @@ struct CalendarRuleMatchingTests {
         #expect(Autotracker._testRuleMatches(rule, event: event) == false)
     }
 
+    @Test("Title-dependent app rules cannot broaden when capture is disabled")
+    func titleRuleRequiresCaptureAndTitle() {
+        var rule = makeAppRule(name: "Client work", appBundleId: "com.apple.Safari")
+        rule.windowTitlePattern = "Client"
+        let missing = makeAppBlock(bundleId: "com.apple.Safari", appName: "Safari")
+        let matching = AppUsageBlock(
+            id: "matching", appBundleId: missing.appBundleId, appName: missing.appName,
+            startTime: missing.startTime, endTime: missing.endTime,
+            durationSeconds: missing.durationSeconds, recordCount: 1,
+            contributingApps: [], windowTitle: "CLIENT dashboard"
+        )
+        #expect(!Autotracker._testRuleMatches(rule, block: matching, windowTitlesEnabled: false))
+        #expect(!Autotracker._testRuleMatches(rule, block: missing, windowTitlesEnabled: false))
+        #expect(!Autotracker._testRuleMatches(rule, block: missing, windowTitlesEnabled: true))
+        #expect(Autotracker._testRuleMatches(rule, block: matching, windowTitlesEnabled: true))
+        rule.windowTitlePattern = nil
+        #expect(Autotracker._testRuleMatches(rule, block: missing, windowTitlesEnabled: false))
+    }
+
     // MARK: - Helpers
 
     private func makeAppRule(

@@ -191,9 +191,6 @@ final class AppState {
         // Wire delete → timer: stop timer before deleting a timed activity
         tracking.deleteUndoManager.timerStopProvider = tracking.timerService
 
-        // Wire usage recording for manual entries (recency, recent entries, descriptions)
-        tracking.activityService.usageRecorder = tracking.sideEffects
-
         // Wire yesterday recheck: when local yesterday data changes (edit, delete),
         // immediately recompute the warning without waiting for the 10-minute poll.
         tracking.activityService.yesterdayService = monitoring.yesterdayService
@@ -320,7 +317,6 @@ final class AppState {
     }
 
     private struct TrackingPhase {
-        let sideEffects: TimerSideEffects
         let activityService: ActivityService
         let timerService: TimerService
         let planningStore: PlanningStore
@@ -370,8 +366,7 @@ final class AppState {
             activitySync: activitySvc
         )
 
-        // Wire timer events → side effects
-        timerSvc.onEvent = { [weak sideEffects] event in sideEffects?.handle(event) }
+        connectTimerSideEffects(sideEffects, timerService: timerSvc, activityService: activitySvc)
 
         // Create PlanningStore — owns planning entries, absences, unplanned tasks
         let planningSvc = PlanningStore(
@@ -390,12 +385,22 @@ final class AppState {
         )
 
         return TrackingPhase(
-            sideEffects: sideEffects,
             activityService: activitySvc,
             timerService: timerSvc,
             planningStore: planningSvc,
             deleteUndoManager: deleteUndo
         )
+    }
+
+    /// The event handler owns side effects after construction. Side effects do
+    /// not retain TimerService, so usage recording stays alive without a cycle.
+    static func connectTimerSideEffects(
+        _ sideEffects: TimerSideEffects,
+        timerService: TimerService,
+        activityService: ActivityService
+    ) {
+        timerService.onEvent = { [sideEffects] event in sideEffects.handle(event) }
+        activityService.usageRecorder = sideEffects
     }
 
     private struct MonitoringPhase {

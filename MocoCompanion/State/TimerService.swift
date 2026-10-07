@@ -13,6 +13,7 @@ protocol ActivitySyncing: AnyObject {
     /// row (e.g., `TimerService.currentActivity`).
     @discardableResult
     func upsertActivity(fromServer activity: MocoActivity) -> ShadowEntry
+    func reconcileTimerSnapshot(_ activities: [MocoActivity], forDate date: String) async throws -> [ShadowEntry]
     func applyFetchedTodayActivities(_ activities: [ShadowEntry])
     func refreshTodayStats() async
 }
@@ -66,6 +67,39 @@ final class TimerService: TimerStopProvider {
     private let userIdProvider: () -> Int?
     private weak var activitySync: (any ActivitySyncing)?
 
+    // Network awaits make MainActor methods reentrant. Mutations and snapshot
+    // publication share this queue; background fetches do not hold it.
+    @ObservationIgnored private var operationInProgress = false
+    @ObservationIgnored private var operationWaiters: [CheckedContinuation<Void, Never>] = []
+    @ObservationIgnored private var mutationGeneration: UInt64 = 0
+    @ObservationIgnored private var syncSequence: UInt64 = 0
+
+    private func acquireOperation() async {
+        if operationInProgress {
+            await withCheckedContinuation { operationWaiters.append($0) }
+        } else {
+            operationInProgress = true
+        }
+    }
+
+    private func releaseOperation() {
+        if operationWaiters.isEmpty {
+            operationInProgress = false
+        } else {
+            operationWaiters.removeFirst().resume()
+        }
+    }
+
+    private func beginMutation() async {
+        await acquireOperation()
+        mutationGeneration &+= 1
+    }
+
+    private func endMutation() {
+        mutationGeneration &+= 1
+        releaseOperation()
+    }
+
     init(
         clientFactory: @escaping () -> (any TimerAPI)?,
         userIdProvider: @escaping () -> Int? = { nil },
@@ -80,6 +114,8 @@ final class TimerService: TimerStopProvider {
 
     /// Start a new timer for a project+task. Stops any running timer first.
     func startTimer(projectId: Int, taskId: Int, description: String) async -> Result<ShadowEntry, MocoError> {
+        await beginMutation()
+        defer { endMutation() }
         guard let client = clientFactory() else {
             let error = MocoError.invalidConfiguration
             lastError = error
@@ -91,7 +127,12 @@ final class TimerService: TimerStopProvider {
         logger.info("startTimer: projectId=\(projectId) taskId=\(taskId) tag=\(tag ?? "nil")")
 
         // Stop any running timer quietly — no user-facing stop notification
-        await stopRunningTimerQuietly(client: client)
+        do {
+            try await stopRunningTimerQuietly(client: client)
+        } catch {
+            handleError(error, label: "stop before start")
+            return .failure(MocoError.from(error))
+        }
 
         let today = DateUtilities.todayString()
 
@@ -127,7 +168,7 @@ final class TimerService: TimerStopProvider {
             return .success(activity)
         } catch {
             handleError(error, label: "startTimer")
-            await sync()
+            await recoverTimerState(client: client)
             return .failure(MocoError.from(error))
         }
     }
@@ -146,6 +187,8 @@ final class TimerService: TimerStopProvider {
 
     /// Pause the currently running timer.
     func pauseTimer() async {
+        await beginMutation()
+        defer { endMutation() }
         guard let client = clientFactory() else { return }
         guard case .running(let activityId, let projectName) = timerState else {
             logger.info("pauseTimer: no running timer to pause")
@@ -158,7 +201,7 @@ final class TimerService: TimerStopProvider {
             logger.info("Timer paused: activityId=\(activityId) project=\(projectName)")
             BreadcrumbTrail.shared.record("TimerService", "Timer paused: activityId=\(activityId)")
             onEvent?(.paused(projectName: projectName))
-            activitySync?.upsertActivity(fromServer: stopped)
+            currentActivity = activitySync?.upsertActivity(fromServer: stopped) ?? ShadowEntry.from(stopped)
         } catch {
             handleError(error, label: "pauseTimer")
         }
@@ -166,6 +209,8 @@ final class TimerService: TimerStopProvider {
 
     /// Resume the currently paused timer.
     func resumeTimer() async {
+        await beginMutation()
+        defer { endMutation() }
         guard let client = clientFactory() else { return }
         guard case .paused(let activityId, let projectName) = timerState else {
             logger.info("resumeTimer: no paused timer to resume")
@@ -200,11 +245,16 @@ final class TimerService: TimerStopProvider {
 
     /// Stop the currently running timer completely.
     func stopTimer() async {
+        await beginMutation()
+        defer { endMutation() }
         guard let client = clientFactory() else { return }
         guard case .running(let activityId, let projectName) = timerState else { return }
 
         do {
-            _ = try await client.stopTimer(activityId: activityId)
+            let stopped = try await client.stopTimer(activityId: activityId)
+            activitySync?.upsertActivity(fromServer: stopped)
+            clearTimerStateIfTracking(activityId)
+            lastError = nil
             logger.info("Timer stopped: activityId=\(activityId) project=\(projectName)")
             BreadcrumbTrail.shared.record("TimerService", "Timer stopped: activityId=\(activityId)")
             onEvent?(.stopped)
@@ -212,27 +262,49 @@ final class TimerService: TimerStopProvider {
             handleError(error, label: "stopTimer")
         }
 
-        clearTimerState()
     }
 
     /// Sync timer state from the server.
     func sync() async {
+        guard !operationInProgress, let client = clientFactory(),
+              let userId = userIdProvider() else { return }
+        let generation = mutationGeneration
+        syncSequence &+= 1
+        let sequence = syncSequence
+        let today = DateUtilities.todayString()
         BreadcrumbTrail.shared.record("TimerService", "Sync requested")
-        let activities = await syncCurrentTimer()
-        // Push fetched activities to activity service
-        if let activities {
-            activitySync?.applyFetchedTodayActivities(activities)
-        } else {
-            await activitySync?.refreshTodayStats()
+        do {
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
+            await acquireOperation()
+            defer { releaseOperation() }
+            guard generation == mutationGeneration, sequence == syncSequence,
+                  today == DateUtilities.todayString(), !Task.isCancelled else { return }
+            // Hold the queue through store reconciliation and publication. A timer
+            // mutation cannot start halfway through applying this snapshot.
+            try await applyTimerSnapshot(activities, forDate: today)
+        } catch {
+            logger.error("Timer sync failed: \(error.localizedDescription)")
         }
     }
 
     /// Stop the timer if it is currently running or paused for the given activity.
     func stopTimerIfActive(activityId: Int) async {
+        await beginMutation()
+        defer { endMutation() }
         switch timerState {
-        case .running(let id, _) where id == activityId,
-             .paused(let id, _) where id == activityId:
-            await stopTimer()
+        case .paused(let id, _) where id == activityId:
+            clearTimerState()
+        case .running(let id, _) where id == activityId:
+            guard let client = clientFactory() else { return }
+            do {
+                let stopped = try await client.stopTimer(activityId: id)
+                activitySync?.upsertActivity(fromServer: stopped)
+                clearTimerStateIfTracking(id)
+                lastError = nil
+                onEvent?(.stopped)
+            } catch {
+                handleError(error, label: "stopTimerIfActive")
+            }
         default: break
         }
     }
@@ -259,10 +331,17 @@ final class TimerService: TimerStopProvider {
     }
 
     private func continueTimer(activityId: Int, projectName: String) async {
+        await beginMutation()
+        defer { endMutation() }
         guard let client = clientFactory() else { return }
 
         // Stop any running timer quietly — no user-facing stop notification
-        await stopRunningTimerQuietly(client: client)
+        do {
+            try await stopRunningTimerQuietly(client: client)
+        } catch {
+            handleError(error, label: "stop before continue")
+            return
+        }
 
         do {
             let startedApi = try await client.startTimer(activityId: activityId)
@@ -276,74 +355,66 @@ final class TimerService: TimerStopProvider {
             onEvent?(.continued(projectId: started.projectId, taskId: started.taskId, projectName: projectName))
         } catch {
             handleError(error, label: "continueTimer")
-            _ = await syncCurrentTimer()
+            await recoverTimerState(client: client)
         }
     }
 
     /// Stop any running timer without firing user-facing side effects.
     /// Used during the internal stop-then-start sequence (startTimer, continueTimer).
     /// This eliminates the old `suppressNextStopNotification` flag.
-    private func stopRunningTimerQuietly(client: any TimerAPI) async {
+    private func stopRunningTimerQuietly(client: any TimerAPI) async throws {
         if case .running(let activityId, _) = timerState {
-            do {
-                let stopped = try await client.stopTimer(activityId: activityId)
-                activitySync?.upsertActivity(fromServer: stopped)
-                logger.info("Quietly stopped running timer: activityId=\(activityId)")
-            } catch {
-                logger.error("stopRunningTimerQuietly failed: \(error.localizedDescription)")
-            }
-            clearTimerState()
+            let stopped = try await client.stopTimer(activityId: activityId)
+            activitySync?.upsertActivity(fromServer: stopped)
+            clearTimerStateIfTracking(activityId)
             return
         }
 
-        // Check server for externally running timers
         guard let userId = userIdProvider() else {
-            logger.warning("stopRunningTimerQuietly skipped server check — userId not available")
-            return
+            throw MocoError.invalidConfiguration
         }
-
         let today = DateUtilities.todayString()
-        do {
-            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
-            if let running = activities.first(where: { $0.isTimerRunning }) {
-                logger.info("Found externally running timer: activityId=\(running.id) — stopping it")
-                _ = try await client.stopTimer(activityId: running.id)
-                onEvent?(.externalTimerStopped)
-            }
-        } catch {
-            logger.error("stopRunningTimerQuietly server check failed: \(error.localizedDescription)")
+        let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
+        if let running = activities.first(where: { $0.isTimerRunning }) {
+            // Keep the discovered running timer visible if stopping it fails.
+            currentActivity = activitySync?.upsertActivity(fromServer: running) ?? ShadowEntry.from(running)
+            timerState = .running(activityId: running.id, projectName: running.project.name)
+            let stopped = try await client.stopTimer(activityId: running.id)
+            activitySync?.upsertActivity(fromServer: stopped)
+            clearTimerStateIfTracking(running.id)
+            onEvent?(.externalTimerStopped)
         }
     }
 
-    private func syncCurrentTimer() async -> [ShadowEntry]? {
-        guard let client = clientFactory() else { return nil }
-        guard let userId = userIdProvider() else {
-            logger.warning("syncCurrentTimer skipped — userId not available yet")
-            return nil
-        }
+    /// Called only while holding the operation queue.
+    private func recoverTimerState(client: any TimerAPI) async {
+        guard let userId = userIdProvider() else { return }
         let today = DateUtilities.todayString()
-
         do {
-            let apiActivities = try await client.fetchActivities(from: today, to: today, userId: userId)
-            let entries = apiActivities.map { ShadowEntry.from($0) }
-            if let runningApi = apiActivities.first(where: { $0.isTimerRunning }) {
-                let running = ShadowEntry.from(runningApi)
-                if case .running(let currentId, _) = timerState, currentId == runningApi.id { return entries }
-                if case .paused(let pausedId, let pausedProject) = timerState, pausedId != runningApi.id {
-                    BreadcrumbTrail.shared.record("TimerService", "Paused timer \(pausedId) (\(pausedProject)) replaced by external timer \(runningApi.id)")
-                    onEvent?(.pausedTimerReplaced(previousProjectName: pausedProject))
-                }
-                currentActivity = running
-                timerState = .running(activityId: runningApi.id, projectName: running.projectName)
-                logger.info("Synced running timer: activityId=\(runningApi.id) project=\(running.projectName)")
-            } else if case .running = timerState {
-                clearTimerState()
-                logger.info("Timer stopped externally — cleared local state")
-            }
-            return entries
+            let activities = try await client.fetchActivities(from: today, to: today, userId: userId)
+            try await applyTimerSnapshot(activities, forDate: today)
         } catch {
-            logger.error("syncCurrentTimer failed: \(error.localizedDescription)")
-            return nil
+            logger.error("Timer recovery failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func applyTimerSnapshot(_ activities: [MocoActivity], forDate date: String) async throws {
+        let entries: [ShadowEntry]
+        if let activitySync {
+            entries = try await activitySync.reconcileTimerSnapshot(activities, forDate: date)
+        } else {
+            entries = activities.map { ShadowEntry.from($0) }
+        }
+        guard date == DateUtilities.todayString() else { return }
+        activitySync?.applyFetchedTodayActivities(entries)
+        if let runningApi = activities.first(where: { $0.isTimerRunning }) {
+            if case .paused(let pausedId, let pausedProject) = timerState, pausedId != runningApi.id {
+                onEvent?(.pausedTimerReplaced(previousProjectName: pausedProject))
+            }
+            currentActivity = entries.first { $0.id == runningApi.id } ?? ShadowEntry.from(runningApi)
+            timerState = .running(activityId: runningApi.id, projectName: runningApi.project.name)
+        } else if case .running = timerState {
+            clearTimerState()
         }
     }
 
