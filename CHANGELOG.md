@@ -12,6 +12,7 @@ All notable changes to MocoCompanion are documented here. The format follows [Ke
 ### Fixed
 
 - **Project and task names in the entry picker are no longer cut off.** The task now sits on its own line under the project, each wraps to two lines, and hovering a row shows the full name. The timeline creation sheet is slightly wider.
+- **Overlapping entries can be dragged anywhere, and double-click opens the editor.** The entry info popover was a separate window: on hover it covered the neighbouring entry of an overlapping cluster, and on click it swallowed the second click of a double-click. Entries now show the same details as a hover tooltip instead; single click only selects.
 
 ## v0.7.0 — 2026-08-19
 

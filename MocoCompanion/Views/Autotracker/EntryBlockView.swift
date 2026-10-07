@@ -25,15 +25,10 @@ struct EntryBlockView: View {
         displayHeight < Self.compactThreshold
     }
 
-    /// True when the block is too narrow to read comfortably — either
-    /// because it's short (compact) or because overlapping entries split
-    /// the column into two or more side-by-side slots.
-    private var needsPopover: Bool {
-        isCompact || columnCount > 1
-    }
-
-    /// Full info string used for the hover tooltip — always shown, both
-    /// compact and expanded variants.
+    /// Full info string for the hover tooltip. A tooltip (not a popover)
+    /// on purpose: a popover is its own window, so it covered the
+    /// neighbouring column of an overlapping cluster and swallowed the
+    /// second click of a double-click. A tooltip never takes input.
     private var tooltipLabel: String {
         var lines: [String] = [entry.projectName]
         if !entry.taskName.isEmpty { lines.append(entry.taskName) }
@@ -65,7 +60,6 @@ struct EntryBlockView: View {
     /// view. See `TimelineViewModel.gesturePreviewState`.
     @State private var gestureMode: GestureMode = .idle
     @State private var showDeleteConfirm: Bool = false
-    @State private var showPopover: Bool = false
     @State private var isHovered: Bool = false
 
     private var isGestureActive: Bool {
@@ -266,44 +260,16 @@ struct EntryBlockView: View {
             if hovering {
                 // Select to trigger cross-highlighting of linked entries
                 onSelect?()
-                // Show popover on hover for compact or multi-column entries
-                if needsPopover && !isGestureActive {
-                    showPopover = true
-                }
             } else {
                 // Clear selection when leaving — outline disappears
                 viewModel.clearEntrySelection()
                 viewModel.clearAppBlockSelection()
-                if needsPopover { showPopover = false }
             }
         }
-        .popover(isPresented: $showPopover, arrowEdge: .trailing) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.projectName)
-                    .font(.system(size: Theme.FontSize.body + fontBoost, weight: .medium))
-                    .foregroundStyle(theme.textPrimary)
-                if !entry.taskName.isEmpty {
-                    Text(entry.taskName)
-                        .font(.system(size: Theme.FontSize.subhead + fontBoost))
-                        .foregroundStyle(theme.textSecondary)
-                }
-                if !entry.description.isEmpty {
-                    Text(entry.description)
-                        .font(.system(size: Theme.FontSize.subhead + fontBoost))
-                        .foregroundStyle(theme.textTertiary)
-                }
-                if let start = entry.startTime {
-                    Text("\(start) • \(durationLabel)")
-                        .font(.system(size: Theme.FontSize.caption + fontBoost, design: .monospaced))
-                        .foregroundStyle(theme.textSecondary)
-                }
-            }
-            .padding(10)
-        }
+        .help(tooltipLabel)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
         .onTapGesture(count: 1) {
             onSelect?()
-            if !showPopover { showPopover = true }
         }
         .onTapGesture(count: 2) {
             if !entry.isReadOnly {
