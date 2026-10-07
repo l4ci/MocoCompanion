@@ -566,7 +566,7 @@ final class Autotracker {
 
         // Rules only apply to today and future dates — never create
         // suggestions or auto-entries for past days.
-        let startOfToday = Calendar.current.startOfDay(for: clock())
+        let startOfToday = calendar.startOfDay(for: clock())
         guard date >= startOfToday else {
             Self.atLogger.debug("evaluate skipped — date is in the past")
             return []

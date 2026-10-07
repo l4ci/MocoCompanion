@@ -363,6 +363,23 @@ struct AutotrackerTests {
         #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
     }
 
+    @Test("Past-date guard uses the injected calendar, not Calendar.current")
+    func pastDateGuardUsesInjectedCalendar() async throws {
+        // 09:00Z is already March 10 in UTC+14, so March 10 local started 10:00Z on the 9th.
+        var kiritimati = Calendar(identifier: .gregorian)
+        kiritimati.timeZone = TimeZone(identifier: "Pacific/Kiritimati")!
+        let now = Date(timeIntervalSince1970: 1_773_133_200) // 2026-03-10T09:00:00Z
+        let (engine, rules, records, _) = try makeEngine(now: now, calendar: kiritimati)
+        _ = try await rules.insert(sampleRule(mode: .suggest))
+        let today = kiritimati.startOfDay(for: now)
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari",
+                                            timestamp: today.addingTimeInterval(7200), duration: 1800))
+
+        await engine.evaluate(for: today, existingEntries: [], timerRunning: false)
+
+        #expect(engine.suggestions.count == 1)
+    }
+
     @Test("App and calendar passes share occupied booking keys")
     func appAndCalendarRulesCreateOneBooking() async throws {
         let now = regressionDate
@@ -483,7 +500,8 @@ struct AutotrackerTests {
     private func makeEngine(
         calendarEnabled: Bool = false,
         now: Date? = nil,
-        windowTitlesEnabled: Bool = false
+        windowTitlesEnabled: Bool = false,
+        calendar: Calendar = .current
     ) throws -> (Autotracker, RuleStore, AppRecordStore, ShadowEntryStore) {
         let ruleDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: ruleDb)
@@ -515,6 +533,7 @@ struct AutotrackerTests {
             ruleStore: ruleStore,
             settings: settings,
             clock: { now ?? Date() },
+            calendar: calendar,
             declinedDefaults: defaults
         )
 
