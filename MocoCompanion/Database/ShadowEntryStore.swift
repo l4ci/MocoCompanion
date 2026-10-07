@@ -6,54 +6,55 @@ actor ShadowEntryStore {
 
     private let database: SQLiteDatabase
 
-    /// Current schema version. Must equal the last `database.userVersion = N`
-    /// in `runMigrations`; bump both together when adding a migration.
-    static let schemaVersion = 3
+    // Undoable tombstones are hidden from readers but not eligible for upload.
+    // On restart the grace period has ended, so persisted tombstones are committed.
+    private var undoableDeletes: Set<Int> = []
+    static let schemaVersion = 4
 
     init(database: SQLiteDatabase) throws {
         self.database = database
-        try database.createTable(sql: Self.createTableSQL)
-        try database.execute("CREATE INDEX IF NOT EXISTS idx_shadow_entries_date ON shadow_entries(date)")
-        try database.execute("CREATE INDEX IF NOT EXISTS idx_shadow_entries_sync ON shadow_entries(sync_status)")
         try Self.runMigrations(database: database)
     }
 
     private static func runMigrations(database: SQLiteDatabase) throws {
-        if database.userVersion < 1 {
-            // On fresh databases the column already exists from createTableSQL.
-            // ALTER TABLE ADD COLUMN errors on duplicates, so we catch that case.
-            do {
-                try database.execute("ALTER TABLE shadow_entries ADD COLUMN start_time TEXT")
-            } catch {
-                // Column already exists — expected on fresh databases
+        try database.transaction {
+            try database.createTable(sql: Self.createTableSQL)
+            let columns = Set(try database.query("PRAGMA table_info(shadow_entries)").compactMap { $0["name"] as? String })
+            // Inspect columns instead of swallowing arbitrary ALTER failures.
+            for (name, type) in [("start_time", "TEXT"), ("source_app_bundle_id", "TEXT"),
+                                 ("source_rule_id", "INTEGER"), ("source_calendar_event_id", "TEXT")] {
+                if !columns.contains(name) {
+                    try database.execute("ALTER TABLE shadow_entries ADD COLUMN \(name) \(type)")
+                }
             }
-            database.userVersion = 1
+            if !columns.contains("row_id") {
+                try database.execute("ALTER TABLE shadow_entries RENAME TO shadow_entries_legacy")
+                try database.createTable(sql: Self.createTableSQL)
+                let oldColumns = try database.query("PRAGMA table_info(shadow_entries_legacy)").compactMap { $0["name"] as? String }
+                let selections = oldColumns.map { column -> String in
+                    if column == "id" {
+                        return "CASE WHEN sync_status = 'pending_create' OR local_id IS NOT NULL THEN NULL ELSE id END"
+                    }
+                    if column == "sync_status" {
+                        return "CASE WHEN local_id IS NOT NULL AND sync_status = 'dirty' THEN 'pending_create' ELSE sync_status END"
+                    }
+                    return column
+                }
+                // Legacy local drafts were never uploaded: a deleted draft needs no server tombstone.
+                try database.execute("INSERT INTO shadow_entries (\(oldColumns.joined(separator: ","))) SELECT \(selections.joined(separator: ",")) FROM shadow_entries_legacy WHERE NOT (local_id IS NOT NULL AND sync_status = 'pending_delete')")
+                try database.execute("DROP TABLE shadow_entries_legacy")
+            }
+            try database.execute("CREATE INDEX IF NOT EXISTS idx_shadow_entries_date ON shadow_entries(date)")
+            try database.execute("CREATE INDEX IF NOT EXISTS idx_shadow_entries_sync ON shadow_entries(sync_status)")
+            try database.execute("PRAGMA user_version = \(schemaVersion)")
         }
-        if database.userVersion < 2 {
-            // Origin tracking columns (local-only metadata). See
-            // ShadowEntry.Origin.appBundleId / ruleId for context.
-            do {
-                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_app_bundle_id TEXT")
-            } catch { /* already exists */ }
-            do {
-                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_rule_id INTEGER")
-            } catch { /* already exists */ }
-            database.userVersion = 2
-        }
-        if database.userVersion < 3 {
-            // Calendar event origin tracking (local-only metadata). See
-            // ShadowEntry.Origin.calendarEventId for context.
-            do {
-                try database.execute("ALTER TABLE shadow_entries ADD COLUMN source_calendar_event_id TEXT")
-            } catch { /* already exists */ }
-            database.userVersion = 3
-        }
-        assert(database.userVersion == Self.schemaVersion, "schemaVersion out of sync with migrations")
     }
 
-    private static let createTableSQL = """
+    static let createTableSQL = """
         CREATE TABLE IF NOT EXISTS shadow_entries (
-            id INTEGER PRIMARY KEY,
+            row_id INTEGER PRIMARY KEY,
+            id INTEGER UNIQUE,
+            local_revision INTEGER NOT NULL DEFAULT 0,
             local_id TEXT UNIQUE,
             date TEXT NOT NULL,
             hours REAL NOT NULL,
@@ -89,6 +90,11 @@ actor ShadowEntryStore {
             source_calendar_event_id TEXT
         )
         """
+
+    #if DEBUG
+    /// Fault injection on the owning actor, without sharing its connection.
+    func _testExecute(_ sql: String) throws { try database.execute(sql) }
+    #endif
 
     /// Expose the database's PRAGMA user_version for testing.
     var databaseUserVersion: Int { database.userVersion }
@@ -142,7 +148,10 @@ actor ShadowEntryStore {
                 SyncStatus.pendingDelete.rawValue,
             ]
         )
-        return rows.map(entryFromRow)
+        return rows.map(entryFromRow).filter { entry in
+            guard let id = entry.id else { return true }
+            return !undoableDeletes.contains(id)
+        }
     }
 
     func entry(id: Int) throws -> ShadowEntry? {
@@ -156,6 +165,142 @@ actor ShadowEntryStore {
     }
 
     // MARK: - Sync Operations
+
+    @discardableResult
+    func insertIfBookingAbsent(_ entry: ShadowEntry) throws -> Bool {
+        var inserted = false
+        try database.transaction {
+            let existing = try database.query("SELECT id, sync_status FROM shadow_entries WHERE date = ? AND project_id = ? AND task_id = ? AND start_time IS ?",
+                                              params: [entry.date, entry.projectId, entry.taskId, entry.startTime])
+            let occupied = existing.contains { row in
+                if row["sync_status"] as? String != SyncStatus.pendingDelete.rawValue { return true }
+                guard let id = intFromRow(row, "id") else { return false }
+                return undoableDeletes.contains(id)
+            }
+            guard !occupied else { return }
+            try insert(entry)
+            inserted = true
+        }
+        return inserted
+    }
+
+    func beginUndoableDelete(id: Int) throws -> ShadowEntry? {
+        guard let original = try entry(id: id) else { return nil }
+        var tombstone = original
+        tombstone.sync.status = .pendingDelete
+        try update(tombstone)
+        undoableDeletes.insert(id)
+        return original
+    }
+
+    func commitUndoableDelete(id: Int) {
+        undoableDeletes.remove(id)
+    }
+
+    func restoreUndoableDelete(_ original: ShadowEntry) throws {
+        guard let id = original.id, undoableDeletes.contains(id),
+              let current = try entry(id: id) else { return }
+        var restored = original
+        // An earlier upload may have completed during the grace period.
+        restored.sync.serverUpdatedAt = current.sync.serverUpdatedAt
+        try update(restored)
+        undoableDeletes.remove(id)
+    }
+
+    /// Recheck queued work just before dispatch; a snapshot can predate undo.
+    func isUploadEligible(_ sent: ShadowEntry) throws -> Bool {
+        let current: ShadowEntry?
+        if let id = sent.id {
+            guard !undoableDeletes.contains(id) else { return false }
+            current = try entry(id: id)
+        } else if let localId = sent.localId {
+            current = try entry(localId: localId)
+        } else { return false }
+        return current?.sync.revision == sent.sync.revision && current?.sync.status == sent.sync.status
+    }
+
+    /// Acknowledge only the version actually sent. Newer edits and deletion
+    /// intent survive, but their server baseline advances to this response.
+    @discardableResult
+    func acknowledgeUpdate(sent: ShadowEntry, response: MocoActivity) throws -> Bool {
+        guard let id = sent.id, let current = try entry(id: id) else { return false }
+        if current.sync.revision == sent.sync.revision && current.sync.status == sent.sync.status {
+            var merged = ShadowEntry.merged(api: response, preserving: current)
+            merged.localId = current.localId
+            try update(merged)
+            return false
+        }
+        try database.execute("UPDATE shadow_entries SET server_updated_at = ? WHERE id = ?", params: [response.updatedAt, id])
+        return current.sync.status == .dirty || (current.sync.status == .pendingDelete && !undoableDeletes.contains(id))
+    }
+
+    /// Replace a draft and an optional already-pulled server row atomically.
+    /// A draft removed while POST was in flight becomes a remote tombstone.
+    @discardableResult
+    func promoteDraft(sent: ShadowEntry, response: MocoActivity) throws -> Bool {
+        var needsPush = false
+        try database.transaction {
+            let current = try sent.localId.flatMap { try entry(localId: $0) }
+            var promoted = ShadowEntry.merged(api: response, preserving: current ?? sent)
+            if let current {
+                if current.sync.revision != sent.sync.revision || current.sync.status != sent.sync.status {
+                    promoted = current
+                    promoted.id = response.id
+                    promoted.localId = nil
+                    promoted.sync.status = current.sync.status == .pendingDelete ? .pendingDelete : .dirty
+                    promoted.sync.serverUpdatedAt = response.updatedAt
+                    needsPush = true
+                }
+            } else {
+                promoted.sync.status = .pendingDelete
+                needsPush = true
+            }
+            if let remote = try entry(id: response.id), remote.sync.status != .synced {
+                // A pull may have inserted the POST result, followed by a user
+                // edit/delete before promotion. Never discard that intent.
+                var newer = remote
+                if newer.startTime == nil { newer.startTime = promoted.startTime }
+                if newer.origin.appBundleId == nil { newer.origin.appBundleId = promoted.origin.appBundleId }
+                if newer.origin.ruleId == nil { newer.origin.ruleId = promoted.origin.ruleId }
+                if newer.origin.calendarEventId == nil { newer.origin.calendarEventId = promoted.origin.calendarEventId }
+                newer.sync.serverUpdatedAt = response.updatedAt
+                promoted = newer
+                needsPush = newer.sync.status != .pendingDelete || !undoableDeletes.contains(response.id)
+            }
+            if let localId = sent.localId { try deleteByLocalId(localId) }
+            try delete(id: response.id)
+            try insert(promoted)
+        }
+        return needsPush
+    }
+
+    /// Timer snapshots never overwrite local edits or tombstones.
+    @discardableResult
+    func mergeFetchedActivity(_ activity: MocoActivity) throws -> ShadowEntry {
+        if let current = try entry(id: activity.id) {
+            guard current.sync.status == .synced else { return current }
+            let merged = ShadowEntry.merged(api: activity, preserving: current)
+            try update(merged)
+        } else {
+            try insert(ShadowEntry.from(activity))
+        }
+        return try entry(id: activity.id)!
+    }
+
+    func reconcileTimerSnapshot(_ activities: [MocoActivity], forDate date: String) throws -> [ShadowEntry] {
+        try database.transaction {
+            for activity in activities { try mergeFetchedActivity(activity) }
+            try removeServerDeleted(keepingIds: Set(activities.map(\.id)), forDate: date)
+        }
+        return try entries(forDate: date).filter { $0.sync.status != .pendingDelete }
+    }
+
+    func rejectDelete(sent: ShadowEntry) throws {
+        guard let id = sent.id, let current = try entry(id: id),
+              current.sync.revision == sent.sync.revision,
+              current.sync.status == .pendingDelete else { return }
+        try markSynced(id: id, serverUpdatedAt: current.sync.serverUpdatedAt)
+    }
 
     func markSynced(id: Int, serverUpdatedAt: String) throws {
         try database.execute(
@@ -171,9 +316,12 @@ actor ShadowEntryStore {
         )
     }
 
-    func updateFromServer(_ entry: ShadowEntry) throws {
-        guard let id = entry.id else { return }
+    @discardableResult
+    func updateFromServer(_ entry: ShadowEntry, expectedRevision: Int? = nil) throws -> Bool {
+        guard let id = entry.id else { return false }
+        if let expectedRevision, try self.entry(id: id)?.sync.revision != expectedRevision { return false }
         try database.execute(Self.updateFromServerSQL, params: updateFromServerParams(for: entry) + [id])
+        return database.changes > 0
     }
 
     func removeServerDeleted(keepingIds: Set<Int>, forDate date: String) throws {
@@ -213,12 +361,13 @@ actor ShadowEntryStore {
             user_id, user_firstname, user_lastname, hourly_rate, timer_started_at,
             start_time, locked, created_at, updated_at, sync_status, local_updated_at,
             server_updated_at, conflict_flag, source_app_bundle_id, source_rule_id,
-            source_calendar_event_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            source_calendar_event_id, local_revision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
     private static let updateSQL = """
         UPDATE shadow_entries SET
+            local_revision = local_revision + 1,
             local_id = ?, date = ?, hours = ?, seconds = ?, worked_seconds = ?,
             description = ?, billed = ?, billable = ?, tag = ?, project_id = ?,
             project_name = ?, project_billable = ?, task_id = ?, task_name = ?,
@@ -234,6 +383,7 @@ actor ShadowEntryStore {
 
     private static let updateByLocalIdSQL = """
         UPDATE shadow_entries SET
+            local_revision = local_revision + 1,
             local_id = ?, date = ?, hours = ?, seconds = ?, worked_seconds = ?,
             description = ?, billed = ?, billable = ?, tag = ?, project_id = ?,
             project_name = ?, project_billable = ?, task_id = ?, task_name = ?,
@@ -249,6 +399,7 @@ actor ShadowEntryStore {
 
     static let updateFromServerSQL = """
         UPDATE shadow_entries SET
+            local_revision = local_revision + 1,
             date = ?, hours = ?, seconds = ?, worked_seconds = ?,
             description = ?, billed = ?, billable = ?, tag = ?, project_id = ?,
             project_name = ?, project_billable = ?, task_id = ?, task_name = ?,
@@ -272,7 +423,7 @@ actor ShadowEntryStore {
             e.startTime, e.locked, e.createdAt, e.updatedAt, e.sync.status.rawValue,
             e.sync.localUpdatedAt, e.sync.serverUpdatedAt, e.sync.conflictFlag,
             e.origin.appBundleId, e.origin.ruleId.map { Int($0) } as Any?,
-            e.origin.calendarEventId,
+            e.origin.calendarEventId, e.sync.revision,
         ]
     }
 
@@ -337,7 +488,8 @@ actor ShadowEntryStore {
                 status: SyncStatus(rawValue: row["sync_status"] as? String ?? "synced") ?? .synced,
                 localUpdatedAt: row["local_updated_at"] as? String ?? "",
                 serverUpdatedAt: row["server_updated_at"] as? String ?? "",
-                conflictFlag: boolFromRow(row, "conflict_flag")
+                conflictFlag: boolFromRow(row, "conflict_flag"),
+                revision: intFromRow(row, "local_revision") ?? 0
             ),
             origin: ShadowEntry.Origin(
                 appBundleId: row["source_app_bundle_id"] as? String,

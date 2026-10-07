@@ -81,7 +81,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -113,7 +113,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -144,7 +144,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -176,7 +176,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -201,7 +201,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -249,7 +249,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -286,7 +286,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -316,7 +316,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -338,7 +338,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -363,7 +363,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -395,7 +395,7 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
@@ -424,12 +424,171 @@ struct SyncEngineTests {
 
         let engine = SyncEngine(
             store: store,
-            clientFactory: { mock },
+            clientFactory: { [mock] in mock },
             userIdProvider: { 42 },
             syncState: syncState
         )
 
         try await engine.pushDirty()
         #expect(createCalled == false)
+    }
+}
+
+private actor SyncRequestGate {
+    private var started = false
+    private var startWaiters: [CheckedContinuation<Void, Never>] = []
+    private var releaseWaiter: CheckedContinuation<Void, Never>?
+    private(set) var calls = 0
+    func record() { calls += 1 }
+    func suspendFirst() async {
+        calls += 1
+        guard calls == 1 else { return }
+        started = true
+        for waiter in startWaiters { waiter.resume() }
+        startWaiters.removeAll()
+        await withCheckedContinuation { releaseWaiter = $0 }
+    }
+    func waitUntilStarted() async {
+        if started { return }
+        await withCheckedContinuation { startWaiters.append($0) }
+    }
+    func release() { releaseWaiter?.resume(); releaseWaiter = nil }
+}
+
+extension SyncEngineTests {
+    @Test("Direct push and sync share a single create drain")
+    func mixedPushAndSync() async throws {
+        let store = try Self.makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "mixed", date: "2025-06-01", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        let gate = SyncRequestGate()
+        let remote = TestFactories.makeActivity(id: 999, date: "2025-06-01")
+        var mock = MockSyncAPI()
+        mock.createActivityHandler = { _, _, _, _, _, _ in
+            await gate.suspendFirst()
+            return remote
+        }
+        mock.fetchActivitiesHandler = { _, _, _ in [remote] }
+        let engine = SyncEngine(store: store, clientFactory: { [mock] in mock }, userIdProvider: { 42 }, syncState: await SyncState())
+        let first = Task { try await engine.pushDirty() }
+        await gate.waitUntilStarted()
+        let second = Task { await engine.sync(dates: ["2025-06-01"]) }
+        try await Task.sleep(for: .milliseconds(10))
+        await gate.release()
+        try await first.value
+        await second.value
+        #expect(await gate.calls == 1)
+        #expect(try await store.entry(id: 999) != nil)
+    }
+
+    @Test("An edit during an upload is drained without a second caller")
+    func editDuringUpload() async throws {
+        let store = try Self.makeStore()
+        try await store.insert(TestFactories.makeShadowEntry(id: 1, description: "A", syncStatus: .dirty))
+        let gate = SyncRequestGate()
+        var mock = MockSyncAPI()
+        mock.updateActivityHandler = { id, description, _, _ in
+            await gate.suspendFirst()
+            return TestFactories.makeActivity(id: id, description: description ?? "")
+        }
+        let engine = SyncEngine(store: store, clientFactory: { [mock] in mock }, userIdProvider: { 42 }, syncState: await SyncState())
+        let push = Task { try await engine.pushDirty() }
+        await gate.waitUntilStarted()
+        var edited = try #require(await store.entry(id: 1))
+        edited.description = "B"
+        try await store.update(edited)
+        await gate.release()
+        try await push.value
+        #expect(await gate.calls == 2)
+        #expect(try await store.entry(id: 1)?.description == "B")
+        #expect(try await store.entry(id: 1)?.sync.status == .synced)
+    }
+
+    @Test("Sync during undo grace sends no DELETE and undo restores the stored row")
+    @MainActor func pushDuringUndoGrace() async throws {
+        let store = try Self.makeStore()
+        let activity = TestFactories.makeActivity(id: 1)
+        try await store.insert(ShadowEntry.from(activity))
+        let deletes = SyncRequestGate()
+        var mock = MockSyncAPI()
+        mock.fetchActivitiesHandler = { _, _, _ in [activity] }
+        mock.deleteActivityHandler = { _ in await deletes.record() }
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
+        let service = ActivityService(clientFactory: { [mock] in mock }, notificationDispatcher: dispatcher, userIdProvider: { 42 })
+        let manager = DeleteUndoManager(clientFactory: { [mock] in mock }, activityService: service, shadowEntryStore: store, notificationDispatcher: dispatcher)
+        let engine = SyncEngine(store: store, clientFactory: { @Sendable [mock] in mock }, userIdProvider: { @Sendable in 42 }, syncState: SyncState())
+        await service.refreshTodayStats()
+        await manager.deleteActivity(activityId: 1)
+        try await engine.pushDirty()
+        #expect(await deletes.calls == 0)
+        manager.undoDelete()
+        // Undo deliberately restores SQLite in an asynchronous task.
+        for _ in 0..<100 {
+            if try await store.entry(id: 1)?.sync.status == .synced { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        #expect(try await store.entry(id: 1)?.sync.status == .synced)
+        #expect(service.todayActivities.contains { $0.id == 1 })
+    }
+
+    @Test("Undo is unavailable once committed deletion is suspended at the server")
+    @MainActor func undoAfterCommitDoesNotRestore() async throws {
+        let store = try Self.makeStore()
+        let activity = TestFactories.makeActivity(id: 1)
+        try await store.insert(ShadowEntry.from(activity))
+        let gate = SyncRequestGate()
+        var mock = MockSyncAPI()
+        mock.fetchActivitiesHandler = { _, _, _ in [activity] }
+        mock.deleteActivityHandler = { _ in await gate.suspendFirst() }
+        let dispatcher = NotificationDispatcher(isEnabledCheck: { _ in false })
+        let service = ActivityService(clientFactory: { [mock] in mock }, notificationDispatcher: dispatcher, userIdProvider: { 42 })
+        let manager = DeleteUndoManager(clientFactory: { [mock] in mock }, activityService: service, shadowEntryStore: store, notificationDispatcher: dispatcher, gracePeriod: .milliseconds(1))
+        await service.refreshTodayStats()
+        await manager.deleteActivity(activityId: 1)
+        await gate.waitUntilStarted()
+        #expect(manager.pendingDelete == nil)
+        manager.undoDelete()
+        #expect(service.todayActivities.isEmpty)
+        await gate.release()
+        for _ in 0..<100 {
+            if try await store.entry(id: 1) == nil { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        #expect(try await store.entry(id: 1) == nil)
+    }
+}
+
+extension SyncEngineTests {
+    @Test("A failed local promotion retries its successful POST receipt without creating again")
+    func retryPromotionWithoutReposting() async throws {
+        let store = try Self.makeStore()
+        var draft = TestFactories.makeShadowEntry(localId: "receipt", description: "A", syncStatus: .pendingCreate)
+        draft.id = nil
+        try await store.insert(draft)
+        try await store._testExecute("CREATE TRIGGER reject_receipt BEFORE INSERT ON shadow_entries WHEN NEW.id = 999 BEGIN SELECT RAISE(ABORT, 'promotion unavailable'); END")
+        let creates = SyncRequestGate()
+        var mock = MockSyncAPI()
+        mock.createActivityHandler = { _, _, _, _, _, _ in
+            await creates.record()
+            return TestFactories.makeActivity(id: 999, description: "A")
+        }
+        mock.updateActivityHandler = { id, description, _, _ in
+            TestFactories.makeActivity(id: id, description: description ?? "")
+        }
+        let engine = SyncEngine(store: store, clientFactory: { [mock] in mock }, userIdProvider: { 42 }, syncState: await SyncState())
+        do {
+            try await engine.pushDirty()
+            Issue.record("Expected promotion failure")
+        } catch { }
+        var newer = try #require(await store.entry(localId: "receipt"))
+        newer.description = "B"
+        try await store.updateByLocalId(newer)
+        try await store._testExecute("DROP TRIGGER reject_receipt")
+        try await engine.pushDirty()
+        #expect(await creates.calls == 1)
+        #expect(try await store.entry(id: 999)?.description == "B")
+        #expect(try await store.entry(id: 999)?.sync.status == .synced)
+        #expect(try await store.entry(localId: "receipt") == nil)
     }
 }

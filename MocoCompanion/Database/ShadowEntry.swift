@@ -49,6 +49,7 @@ struct ShadowEntry: Sendable, Equatable {
         var localUpdatedAt: String
         var serverUpdatedAt: String
         var conflictFlag: Bool
+        var revision: Int = 0
     }
 
     /// Local-only metadata that records where the entry came from when it

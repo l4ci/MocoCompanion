@@ -91,8 +91,7 @@ actor AppRecordStore {
 
     // MARK: - Reads
 
-    func records(for date: Date) -> [AppRecord] {
-        let calendar = Calendar.current
+    func records(for date: Date, calendar: Calendar = .current) -> [AppRecord] {
         let startOfDay = calendar.startOfDay(for: date)
         guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
 
@@ -100,8 +99,22 @@ actor AppRecordStore {
         let endStr = Self.dateFormatter.string(from: endOfDay)
 
         do {
-            let rows = try database.query(Self.selectByDateSQL, params: [startStr, endStr])
-            return rows.compactMap(Self.recordFromRow)
+            let rows = try database.query(Self.selectByDateSQL, params: [endStr, startStr])
+            // Older versions stored segments spanning midnight as one row.
+            // Clip only the returned view; keep the persisted legacy row intact.
+            return rows.compactMap(Self.recordFromRow).compactMap { record in
+                let start = max(startOfDay, record.timestamp)
+                let end = min(endOfDay, record.timestamp.addingTimeInterval(record.durationSeconds))
+                guard end > start else { return nil }
+                return AppRecord(
+                    id: record.id,
+                    timestamp: start,
+                    appBundleId: record.appBundleId,
+                    appName: record.appName,
+                    windowTitle: record.windowTitle,
+                    durationSeconds: end.timeIntervalSince(start)
+                )
+            }
         } catch {
             Self.logger.error("Failed to query records: \(error)")
             return []
@@ -160,7 +173,8 @@ actor AppRecordStore {
 
     private static let selectByDateSQL = """
         SELECT id, timestamp, app_bundle_id, app_name, window_title, duration_seconds \
-        FROM app_records WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC
+        FROM app_records WHERE timestamp < ? \
+        AND julianday(timestamp) + duration_seconds / 86400.0 > julianday(?) ORDER BY timestamp ASC
         """
 
     private static func recordFromRow(_ row: [String: Any]) -> AppRecord? {

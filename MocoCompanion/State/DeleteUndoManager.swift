@@ -32,6 +32,7 @@ final class DeleteUndoManager {
     private let activityService: ActivityService
     private let shadowEntryStore: ShadowEntryStore
     private let notificationDispatcher: NotificationDispatcher
+    private let gracePeriod: Duration
 
     /// Stops the timer before deleting a timed activity.
     var timerStopProvider: (any TimerStopProvider)?
@@ -45,12 +46,14 @@ final class DeleteUndoManager {
         clientFactory: @escaping () -> (any ActivityAPI)?,
         activityService: ActivityService,
         shadowEntryStore: ShadowEntryStore,
-        notificationDispatcher: NotificationDispatcher
+        notificationDispatcher: NotificationDispatcher,
+        gracePeriod: Duration = .seconds(5)
     ) {
         self.clientFactory = clientFactory
         self.activityService = activityService
         self.shadowEntryStore = shadowEntryStore
         self.notificationDispatcher = notificationDispatcher
+        self.gracePeriod = gracePeriod
     }
 
     // MARK: - Delete with Undo
@@ -87,8 +90,10 @@ final class DeleteUndoManager {
 
         guard let activity else {
             // Activity wasn't in local arrays — just delete server-side
+            await shadowEntryStore.commitUndoableDelete(id: activityId)
+            guard let client = clientFactory() else { return }
             do {
-                try await clientFactory()?.deleteActivity(activityId: activityId)
+                try await client.deleteActivity(activityId: activityId)
                 await shadowDeleteOrLog(id: activityId, label: "deleteActivity (orphan)")
             } catch MocoError.notFound {
                 // Server doesn't have it anyway — safe to clear the local tombstone
@@ -102,8 +107,9 @@ final class DeleteUndoManager {
         }
 
         // Start a delayed delete — can be undone within 5 seconds
+        let delay = gracePeriod
         let deleteTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(5))
+            try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
             await self?.executeDelete(activityId: activityId)
         }
@@ -121,14 +127,7 @@ final class DeleteUndoManager {
     /// is not in the store (e.g. hasn't been synced locally yet).
     private func markShadowPendingDelete(id: Int) async -> ShadowEntry? {
         do {
-            guard let existing = try await shadowEntryStore.entry(id: id) else {
-                return nil
-            }
-            var updated = existing
-            updated.sync.status = .pendingDelete
-            updated.sync.localUpdatedAt = Self.isoFormatter.string(from: Date.now)
-            try await shadowEntryStore.update(updated)
-            return existing
+            return try await shadowEntryStore.beginUndoableDelete(id: id)
         } catch {
             logger.error("markShadowPendingDelete(\(id)) failed: \(error.localizedDescription)")
             return nil
@@ -151,7 +150,7 @@ final class DeleteUndoManager {
         if let original = pending.originalShadow {
             Task { [weak self] in
                 do {
-                    try await self?.shadowEntryStore.update(original)
+                    try await self?.shadowEntryStore.restoreUndoableDelete(original)
                     await self?.onStoreChanged?()
                 } catch {
                     self?.logger.error("undoDelete store restore failed: \(error.localizedDescription)")
@@ -180,6 +179,10 @@ final class DeleteUndoManager {
     /// the autotracker UI is already hiding it. We do not need to
     /// broadcast again on success.
     private func executeDelete(activityId: Int) async {
+        // Commitment ends undo synchronously, before store or network suspension.
+        // An older task must never clear a newer activity's undo state.
+        if pendingDelete?.activity.id == activityId { pendingDelete = nil }
+        await shadowEntryStore.commitUndoableDelete(id: activityId)
         guard let client = clientFactory() else { return }
         do {
             try await client.deleteActivity(activityId: activityId)
@@ -192,9 +195,6 @@ final class DeleteUndoManager {
         } catch {
             // Leave the shadow row as .pendingDelete so the next sync can retry.
             handleError(error, label: "deleteActivity")
-        }
-        if pendingDelete?.activity.id == activityId {
-            pendingDelete = nil
         }
     }
 

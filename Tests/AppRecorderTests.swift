@@ -6,6 +6,119 @@ import Foundation
 @Suite("AutotrackerRecording")
 struct AppRecorderTests {
 
+    @Test("Excluded app time is never attributed to the previous app", arguments: [
+        "com.example.excluded", "com.apple.loginwindow", "com.apple.ScreenSaver"
+    ])
+    func excludedTransitionEndsTrackedSegment(excluded: String) async throws {
+        let settings = SettingsStore()
+        settings.autotrackerExcludedApps = ["com.example.excluded"]
+        let store = try AppRecordStore(inMemory: true)
+        var now = Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 12))!
+        let beginning = now
+        let tracker = Autotracker(
+            shadowEntryStore: try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
+            appRecordStore: store,
+            ruleStore: try RuleStore(database: SQLiteDatabase(path: ":memory:")),
+            settings: settings, workspace: FakeWorkspace(), clock: { now }
+        )
+        await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA")
+        now = beginning.addingTimeInterval(600)
+        await tracker.processAppChange(bundleId: excluded, appName: "Excluded")
+        #expect(tracker.currentAppName == nil)
+        now = beginning.addingTimeInterval(1800)
+        await tracker.processAppChange(bundleId: "com.app.B", appName: "AppB")
+        now = beginning.addingTimeInterval(2400)
+        await tracker.stop()
+        let records = await tracker.records(for: now)
+        #expect(records.map(\.appBundleId) == ["com.app.A", "com.app.B"])
+        #expect(records.map(\.durationSeconds) == [600, 600])
+        #expect(records.map(\.timestamp) == [beginning, beginning.addingTimeInterval(1800)])
+    }
+
+    @Test("Exclusion invalidates a tracked debounce already queued behind it")
+    func excludedTransitionInvalidatesQueuedDebounce() async throws {
+        let store = try AppRecordStore(inMemory: true)
+        let workspace = FakeWorkspace()
+        var now = Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 12))!
+        let beginning = now
+        let tracker = Autotracker(
+            shadowEntryStore: try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
+            appRecordStore: store,
+            ruleStore: try RuleStore(database: SQLiteDatabase(path: ":memory:")),
+            workspace: workspace, clock: { now }
+        )
+        await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA")
+        now = beginning.addingTimeInterval(600)
+        // Both enqueue synchronously on the main actor, before either runs:
+        // the stale timer has already passed its cancellation check.
+        workspace.handler?(.appActivated(bundleId: "com.apple.loginwindow", appName: "Excluded", windowTitle: nil))
+        tracker._testEnqueueDebouncedAppChange(bundleId: "com.app.A", appName: "AppA")
+        await tracker._testDrainWorkspaceEvents()
+        #expect(tracker.currentAppName == nil)
+        now = beginning.addingTimeInterval(1800)
+        await tracker.stop()
+        let records = await tracker.records(for: now)
+        #expect(records.map(\.durationSeconds) == [600])
+        #expect(records.map(\.appBundleId) == ["com.app.A"])
+    }
+
+    @Test("New segments split 23:50–00:20 into ten and twenty minutes")
+    func midnightSplitsNewSegment() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 23, minute: 50))!
+        let end = calendar.date(from: DateComponents(year: 2026, month: 6, day: 16, hour: 0, minute: 20))!
+        let store = try AppRecordStore(inMemory: true)
+        var now = start
+        let tracker = Autotracker(
+            shadowEntryStore: try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
+            appRecordStore: store,
+            ruleStore: try RuleStore(database: SQLiteDatabase(path: ":memory:")),
+            workspace: FakeWorkspace(), clock: { now }, calendar: calendar
+        )
+        await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA", windowTitle: "Document")
+        now = end
+        await tracker.stop()
+        #expect(await store.recordCount() == 2)
+        #expect(tracker.recordCount == 2)
+        let before = await tracker.records(for: start)
+        let after = await tracker.records(for: end)
+        #expect(before.map(\.durationSeconds) == [600])
+        #expect(after.map(\.durationSeconds) == [1200])
+        #expect(after.first?.timestamp == calendar.startOfDay(for: end))
+        #expect(before.first?.id != after.first?.id)
+        #expect(after.first?.windowTitle == "Document")
+    }
+
+    @Test("Segments split at actual midnight across short and long DST days", arguments: [3, 10])
+    func midnightSplitsAcrossDST(month: Int) async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let day = month == 3 ? 29 : 25
+        let start = calendar.date(from: DateComponents(year: 2026, month: month, day: day - 1, hour: 23, minute: 50))!
+        let middle = calendar.date(from: DateComponents(year: 2026, month: month, day: day))!
+        let end = calendar.date(from: DateComponents(year: 2026, month: month, day: day + 1, hour: 0, minute: 20))!
+        let store = try AppRecordStore(inMemory: true)
+        var now = start
+        let tracker = Autotracker(
+            shadowEntryStore: try ShadowEntryStore(database: SQLiteDatabase(path: ":memory:")),
+            appRecordStore: store,
+            ruleStore: try RuleStore(database: SQLiteDatabase(path: ":memory:")),
+            workspace: FakeWorkspace(), clock: { now }, calendar: calendar
+        )
+        await tracker.processAppChange(bundleId: "com.app.A", appName: "AppA")
+        now = end
+        await tracker.stop()
+        #expect(await store.recordCount() == 3)
+        let before = await tracker.records(for: start)
+        let during = await tracker.records(for: middle)
+        let after = await tracker.records(for: end)
+        #expect(before.map(\.durationSeconds) == [600])
+        #expect(during.map(\.durationSeconds) == [Double(month == 3 ? 23 : 25) * 3600])
+        #expect(after.map(\.durationSeconds) == [1200])
+        #expect((before + during + after).reduce(0) { $0 + $1.durationSeconds } == end.timeIntervalSince(start))
+    }
+
     private func makeTracker() throws -> Autotracker {
         let shadowDb = try SQLiteDatabase(path: ":memory:")
         let shadowStore = try ShadowEntryStore(database: shadowDb)

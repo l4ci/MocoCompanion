@@ -267,6 +267,193 @@ struct AutotrackerTests {
         #expect(entries.first?.description == "Engineering Standup")
     }
 
+    @Test("Overlapping evaluations return their own results and only the latest publishes",
+          arguments: ["different-day", "skipped", "declined-next-day"])
+    func evaluationResultsAreScopedToInvocation(scenario: String) async throws {
+        let now = regressionDate
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now)!
+        let (engine, rules, records, _) = try makeEngine(now: now)
+        _ = try await rules.insert(sampleRule(mode: .suggest))
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Today App",
+                                            timestamp: now, duration: 600))
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Tomorrow App",
+                                            timestamp: tomorrow, duration: 600))
+        if scenario == "declined-next-day" {
+            let initial = await engine.evaluate(for: tomorrow, existingEntries: [], timerRunning: false)
+            engine.declineSuggestion(try #require(initial.first))
+        }
+
+        let gate = EvaluationGate()
+        engine._testBeforeRuleEvaluation = { date in
+            if date == now { await gate.pause() }
+        }
+        let older = Task { await engine.evaluate(for: now, existingEntries: [], timerRunning: false) }
+        await gate.waitUntilPaused()
+        let newerDate = scenario == "skipped"
+            ? Calendar.current.date(byAdding: .day, value: -1, to: now)!
+            : tomorrow
+        let newer = await engine.evaluate(for: newerDate, existingEntries: [], timerRunning: false)
+        gate.resume()
+        let earlierResult = await older.value
+
+        // Both dates use the same rule and HH:mm, so a leaked declined-ID set
+        // would incorrectly suppress today's per-call result.
+        #expect(earlierResult.map(\.appName) == ["Today App"])
+        let expected = scenario == "different-day" ? ["Tomorrow App"] : []
+        #expect(newer.map(\.appName) == expected)
+        #expect(engine.suggestions.map(\.appName) == expected)
+    }
+
+    @MainActor
+    private final class EvaluationGate {
+        private var paused = false
+        private var waiter: CheckedContinuation<Void, Never>?
+        private var release: CheckedContinuation<Void, Never>?
+
+        func pause() async {
+            await withCheckedContinuation { continuation in
+                release = continuation
+                paused = true
+                waiter?.resume()
+                waiter = nil
+            }
+        }
+
+        func waitUntilPaused() async {
+            if paused { return }
+            await withCheckedContinuation { waiter = $0 }
+        }
+
+        func resume() {
+            release?.resume()
+            release = nil
+        }
+    }
+
+    // MARK: - Rule safety regressions
+
+    @Test("Title-dependent create rules produce no booking when capture is off")
+    func titleCreateRuleDoesNotBroaden() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(now: now, windowTitlesEnabled: false)
+        var rule = sampleRule(mode: .create)
+        rule.windowTitlePattern = "Client"
+        _ = try await rules.insert(rule)
+        await records.insert(AppRecord(id: nil, timestamp: now.addingTimeInterval(-1800),
+                                       appBundleId: "com.apple.Safari", appName: "Safari",
+                                       windowTitle: "Client dashboard", durationSeconds: 600))
+        await engine.evaluate(for: now, existingEntries: [], timerRunning: false)
+        #expect(try await entries.entries(forDate: dateString(from: now)).isEmpty)
+        #expect(engine.suggestions.isEmpty)
+    }
+
+    @Test("Two matching app rules create one booking, including on stale reevaluation")
+    func duplicateAppRulesCreateOneBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(now: now)
+        _ = try await rules.insert(sampleRule(mode: .create))
+        var second = sampleRule(mode: .create)
+        second.name = "Second rule"
+        _ = try await rules.insert(second)
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari",
+                                            timestamp: now.addingTimeInterval(-1800), duration: 600))
+        await engine.evaluate(for: now, existingEntries: [], timerRunning: false)
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+        await engine.evaluate(for: now, existingEntries: [], timerRunning: false)
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+    }
+
+    @Test("App and calendar passes share occupied booking keys")
+    func appAndCalendarRulesCreateOneBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(calendarEnabled: true, now: now)
+        _ = try await rules.insert(sampleRule(mode: .create))
+        _ = try await rules.insert(sampleCalendarRule(mode: .create, eventTitlePattern: "Standup"))
+        let start = now.addingTimeInterval(-1800)
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari",
+                                            timestamp: start, duration: 600))
+        await engine.evaluate(for: now, existingEntries: [], events: [regressionEvent(start: start)], timerRunning: false)
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+    }
+
+    @Test("Calendar rules and overlapping evaluations cannot duplicate bookings")
+    func concurrentCalendarEvaluationsCreateOneBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, _, entries) = try makeEngine(calendarEnabled: true, now: now)
+        _ = try await rules.insert(sampleCalendarRule(mode: .create, eventTitlePattern: "Standup"))
+        _ = try await rules.insert(sampleCalendarRule(mode: .create, eventTitlePattern: "Team"))
+        let event = regressionEvent(start: now.addingTimeInterval(-1800))
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<4 {
+                group.addTask {
+                    await engine.evaluate(for: now, existingEntries: [], events: [event], timerRunning: false)
+                }
+            }
+        }
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+    }
+
+    @Test("Booking identity includes the date and ignores pending deletion")
+    func unrelatedOrDeletedEntryDoesNotBlockBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(now: now)
+        _ = try await rules.insert(sampleRule(mode: .create))
+        let start = now.addingTimeInterval(-1800)
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: start, duration: 600))
+        let time = TimelineGeometry.timeString(from: start)
+        var deleted = makeExistingEntry(date: dateString(from: now), startTime: time, projectId: 100, taskId: 200)
+        deleted.sync.status = .pendingDelete
+        let otherDay = makeExistingEntry(date: "2000-01-01", startTime: time, projectId: 100, taskId: 200)
+        await engine.evaluate(for: now, existingEntries: [deleted, otherDay], timerRunning: false)
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+    }
+
+    @Test("Evaluation during undo grace does not replace a hidden booking")
+    func undoableDeletionStillOccupiesBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(now: now)
+        _ = try await rules.insert(sampleRule(mode: .create))
+        let start = now.addingTimeInterval(-1800)
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari", timestamp: start, duration: 600))
+        let original = makeExistingEntry(date: dateString(from: now), startTime: TimelineGeometry.timeString(from: start),
+                                         projectId: 100, taskId: 200)
+        try await entries.insert(original)
+        let saved = try #require(try await entries.beginUndoableDelete(id: 999))
+        await engine.evaluate(for: now, existingEntries: [], timerRunning: false)
+        let duringGrace = try await entries.entries(forDate: dateString(from: now))
+        #expect(duringGrace.count == 1)
+        #expect(duringGrace.first?.sync.status == .pendingDelete)
+        try await entries.restoreUndoableDelete(saved)
+        let restored = try await entries.entries(forDate: dateString(from: now))
+        #expect(restored.count == 1)
+        #expect(restored.first?.id == 999)
+        #expect(restored.first?.sync.status == .synced)
+    }
+
+    @Test("Approving the same suggestion twice creates one booking")
+    func duplicateApprovalCreatesOneBooking() async throws {
+        let now = regressionDate
+        let (engine, rules, records, entries) = try makeEngine(now: now)
+        _ = try await rules.insert(sampleRule(mode: .suggest))
+        await records.insert(makeAppRecord(bundleId: "com.apple.Safari", name: "Safari",
+                                            timestamp: now.addingTimeInterval(-1800), duration: 600))
+        await engine.evaluate(for: now, existingEntries: [], timerRunning: false)
+        let suggestion = try #require(engine.suggestions.first)
+        await engine.approveSuggestion(suggestion)
+        await engine.approveSuggestion(suggestion)
+        #expect(try await entries.entries(forDate: dateString(from: now)).count == 1)
+    }
+
+    private var regressionDate: Date {
+        Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 12))!
+    }
+
+    private func regressionEvent(start: Date) -> CalendarEvent {
+        CalendarEvent(id: "event", calendarItemIdentifier: "calendar-item", title: "Team Standup",
+                      location: nil, startDate: start, endDate: start.addingTimeInterval(600),
+                      isAllDay: false, isAcceptedByUser: true, calendarColorHex: "#808080")
+    }
+
     // MARK: - Helpers
 
     private func sampleCalendarRule(
@@ -294,7 +481,9 @@ struct AutotrackerTests {
     }
 
     private func makeEngine(
-        calendarEnabled: Bool = false
+        calendarEnabled: Bool = false,
+        now: Date? = nil,
+        windowTitlesEnabled: Bool = false
     ) throws -> (Autotracker, RuleStore, AppRecordStore, ShadowEntryStore) {
         let ruleDb = try SQLiteDatabase(path: ":memory:")
         let ruleStore = try RuleStore(database: ruleDb)
@@ -318,12 +507,14 @@ struct AutotrackerTests {
         settings.rulesEnabled = true
         settings.appRecordingEnabled = true
         settings.calendarEnabled = calendarEnabled
+        settings.windowTitleTrackingEnabled = windowTitlesEnabled
 
         let engine = Autotracker(
             shadowEntryStore: shadowEntryStore,
             appRecordStore: appRecordStore,
             ruleStore: ruleStore,
             settings: settings,
+            clock: { now ?? Date() },
             declinedDefaults: defaults
         )
 
