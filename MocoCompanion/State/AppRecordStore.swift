@@ -98,8 +98,12 @@ actor AppRecordStore {
         let startStr = Self.dateFormatter.string(from: startOfDay)
         let endStr = Self.dateFormatter.string(from: endOfDay)
 
+        // Segments are split at midnight, so only legacy rows can start before this day.
+        // Two days of slack keeps those (including a 25-hour DST day) without a full scan.
+        let lowerStr = Self.dateFormatter.string(from: calendar.date(byAdding: .day, value: -2, to: startOfDay) ?? startOfDay)
+
         do {
-            let rows = try database.query(Self.selectByDateSQL, params: [endStr, startStr])
+            let rows = try database.query(Self.selectByDateSQL, params: [lowerStr, endStr, startStr])
             // Older versions stored segments spanning midnight as one row.
             // Clip only the returned view; keep the persisted legacy row intact.
             return rows.compactMap(Self.recordFromRow).compactMap { record in
@@ -173,7 +177,7 @@ actor AppRecordStore {
 
     private static let selectByDateSQL = """
         SELECT id, timestamp, app_bundle_id, app_name, window_title, duration_seconds \
-        FROM app_records WHERE timestamp < ? \
+        FROM app_records WHERE timestamp >= ? AND timestamp < ? \
         AND julianday(timestamp) + duration_seconds / 86400.0 > julianday(?) ORDER BY timestamp ASC
         """
 

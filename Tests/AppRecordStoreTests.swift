@@ -111,6 +111,22 @@ struct AppRecordStoreTests {
         #expect(await store.records(for: start, calendar: calendar) == before)
     }
 
+    @Test("Day queries have a lower bound but still return rows spanning midnight")
+    func dayQueryHasLowerBound() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let day = calendar.date(from: DateComponents(year: 2026, month: 6, day: 15))!
+        let spanning = calendar.date(from: DateComponents(year: 2026, month: 6, day: 14, hour: 23, minute: 50))!
+        let threeDaysAgo = calendar.date(from: DateComponents(year: 2026, month: 6, day: 12, hour: 12))!
+        let store = try makeStore()
+        await store.insert(makeRecord(timestamp: spanning, windowTitle: "Spanning", duration: 1800))
+        // Only an implausible multi-day legacy row can reach back past the bound.
+        await store.insert(makeRecord(timestamp: threeDaysAgo, windowTitle: "Ancient", duration: 4 * 86_400))
+        let results = await store.records(for: day, calendar: calendar)
+        #expect(results.map(\.windowTitle) == ["Spanning"])
+        #expect(results.first?.durationSeconds == 1200)
+    }
+
     @Test("Legacy overlap queries use 23- and 25-hour local days", arguments: [3, 10])
     func legacyDSTRecordIsClipped(month: Int) async throws {
         var calendar = Calendar(identifier: .gregorian)
