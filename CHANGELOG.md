@@ -4,17 +4,22 @@ All notable changes to MocoCompanion are documented here. The format follows [Ke
 
 ## Unreleased
 
+Timeline release. Everything below is about creating and handling entries in the timeline window; the panel and sync are unchanged. Prompted by issues #10, #11 and #13 and a manual test pass.
+
 ### New
 
-- **Editable time range when creating or editing a timeline entry.** The sheet now has start, end and duration fields that stay in sync: changing start keeps the duration, changing end recomputes it, changing duration moves the end. Changes apply on Return or when the field loses focus; invalid input reverts. The create and edit sheets share the same controls.
-- **Duplicate entry** in the timeline. Right-click an entry and choose Duplicate, or select it and press ⌘D. The copy has the same project, task, description and duration, and starts where the original ends (snapped to 15 minutes, kept within the day). Works on locked and billed entries too.
-- **Keyboard flow in the timeline entry sheets.** Typing in the project search selects the top match automatically, and the up and down arrows move through the results. Return confirms the project and jumps to the description, which is now a larger multi-line field. Return in the description still creates or saves the entry.
+- **Duplicate an entry.** Right-click an entry and choose Duplicate, or hover it and press ⌘D. The copy keeps project, task, description and duration and starts where the original ends, on the 15-minute grid and within the same day. Locked and billed entries can be duplicated too, since the original is left alone. (#11)
+- **Edit the time right in the sheet.** Creating or editing an entry shows start, end and duration as fields instead of a read-only label. They stay in sync: move the start and the end follows, change the end and the duration is recomputed, change the duration and the end moves. Edits apply on Return or when the field loses focus; a typo reverts to the last valid value. (#13)
+- **Keyboard flow in the entry sheets.** Start typing in the project search and the top match is selected. ↑ and ↓ move through the results, Return or Tab lands in the description, and Return there creates or saves. Hovering a row no longer matters; only a click changes the selection. The description field is three to six lines tall now.
 
 ### Fixed
 
-- **Project and task names in the entry picker are no longer cut off.** The task now sits on its own line under the project, each wraps to two lines, and hovering a row shows the full name. The timeline creation sheet is slightly wider.
-- **Overlapping entries can be dragged anywhere, and double-click opens the editor.** The entry info popover was a separate window: on hover it covered the neighbouring entry of an overlapping cluster, and on click it swallowed the second click of a double-click. Entries now show the same details as a hover tooltip instead.
-- **Drag and double-click on timeline entries no longer fail intermittently.** Three causes: the click that brings the timeline window to the front from another app now also acts on the entry under the cursor; a single click no longer deselects the hovered entry and no longer starves the double-click; and the resize handles shrink on short entries so at least half of every block moves the entry instead of resizing it.
+- **Project and task names in the picker were cut off**, so two tasks of the same project looked identical. The task now has its own line under the project, both wrap to two lines, and a tooltip shows the full name. The creation sheet is 60pt wider. (#10)
+- **Dragging and double-clicking entries was unreliable.** Four separate causes, all gone. The info popover was its own window: it covered the neighbouring entry in an overlapping cluster and swallowed the second click of a double-click, so it is a tooltip now. The click that brought the timeline window to the front from another app was dropped instead of acting on the entry. A single click deselected the entry under the cursor and outranked the double-click. And the resize handles took 16 of the 22 points of a 15-minute entry, so most drags resized instead of moving; handles now take at most a quarter of the block each.
+
+### Changed
+
+- The string catalog is stored in Xcode's own format. Builds no longer leave a large diff behind.
 
 ## v0.7.0 — 2026-08-19
 
