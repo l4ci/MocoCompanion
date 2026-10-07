@@ -20,10 +20,13 @@ struct MonitorAlert: Sendable {
     }
 }
 
-/// Stable identity for one continuous run, including resumes and external replacements.
+/// Identity of one running timer. Equality includes `startedAt`, which Moco resets on every
+/// start_timer, so it detects pause/resume and replacement of in-flight work.
+/// Alerts that must fire once per booking across resumes use `bookingKey` instead.
 /// Use the server activity ID rather than ShadowEntry.localId, which can change on refresh.
 struct RunningMonitorSession: Equatable {
     let activityId: Int
+    let date: String
     let startedAt: String
     let projectId: Int
     let taskId: Int
@@ -34,13 +37,20 @@ struct RunningMonitorSession: Equatable {
               let activity = timerService.currentActivity,
               let startedAt = activity.timerStartedAt else { return nil }
         self.activityId = activityId
+        self.date = activity.date
         self.startedAt = startedAt
         self.projectId = activity.projectId
         self.taskId = activity.taskId
     }
 
+    /// Per run: changes on every resume.
     var dedupKey: String {
         "\(activityId):\(startedAt):\(projectId):\(taskId)"
+    }
+
+    /// Per booking: unchanged by pause/resume of the same activity.
+    var bookingKey: String {
+        "\(activityId):\(date):\(projectId):\(taskId)"
     }
 }
 

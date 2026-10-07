@@ -49,7 +49,7 @@ struct BudgetDepletionMonitorTests {
         return api
     }
 
-    @Test("Budget thresholds dedup per activity, start time, and task", arguments: [0, 1, 2], [50, 95])
+    @Test("Budget thresholds dedup per activity and task, across resumes", arguments: [0, 1, 2], [50, 95])
     func budgetUsesSessionIdentity(change: Int, progress: Int) async throws {
         var activity = TestFactories.makeActivity(id: 10, timerStartedAt: "2026-01-05T08:00:00Z")
         var api = MockTimerAPI()
@@ -85,7 +85,8 @@ struct BudgetDepletionMonitorTests {
         let second = await monitor.check()
         #expect(second.count == 2)
         for alert in second {
-            #expect(ledger.shouldFire(alert))
+            // Resuming the same activity is one continuous booking: no repeat alert.
+            #expect(ledger.shouldFire(alert) == (change != 1))
             ledger.markFired(alert)
         }
         for alert in await monitor.check() { #expect(!ledger.shouldFire(alert)) }
