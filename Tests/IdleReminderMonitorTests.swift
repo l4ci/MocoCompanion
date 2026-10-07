@@ -170,4 +170,83 @@ struct IdleReminderMonitorTests {
         let alerts = await monitor.check()
         #expect(alerts.contains { $0.type == .endOfDaySummary })
     }
+
+    @Test("Forgotten reminders rearm for replacement, resume, and task changes", arguments: [0, 1, 2])
+    func forgottenReminderUsesSessionIdentity(change: Int) async throws {
+        let now = Date(timeIntervalSince1970: 1_770_000_000)
+        let start = ISO8601DateFormatter().string(from: now.addingTimeInterval(-5 * 3600))
+        let resumed = ISO8601DateFormatter().string(from: now.addingTimeInterval(-4 * 3600))
+        var activity = TestFactories.makeActivity(id: 10, timerStartedAt: start)
+        var api = MockTimerAPI()
+        api.fetchActivitiesHandler = { _, _, _ in [activity] }
+        api.createActivityHandler = { _, _, _, _, _, _ in activity }
+        api.stopTimerHandler = { id in TestFactories.makeActivity(id: id) }
+        api.startTimerHandler = { _ in activity }
+        let timer = TimerService(clientFactory: { api }, userIdProvider: { 42 })
+        await timer.sync()
+        let (_, activities, settings) = makeServices()
+        settings.workingDays = []
+        let monitor = IdleReminderMonitor(
+            timerService: timer, activityService: activities, settings: settings, clock: { now }
+        )
+        var ledger = DedupLedger()
+        let first = try #require(await monitor.check().first { $0.type == .forgottenTimer })
+        #expect(ledger.shouldFire(first, now: now))
+        ledger.markFired(first, at: now)
+        #expect(await monitor.check().isEmpty)
+
+        switch change {
+        case 0: // External running-to-running replacement, with the same start time.
+            activity = TestFactories.makeActivity(id: 11, timerStartedAt: start)
+            await timer.sync()
+        case 1: // Pause/resume entirely between polls, keeping the activity ID.
+            await timer.pauseTimer()
+            activity = TestFactories.makeActivity(id: 10, timerStartedAt: resumed)
+            await timer.resumeTimer()
+        default: // Task change in the same project.
+            activity = TestFactories.makeActivity(id: 10, taskId: 201, timerStartedAt: start)
+            _ = await timer.startTimer(projectId: 100, taskId: 201, description: "New task")
+        }
+        let second = try #require(await monitor.check().first { $0.type == .forgottenTimer })
+        #expect(second.dedupKey != first.dedupKey)
+        #expect(ledger.shouldFire(second, now: now))
+        ledger.markFired(second, at: now)
+        #expect(!ledger.shouldFire(second, now: now))
+        #expect(await monitor.check().isEmpty)
+    }
+
+    @Test("End-of-day summary uses refreshed totals and only refreshes inside the schedule")
+    func endOfDayUsesRefreshedTotals() async throws {
+        let now = Calendar.current.date(from: DateComponents(year: 2026, month: 1, day: 5, hour: 17))!
+        var fetches = 0
+        var api = MockActivityAPI()
+        api.fetchActivitiesHandler = { _, _, _ in
+            fetches += 1
+            return [TestFactories.makeActivity(hours: 8.5)]
+        }
+        let (timer, _, settings) = makeServices()
+        let activities = ActivityService(
+            clientFactory: { api }, notificationDispatcher: TestFactories.makeStubDispatcher(),
+            userIdProvider: { 42 }
+        )
+        activities.applyFetchedTodayActivities([TestFactories.makeShadowEntry(hours: 2)])
+        settings.workingDays = []
+        settings.workingHoursEnd = 17
+        let monitor = IdleReminderMonitor(
+            timerService: timer, activityService: activities, settings: settings, clock: { now }
+        )
+        #expect(await monitor.check().isEmpty)
+        #expect(fetches == 0)
+        settings.workingDays = [Calendar.current.component(.weekday, from: now)]
+        settings.workingHoursEnd = 18
+        _ = await monitor.check()
+        #expect(fetches == 0)
+        settings.workingHoursEnd = 17
+        let alert = try #require(await monitor.check().first { $0.type == .endOfDaySummary })
+        let hours = 8.5.formatted(.number.precision(.fractionLength(1)))
+        #expect(alert.message == String(localized: "eod.fullDay \(hours)"))
+        #expect(activities.todayTotalHours == 8.5)
+        #expect(fetches == 1)
+    }
+
 }

@@ -32,7 +32,7 @@ final class IdleReminderMonitor: PollingMonitor {
     /// When the timer last transitioned to idle.
     private var idleSince: Date?
     /// Tracks whether forgotten-timer has fired this continuous run.
-    private var forgottenTimerFired = false
+    private var forgottenSession: RunningMonitorSession?
 
     private static let messages: [String] = [
         String(localized: "idle.msg1"),
@@ -98,14 +98,12 @@ final class IdleReminderMonitor: PollingMonitor {
     func check() async -> [MonitorAlert] {
         var alerts: [MonitorAlert] = []
 
-        // End-of-day summary — evaluated on each poll because the
-        // DedupLedger's `.perDay` strategy ensures it fires once. When the
-        // user is within the configured hoursEnd window, this returns an
-        // alert. When the visibility gate bumps pollInterval to 5 min, the
-        // hour-wide window still contains at least one poll.
-        if let eod = checkEndOfDay() {
+        // Gate before fetching, then build the summary from refreshed totals.
+        // Daily dedup remains independent of running-session reminders.
+        // The hour-wide window also accommodates the hidden panel's 5-min cadence.
+        if isEndOfDay() {
             await activityService.refreshTodayStats()
-            alerts.append(eod)
+            alerts.append(makeEndOfDaySummary())
         }
 
         // Forgotten timer (3h+)
@@ -118,7 +116,6 @@ final class IdleReminderMonitor: PollingMonitor {
         case .idle:
             if idleSince == nil {
                 idleSince = clock()
-                forgottenTimerFired = false
             }
         case .running, .paused:
             if idleSince != nil { idleSince = nil }
@@ -147,14 +144,15 @@ final class IdleReminderMonitor: PollingMonitor {
 
     func resetSession() {
         idleSince = nil
-        forgottenTimerFired = false
+        forgottenSession = nil
     }
 
     // MARK: - Private Checks
 
     private func checkForgottenTimer() -> MonitorAlert? {
         guard case .running(_, let projectName) = timerService.timerState else { return nil }
-        guard !forgottenTimerFired else { return nil }
+        guard let session = RunningMonitorSession(timerService: timerService),
+              session != forgottenSession else { return nil }
         guard let activity = timerService.currentActivity,
               let startedAt = activity.timerStartedAt,
               let start = DateUtilities.parseISO8601(startedAt) else { return nil }
@@ -162,26 +160,27 @@ final class IdleReminderMonitor: PollingMonitor {
         let hoursRunning = clock().timeIntervalSince(start) / 3600.0
         guard hoursRunning >= 3 else { return nil }
 
-        forgottenTimerFired = true
+        forgottenSession = session
         let hours = hoursRunning.formatted(.number.precision(.fractionLength(0)))
         return MonitorAlert(
             type: .forgottenTimer,
             message: String(localized: "forgotten.message \(hours) \(projectName)"),
-            dedupKey: "IdleReminder:forgotten",
+            dedupKey: "IdleReminder:forgotten:\(session.dedupKey)",
             dedupStrategy: .once
         )
     }
 
-    private func checkEndOfDay() -> MonitorAlert? {
+    private func isEndOfDay() -> Bool {
         let now = clock()
         let cal = Calendar.current
         let weekday = cal.component(.weekday, from: now)
         let hour = cal.component(.hour, from: now)
         let schedule = settings.schedule
 
-        guard schedule.workingDays.contains(weekday) else { return nil }
-        guard hour == schedule.hoursEnd else { return nil }
+        return schedule.workingDays.contains(weekday) && hour == schedule.hoursEnd
+    }
 
+    private func makeEndOfDaySummary() -> MonitorAlert {
         let hours = activityService.todayTotalHours
         let message: String
         if hours >= 8 {

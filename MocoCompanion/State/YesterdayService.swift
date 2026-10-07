@@ -29,15 +29,19 @@ final class YesterdayService: PollingMonitor {
     private let settings: SettingsStore
     private let clientFactory: () -> (any YesterdayAPI)?
     private let userIdProvider: () -> Int?
+    private let now: () -> Date
+    private var targetDate: String?
 
     init(
         settings: SettingsStore,
         clientFactory: @escaping () -> (any YesterdayAPI)?,
-        userIdProvider: @escaping () -> Int? = { nil }
+        userIdProvider: @escaping () -> Int? = { nil },
+        now: @escaping () -> Date = { .now }
     ) {
         self.settings = settings
         self.clientFactory = clientFactory
         self.userIdProvider = userIdProvider
+        self.now = now
     }
 
     var isActive: Bool { settings.isConfigured }
@@ -45,24 +49,37 @@ final class YesterdayService: PollingMonitor {
     // MARK: - API-based check (called by MonitorEngine)
 
     func check() async -> [MonitorAlert] {
-        guard let client = clientFactory() else { return [] }
-        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date.now) else { return [] }
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now()) else { return [] }
 
         let yesterdayStr = DateUtilities.dateString(yesterday)
+        if targetDate != yesterdayStr {
+            warning = nil
+            targetDate = yesterdayStr
+        }
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: yesterday)
 
         // Skip weekends
-        guard weekday >= 2 && weekday <= 6 else { return [] }
+        guard weekday >= 2 && weekday <= 6 else {
+            warning = nil
+            return []
+        }
+        guard let client = clientFactory() else { return [] }
 
         let patternIndex = weekday - 2 // Mon=0, Tue=1, ..., Fri=4
 
         do {
             let employments = try await client.fetchEmployments(from: yesterdayStr)
-            guard let employment = employments.first else { return [] }
+            guard let employment = employments.first else {
+                warning = nil
+                return []
+            }
 
             let expectedHours = employment.pattern.expectedHours(weekdayIndex: patternIndex)
-            guard expectedHours > 0 else { return [] }
+            guard expectedHours > 0 else {
+                warning = nil
+                return []
+            }
 
             // Check for absences — filter to current user
             let schedules = try await client.fetchSchedules(from: yesterdayStr, to: yesterdayStr)

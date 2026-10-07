@@ -253,8 +253,7 @@ struct MocoClient: MocoClientProtocol, Sendable {
         logger.debug("\(method) \(url)")
 
         // Rate gate: wait for capacity before sending
-        await rateGate?.waitForCapacity()
-        await rateGate?.recordRequest()
+        try await rateGate?.waitForCapacity()
 
         let startTime = CFAbsoluteTimeGetCurrent()
         let data: Data

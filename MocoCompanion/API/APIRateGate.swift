@@ -21,62 +21,68 @@ actor APIRateGate {
     /// If set, all requests are delayed until this date (from Retry-After header).
     private var retryAfterDate: Date?
 
-    init(limit: Int = 120, windowSeconds: TimeInterval = 120, safetyThreshold: Double = 0.85) {
+    private let now: @Sendable () -> Date
+    private let sleep: @Sendable (TimeInterval) async throws -> Void
+
+    init(
+        limit: Int = 120,
+        windowSeconds: TimeInterval = 120,
+        safetyThreshold: Double = 0.85,
+        now: @escaping @Sendable () -> Date = { .now },
+        sleep: @escaping @Sendable (TimeInterval) async throws -> Void = {
+            try await Task.sleep(for: .seconds($0))
+        }
+    ) {
+        self.now = now
+        self.sleep = sleep
         self.limit = limit
         self.windowSeconds = windowSeconds
         self.safetyThreshold = safetyThreshold
     }
 
-    /// Wait until it's safe to make a request. Returns immediately if under the threshold.
-    func waitForCapacity() async {
-        // Respect Retry-After if set
-        if let retryDate = retryAfterDate {
-            let delay = retryDate.timeIntervalSinceNow
-            if delay > 0 {
-                logger.info("Rate gate: waiting \(String(format: "%.1f", delay))s for Retry-After")
-                try? await Task.sleep(for: .seconds(delay))
+    /// Wait and reserve a request slot atomically. Every wake-up rechecks both
+    /// limits because other callers and Retry-After responses can run meanwhile.
+    func waitForCapacity() async throws {
+        while true {
+            try Task.checkCancellation()
+            let current = now()
+            pruneOldTimestamps(at: current)
+
+            if let retryDate = retryAfterDate, retryDate > current {
+                try await sleep(retryDate.timeIntervalSince(current))
+                continue
             }
             retryAfterDate = nil
-        }
 
-        pruneOldTimestamps()
-
-        let threshold = Int(Double(limit) * safetyThreshold)
-        if timestamps.count >= threshold {
-            // Calculate how long to wait until the oldest request exits the window
-            guard let oldest = timestamps.first else { return }
-            let waitUntil = oldest.addingTimeInterval(windowSeconds)
-            let delay = waitUntil.timeIntervalSinceNow
-            if delay > 0 {
-                let count = self.timestamps.count
-                let max = self.limit
-                logger.info("Rate gate: \(count)/\(max) requests in window, delaying \(String(format: "%.1f", delay))s")
-                try? await Task.sleep(for: .seconds(min(delay, 5))) // Cap at 5s to avoid long stalls
+            let threshold = max(1, Int(Double(limit) * safetyThreshold))
+            if timestamps.count >= threshold, let oldest = timestamps.first {
+                try await sleep(oldest.addingTimeInterval(windowSeconds).timeIntervalSince(current))
+                continue
             }
-        }
-    }
 
-    /// Record that a request was made.
-    func recordRequest() {
-        timestamps.append(Date.now)
+            // No suspension between the capacity check and reservation.
+            timestamps.append(current)
+            return
+        }
     }
 
     /// Record a Retry-After response from the server.
     func recordRetryAfter(seconds: Int?) {
         let delay = TimeInterval(seconds ?? 10) // Default 10s if no header
-        retryAfterDate = Date.now.addingTimeInterval(delay)
+        let deadline = now().addingTimeInterval(delay)
+        retryAfterDate = max(retryAfterDate ?? deadline, deadline)
         logger.warning("Rate gate: Retry-After set for \(delay)s")
     }
 
     /// Number of requests in the current window (for diagnostics).
     var currentWindowCount: Int {
-        pruneOldTimestamps()
+        pruneOldTimestamps(at: now())
         return timestamps.count
     }
 
     /// Remove timestamps outside the sliding window.
-    private func pruneOldTimestamps() {
-        let cutoff = Date.now.addingTimeInterval(-windowSeconds)
-        timestamps.removeAll { $0 < cutoff }
+    private func pruneOldTimestamps(at current: Date) {
+        let cutoff = current.addingTimeInterval(-windowSeconds)
+        timestamps.removeAll { $0 <= cutoff }
     }
 }

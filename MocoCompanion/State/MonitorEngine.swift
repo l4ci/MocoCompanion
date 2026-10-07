@@ -20,6 +20,30 @@ struct MonitorAlert: Sendable {
     }
 }
 
+/// Stable identity for one continuous run, including resumes and external replacements.
+/// Use the server activity ID rather than ShadowEntry.localId, which can change on refresh.
+struct RunningMonitorSession: Equatable {
+    let activityId: Int
+    let startedAt: String
+    let projectId: Int
+    let taskId: Int
+
+    @MainActor
+    init?(timerService: TimerService) {
+        guard case .running(let activityId, _) = timerService.timerState,
+              let activity = timerService.currentActivity,
+              let startedAt = activity.timerStartedAt else { return nil }
+        self.activityId = activityId
+        self.startedAt = startedAt
+        self.projectId = activity.projectId
+        self.taskId = activity.taskId
+    }
+
+    var dedupKey: String {
+        "\(activityId):\(startedAt):\(projectId):\(taskId)"
+    }
+}
+
 // MARK: - Polling Monitor Protocol
 
 /// A monitor that checks conditions on a polling interval and produces alerts.
@@ -131,6 +155,7 @@ final class MonitorEngine {
     private let scheduler: any MonitorScheduler
 
     private var dedupLedger = DedupLedger()
+    private var onceLedger = DedupLedger()
     /// Strong references so monitors aren't deallocated.
     private var monitors: [ObjectIdentifier: any PollingMonitor] = [:]
 
@@ -168,10 +193,11 @@ final class MonitorEngine {
         BreadcrumbTrail.shared.record("MonitorEngine", "\(monitor.monitorName): unregistered")
     }
 
-    /// Reset dedup state for a specific monitor (e.g., new tracking session).
+    /// Reset once-only alerts for a monitor, preserving daily and rate-limited dedup.
+    /// Running-session alerts use identity keys and do not require this call.
     func resetSession(for monitor: any PollingMonitor) {
         monitor.resetSession()
-        dedupLedger.clearPrefix(monitor.monitorName + ":")
+        onceLedger.clearPrefix(monitor.monitorName + ":")
     }
 
     /// Stop all monitors. Call from applicationWillTerminate.
@@ -187,9 +213,17 @@ final class MonitorEngine {
         guard monitor.isActive else { return }
         let alerts = await monitor.check()
         for alert in alerts {
-            if dedupLedger.shouldFire(alert) {
+            let shouldFire: Bool
+            switch alert.dedupStrategy {
+            case .once:
+                shouldFire = onceLedger.shouldFire(alert)
+                if shouldFire { onceLedger.markFired(alert) }
+            case .perDay, .rateLimited:
+                shouldFire = dedupLedger.shouldFire(alert)
+                if shouldFire { dedupLedger.markFired(alert) }
+            }
+            if shouldFire {
                 dispatcher.send(alert.type, message: alert.message)
-                dedupLedger.markFired(alert)
                 logger.info("\(monitor.monitorName): fired \(alert.dedupKey)")
                 BreadcrumbTrail.shared.record("MonitorEngine", "\(monitor.monitorName): fired \(alert.dedupKey)")
             }
