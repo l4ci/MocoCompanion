@@ -57,6 +57,7 @@ final class SettingsStore {
     private static let logger = Logger(category: "Settings")
     private static let keychainService = "com.mococompanion.api"
     private static let keychainAccount = "apiKey"
+    private let credentials: KeychainHelper.CredentialStore
 
     // MARK: - Keys
 
@@ -101,11 +102,16 @@ final class SettingsStore {
 
     // MARK: - Defaults Helper
 
+    /// Keep domain removal aligned with the store used for reads and writes.
+    private static let defaultsDomainName = ProcessInfo.processInfo.isRunningTests
+        ? "com.mococompanion.tests"
+        : Bundle.main.bundleIdentifier
+
     /// Backing store for preferences. Under XCTest this is a throwaway suite
     /// so the test host never reads or writes the user's real preferences.
     private static let defaults: UserDefaults = {
         guard ProcessInfo.processInfo.isRunningTests else { return .standard }
-        let suite = "com.mococompanion.tests"
+        let suite = defaultsDomainName!
         let d = UserDefaults(suiteName: suite)!
         d.removePersistentDomain(forName: suite)
         return d
@@ -146,7 +152,7 @@ final class SettingsStore {
     }
 
     var apiKey: String {
-        didSet { KeychainHelper.save(value: apiKey, service: Self.keychainService, account: Self.keychainAccount) }
+        didSet { credentials.save(apiKey) }
     }
 
     /// Whether both subdomain and API key are configured.
@@ -397,12 +403,14 @@ final class SettingsStore {
 
     // MARK: - Init
 
-    init() {
-        // One-time recovery: v0.5.0 moved items to the data protection keychain
-        // which fails on some Developer ID signing configs. Move them back.
-        KeychainHelper.recoverFromDataProtectionKeychain(service: Self.keychainService, account: Self.keychainAccount)
+    init(credentials: KeychainHelper.CredentialStore? = nil) {
+        let credentials = credentials ?? KeychainHelper.CredentialStore(
+            service: Self.keychainService, account: Self.keychainAccount, defaults: Self.defaults
+        )
+        self.credentials = credentials
+        credentials.recover()
 
-        let loadedKey = KeychainHelper.load(service: Self.keychainService, account: Self.keychainAccount) ?? ""
+        let loadedKey = credentials.load() ?? ""
         self.subdomain = Self.read(Key.subdomain, default: "")
         self.apiKey = loadedKey
         self.launchAtLogin = Self.read(Key.launchAtLogin, default: false)
@@ -466,23 +474,21 @@ final class SettingsStore {
 
     // MARK: - Reset
 
-    /// Nuke all persisted data: Keychain API key, all UserDefaults entries for this app.
-    /// After calling this, the app is in a fresh-install state.
+    /// Clear credentials and user preferences, retaining only credential-reset
+    /// markers so failed Keychain cleanup cannot restore the old account.
     func resetAllData() {
-        // 1. Delete API key from Keychain
-        KeychainHelper.save(value: "", service: Self.keychainService, account: Self.keychainAccount)
-        apiKey = ""
-
-        // 2. Clear subdomain
-        subdomain = ""
-
-        // 3. Remove the entire UserDefaults domain for this app
-        if let bundleId = Bundle.main.bundleIdentifier {
-            Self.defaults.removePersistentDomain(forName: bundleId)
+        // Clear preferences first so the credential reset markers written below
+        // survive this reset and continue protecting subsequent launches.
+        if let domainName = Self.defaultsDomainName {
+            Self.defaults.removePersistentDomain(forName: domainName)
             Self.defaults.synchronize()
         }
 
-        // 4. Reset in-memory properties to defaults
+        credentials.reset()
+        apiKey = ""
+        subdomain = ""
+
+        // Reset in-memory properties to defaults
         launchAtLogin = false
         soundEnabled = true
         appearance = "auto"
@@ -490,6 +496,8 @@ final class SettingsStore {
         autoCompleteEnabled = true
         defaultTab = .today
         entryFontSizeBoost = 0
+        panelPositionX = 0
+        panelPositionY = 0
         hasSavedPanelPosition = false
         panelResetSeconds = 60
         hasSeenFirstUseHint = false
@@ -506,12 +514,13 @@ final class SettingsStore {
         showKeyboardHints = true
         autotrackerEnabled = false
         autotrackerRetentionDays = 14
-        autotrackerExcludedApps = []
+        autotrackerExcludedApps = Self.defaultExcludedApps
         calendarEnabled = false
         rulesEnabled = false
         windowTitleTrackingEnabled = false
         selectedCalendarId = nil
         demoMode = false
+        breadcrumbsEnabled = false
 
         Self.logger.info("All app data has been reset")
     }
