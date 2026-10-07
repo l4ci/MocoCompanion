@@ -15,6 +15,7 @@ struct TodayView: View {
     @State private var refreshId: UUID?
 
     @FocusState private var listFocused: Bool
+    @Environment(\.panelDismissalScope) private var dismissalScope
     @Environment(\.theme) private var theme
     @Environment(\.entryFontSizeBoost) private var fontBoost
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -172,7 +173,7 @@ struct TodayView: View {
                 onStartEntry?(entry)
                 return .handled
             case .dismiss:
-                NSApp.keyWindow?.close()
+                dismissalScope?.makeDismissAction()()
                 return .handled
             case .startEdit(let desc, let hours):
                 descriptionDraft = desc
@@ -411,12 +412,12 @@ struct TodayView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
-                    ForEach(Array(vm.sortedActivities.enumerated()), id: \.element.id) { index, activity in
+                    ForEach(Array(vm.sortedActivities.enumerated()), id: \.element.uiIdentity) { index, activity in
                         TodayActivityRow(
                             activity: activity,
                             index: index,
                             isSelected: index == vm.selectedIndex,
-                            isHovered: vm.hoveredActivityId == activity.id,
+                            isHovered: activity.matchesServerSelection(vm.hoveredActivityId),
                             isRunning: !vm.isYesterday && activity.isTimerRunning,
                             isPaused: !vm.isYesterday && vm.isPausedActivity(activity),
                             shortcutIndex: vm.shortcutIndex(for: index),
@@ -439,12 +440,12 @@ struct TodayView: View {
                             onAction: {
                                 let result = vm.performEntryAction()
                                 if PanelDismissPolicy.shouldDismiss(after: result) {
-                                    NSApp.keyWindow?.close()
+                                    dismissalScope?.makeDismissAction()()
                                 }
                             },
                             onFocusList: { listFocused = true }
                         )
-                        .id(activity.id)
+                        .id(activity.uiIdentity)
                     }
                 }
                 .padding(.vertical, 4)
@@ -452,7 +453,7 @@ struct TodayView: View {
             }
             .frame(maxHeight: 500)
             .id(vm.selectedDay)
-            .onChange(of: vm.selectedActivityId) { _, newId in
+            .onChange(of: vm.selectedActivityKey) { _, newId in
                 if let newId {
                     animateAccessibly(reduceMotion, .easeOut(duration: Theme.Motion.fast)) {
                         proxy.scrollTo(newId, anchor: .center)

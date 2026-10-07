@@ -49,10 +49,7 @@ final class QuickEntryStateMachine {
 
     var searchText = "" {
         didSet {
-            _cachedDisplayItems = nil
-            _cachedSearchResults = nil
             hoveredIndex = nil
-            scheduleSearchDebounce()
             // Editing the search field while an entry is selected cancels the
             // selection and returns to the search list.
             if phase.isDescribing && searchText != oldValue {
@@ -75,13 +72,7 @@ final class QuickEntryStateMachine {
     var isManualMode = false
     var manualHours = ""
 
-    /// Debounced search flag — views read displayItems which check this.
-    private var searchReady = true
-    private var debounceTask: Task<Void, Never>?
-
-    /// Cached display items — invalidated on searchText change.
-    @ObservationIgnored private var _cachedDisplayItems: [(entry: SearchEntry, section: ResultSection, description: String?)]?
-    @ObservationIgnored private var _cachedSearchResults: [FuzzyMatcher.Match]?
+    private var submissionGeneration = 0
 
     // MARK: - Dependencies
 
@@ -129,17 +120,11 @@ final class QuickEntryStateMachine {
     }
 
     var displayItems: [(entry: SearchEntry, section: ResultSection, description: String?)] {
-        if let cached = _cachedDisplayItems { return cached }
-        let result = computeDisplayItems()
-        _cachedDisplayItems = result
-        return result
+        computeDisplayItems()
     }
 
     var searchResults: [FuzzyMatcher.Match] {
-        if let cached = _cachedSearchResults { return cached }
-        let result = displayItems.map { FuzzyMatcher.Match(entry: $0.entry, score: 0, matchedIndices: []) }
-        _cachedSearchResults = result
-        return result
+        displayItems.map { FuzzyMatcher.Match(entry: $0.entry, score: 0, matchedIndices: []) }
     }
 
     private func computeDisplayItems() -> [(entry: SearchEntry, section: ResultSection, description: String?)] {
@@ -163,25 +148,10 @@ final class QuickEntryStateMachine {
         }
     }
 
-    private func scheduleSearchDebounce() {
-        debounceTask?.cancel()
-        // For empty or short queries, no debounce needed
-        guard searchText.trimmingCharacters(in: .whitespaces).count >= 2 else {
-            _cachedDisplayItems = nil
-            _cachedSearchResults = nil
-            return
-        }
-        debounceTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(120))
-            guard !Task.isCancelled else { return }
-            _cachedDisplayItems = nil
-            _cachedSearchResults = nil
-        }
-    }
-
     // MARK: - Actions
 
     func reset() {
+        invalidateSubmission()
         searchText = ""
         descriptionText = ""
         selectedIndex = hasActiveTimer ? -1 : 0
@@ -191,9 +161,6 @@ final class QuickEntryStateMachine {
         autocompleteSuggestion = nil
         isManualMode = false
         manualHours = ""
-        _cachedDisplayItems = nil
-        _cachedSearchResults = nil
-        debounceTask?.cancel()
     }
 
     func selectCurrentResult() -> SearchEntry? {
@@ -260,10 +227,11 @@ final class QuickEntryStateMachine {
     // MARK: - Submit
 
     /// Result of a submit operation. View uses this to decide animations and panel close.
-    enum SubmitResult {
+    enum SubmitResult: Equatable {
         case success(displayName: String)
         case validationError
         case apiError
+        case ignored
     }
 
     /// Handle empty-search submit: pause/resume timer or select current result.
@@ -276,45 +244,48 @@ final class QuickEntryStateMachine {
         return false
     }
 
+    /// Invalidates UI completion without attempting to undo an already dispatched command.
+    func invalidateSubmission() {
+        submissionGeneration &+= 1
+        isSubmitting = false
+    }
+
     /// Submit a description — either start a timer or book manual hours.
     func submitDescription() async -> SubmitResult {
+        guard !isSubmitting else { return .ignored }
         guard let entry = selectedEntry else { return .apiError }
-
+        let hours: Double?
         if isManualMode {
-            guard let hours = DateUtilities.parseHours(manualHours), hours > 0, hours <= 24 else {
+            guard let parsed = DateUtilities.parseHours(manualHours), parsed > 0, parsed <= 24 else {
                 commands.reportValidationError(String(localized: "validation.hours"))
                 return .validationError
             }
-
-            isSubmitting = true
-            let result = await commands.bookManual(entry: entry, hours: hours, description: descriptionText)
-            isSubmitting = false
-
-            switch result {
-            case .failure(let commandError):
-                if case .apiFailure(let mocoError) = commandError {
-                    phase = .error(message: mocoError.errorDescription ?? "Unknown error")
-                }
-                return .apiError
-            case .success(let displayName):
-                phase = .success(projectName: displayName)
-                return .success(displayName: displayName)
-            }
+            hours = parsed
         } else {
-            isSubmitting = true
-            let result = await commands.startTimer(entry: entry, description: descriptionText)
-            isSubmitting = false
+            hours = nil
+        }
 
-            switch result {
-            case .failure(let commandError):
-                if case .apiFailure(let mocoError) = commandError {
-                    phase = .error(message: mocoError.errorDescription ?? "Unknown error")
-                }
-                return .apiError
-            case .success(let displayName):
-                phase = .success(projectName: displayName)
-                return .success(displayName: displayName)
+        let generation = submissionGeneration
+        isSubmitting = true
+        let result: Result<String, QuickEntryCommandError>
+        if let hours {
+            result = await commands.bookManual(entry: entry, hours: hours, description: descriptionText)
+        } else {
+            result = await commands.startTimer(entry: entry, description: descriptionText)
+        }
+        guard generation == submissionGeneration else { return .ignored }
+        isSubmitting = false
+        guard !Task.isCancelled else { return .ignored }
+
+        switch result {
+        case .failure(let commandError):
+            if case .apiFailure(let mocoError) = commandError {
+                phase = .error(message: mocoError.errorDescription ?? "Unknown error")
             }
+            return .apiError
+        case .success(let displayName):
+            phase = .success(projectName: displayName)
+            return .success(displayName: displayName)
         }
     }
 }

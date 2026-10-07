@@ -13,8 +13,8 @@ struct StatusActivityRow: View {
     var activityService: ActivityService
 
     private var isRunning: Bool { activity.isTimerRunning }
-    private var isEditing: Bool { editingActivityId == activity.id }
-    private var isHovered: Bool { hoveredActivityId == activity.id }
+    private var isEditing: Bool { activity.matchesServerSelection(editingActivityId) }
+    private var isHovered: Bool { activity.matchesServerSelection(hoveredActivityId) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

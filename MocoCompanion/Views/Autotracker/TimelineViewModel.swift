@@ -79,7 +79,25 @@ import os
 
     // MARK: - Published State
 
-    var selectedDate: Date = Calendar.current.startOfDay(for: Date.now)
+    var selectedDate: Date = Calendar.current.startOfDay(for: Date.now) {
+        didSet {
+            if selectedDate != oldValue {
+                loadGeneration &+= 1
+                isLoading = false
+                suggestions = []
+            }
+        }
+    }
+    @ObservationIgnored private var loadGeneration = 0
+
+    struct Snapshot: Sendable {
+        var entries: [ShadowEntry]
+        var records: [AppRecord]
+        var events: [CalendarEvent]
+    }
+
+    @ObservationIgnored private let snapshotLoader: (@MainActor (Date) async -> Snapshot)?
+    @ObservationIgnored private let suggestionEvaluator: (@MainActor (Date, Snapshot) async -> [Suggestion])?
     private(set) var shadowEntries: [ShadowEntry] = []
     private(set) var appRecords: [AppRecord] = []
     /* internal for test */ var appUsageBlocks: [AppUsageBlock] = []
@@ -201,7 +219,9 @@ import os
 
     // MARK: - Init
 
-    init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState, workdayStartHour: Int = 8, workdayEndHour: Int = 17) {
+    init(shadowEntryStore: ShadowEntryStore, autotracker: Autotracker, syncState: SyncState, workdayStartHour: Int = 8, workdayEndHour: Int = 17, snapshotLoader: (@MainActor (Date) async -> Snapshot)? = nil, suggestionEvaluator: (@MainActor (Date, Snapshot) async -> [Suggestion])? = nil) {
+        self.suggestionEvaluator = suggestionEvaluator
+        self.snapshotLoader = snapshotLoader
         self.shadowEntryStore = shadowEntryStore
         self.autotracker = autotracker
         self.syncState = syncState
@@ -212,38 +232,51 @@ import os
     // MARK: - Data Loading
 
     func loadData() async {
+        loadGeneration &+= 1
+        let generation = loadGeneration
+        let date = selectedDate
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            if generation == loadGeneration { isLoading = false }
+        }
 
-        let dateString = TimelineGeometry.dateString(from: selectedDate)
+        let snapshot: Snapshot
+        if let snapshotLoader {
+            snapshot = await snapshotLoader(date)
+        } else {
+            snapshot = await fetchSnapshot(for: date)
+        }
+        guard !Task.isCancelled, generation == loadGeneration, selectedDate == date else { return }
 
-        // Shadow entries, app records, and calendar events come from
-        // independent actors (ShadowEntryStore, Autotracker/AppRecordStore,
-        // CalendarService) — fetch them concurrently instead of awaiting
-        // each in turn. Each source keeps its own error handling so a
-        // failure in one doesn't drop the results of the others.
-        async let entriesResult = fetchShadowEntries(dateString: dateString)
-        async let records = autotracker.records(for: selectedDate)
-        async let events = fetchCalendarEvents()
-
-        let (filtered, positioned, unpositioned) = await entriesResult
-        shadowEntries = filtered
-        positionedEntries = positioned
-        unpositionedEntries = unpositioned
-
-        let fetchedRecords = await records
-        appRecords = fetchedRecords
-        appUsageBlocks = AppUsageBlock.merge(fetchedRecords)
-        timeSlots = TimeSlot.aggregate(fetchedRecords)
-
-        calendarEvents = await events
+        // Publish a coherent snapshot without suspending between its components.
+        shadowEntries = snapshot.entries
+        positionedEntries = snapshot.entries.filter { $0.startTime != nil }
+        unpositionedEntries = snapshot.entries.filter { $0.startTime == nil }
+        appRecords = snapshot.records
+        appUsageBlocks = AppUsageBlock.merge(snapshot.records)
+        timeSlots = TimeSlot.aggregate(snapshot.records)
+        calendarEvents = snapshot.events
         recomputeCalendarLayouts()
 
-        Self.logger.info("Loaded \(self.shadowEntries.count) entries, \(self.timeSlots.count) time slots, \(self.calendarEvents.count) calendar events for \(dateString)")
+        let isTimerRunning = snapshot.entries.contains { $0.timerStartedAt != nil }
+        let evaluated: [Suggestion]
+        if let suggestionEvaluator {
+            evaluated = await suggestionEvaluator(date, snapshot)
+        } else {
+            evaluated = await autotracker.evaluate(for: date, existingEntries: snapshot.entries,
+                                                   events: snapshot.events, timerRunning: isTimerRunning)
+        }
+        guard !Task.isCancelled, generation == loadGeneration, selectedDate == date else { return }
+        suggestions = evaluated
+    }
 
-        // Evaluate rules against loaded data
-        let isTimerRunning = shadowEntries.contains { $0.timerStartedAt != nil }
-        await autotracker.evaluate(for: selectedDate, existingEntries: shadowEntries, timerRunning: isTimerRunning)
+    private func fetchSnapshot(for date: Date) async -> Snapshot {
+        let dateString = TimelineGeometry.dateString(from: date)
+        async let entries = fetchShadowEntries(dateString: dateString)
+        async let records = autotracker.records(for: date)
+        async let events = fetchCalendarEvents(for: date)
+        let (fetchedEntries, fetchedRecords, fetchedEvents) = await (entries, records, events)
+        return Snapshot(entries: fetchedEntries.all, records: fetchedRecords, events: fetchedEvents)
     }
 
     /// Fetches and filters shadow entries for `dateString`. Split out of
@@ -264,16 +297,16 @@ import os
     /// Fetches calendar events for the selected date, only when the
     /// feature is enabled and a calendar is picked. `requestAccessIfNeeded`
     /// is idempotent and cheap when access is already established.
-    private func fetchCalendarEvents() async -> [CalendarEvent] {
+    private func fetchCalendarEvents(for date: Date) async -> [CalendarEvent] {
         guard settings?.calendarEnabled == true, let svc = calendarService else { return [] }
         _ = await svc.requestAccessIfNeeded()
         guard svc.hasReadAccess, let calId = settings?.selectedCalendarId else { return [] }
-        return svc.fetchEvents(for: selectedDate, selectedCalendarId: calId)
+        return svc.fetchEvents(for: date, selectedCalendarId: calId)
     }
 
     // MARK: - Autotracker Passthrough
 
-    var suggestions: [Suggestion] { autotracker.suggestions }
+    private(set) var suggestions: [Suggestion] = []
 
     func approveSuggestion(_ suggestion: Suggestion) async {
         await autotracker.approveSuggestion(suggestion)
@@ -282,10 +315,14 @@ import os
 
     func declineSuggestion(_ suggestion: Suggestion) {
         autotracker.declineSuggestion(suggestion)
+        suggestions.removeAll { $0.id == suggestion.id }
     }
 
     func approveAllSuggestions() async {
-        await autotracker.approveAllSuggestions()
+        let pending = suggestions
+        for suggestion in pending {
+            await autotracker.approveSuggestion(suggestion)
+        }
         await loadData()
     }
 
