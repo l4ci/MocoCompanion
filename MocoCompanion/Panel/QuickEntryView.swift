@@ -137,6 +137,19 @@ struct QuickEntryView: View {
             }
         }
         .disabled(sm.isSubmitting)
+        .onChange(of: sm.isSubmitting) { _, submitting in
+            // Disabling the view drops the focused field. After a failed submit
+            // that returns to .describing, give focus back or Enter/Escape are lost.
+            guard !submitting else { return }
+            Task { @MainActor in
+                // Wait until the view is enabled again, then re-check the phase:
+                // Escape may have moved on to the search list in the meantime.
+                try? await Task.sleep(for: .milliseconds(50))
+                if sm.phase.isDescribing {
+                    focusedField = sm.isManualMode ? .hours : .description
+                }
+            }
+        }
         .accessibleAnimation(reduceMotion, value: sm.phase.animationKey)
         .onDisappear {
             cancelSubmission()
