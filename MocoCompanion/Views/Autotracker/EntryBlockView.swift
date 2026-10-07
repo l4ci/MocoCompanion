@@ -268,14 +268,19 @@ struct EntryBlockView: View {
         }
         .help(tooltipLabel)
         .gesture(entry.isReadOnly || isRunning ? nil : dragMoveGesture)
-        .onTapGesture(count: 1) {
-            onSelect?()
-        }
-        .onTapGesture(count: 2) {
-            if !entry.isReadOnly {
-                onEdit?(entry)
+        // No single-click handler: hover already selects, and a click
+        // toggle deselected the hovered entry. The double-tap is high
+        // priority so a few points of jitter between the two clicks does
+        // not hand the sequence to the drag gesture as a zero-length move;
+        // a real drag still wins because a tap fails as soon as the mouse
+        // travels.
+        .highPriorityGesture(
+            TapGesture(count: 2).onEnded {
+                if !entry.isReadOnly {
+                    onEdit?(entry)
+                }
             }
-        }
+        )
         .contextMenu {
             if !entry.isReadOnly {
                 Button("Edit entry…") {
