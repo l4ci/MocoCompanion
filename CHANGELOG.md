@@ -2,6 +2,12 @@
 
 All notable changes to MocoCompanion are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) loosely; versions follow semver.
 
+## Unreleased
+
+### New
+
+- **Editable time range when creating or editing a timeline entry.** The sheet now has start, end and duration fields that stay in sync: changing start keeps the duration, changing end recomputes it, changing duration moves the end. Changes apply on Return or when the field loses focus; invalid input reverts. The create and edit sheets share the same controls.
+
 ## v0.7.0 — 2026-08-19
 
 Audit pass: security, performance, concurrency and test-hygiene reviews, with fixes. Day-to-day use is unchanged apart from the additions below.

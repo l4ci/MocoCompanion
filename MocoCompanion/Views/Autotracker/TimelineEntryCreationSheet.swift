@@ -6,24 +6,51 @@ import os
 /// description, then submits to create a ShadowEntry.
 struct TimelineEntryCreationSheet: View {
     let date: String          // YYYY-MM-DD
-    let startTime: String     // HH:mm
-    let durationMinutes: Int
     let suggestedDescription: String
     let projectCatalog: ProjectCatalog
     var favorites: [SearchEntry] = []
     var descriptionRequired: Bool = false
 
-    /// (projectId, taskId, projectName, taskName, customerName, description)
-    let onSubmit: (Int, Int, String, String, String, String) -> Void
+    /// (projectId, taskId, projectName, taskName, customerName, description,
+    /// startTime "HH:mm", durationMinutes) — time reflects the user's edits.
+    let onSubmit: (Int, Int, String, String, String, String, String, Int) -> Void
     let onCancel: () -> Void
 
     @Environment(\.theme) private var theme
+    @State private var startMinutes: Int
+    @State private var durationMinutes: Int
     @State private var searchText = ""
     @State private var selectedEntry: SearchEntry?
     @State private var descriptionText: String = ""
     @State private var errorMessage: String?
     @State private var hasInteracted: Bool = false
     @FocusState private var isSearchFocused: Bool
+
+    init(
+        date: String,
+        startTime: String,
+        durationMinutes: Int,
+        suggestedDescription: String,
+        projectCatalog: ProjectCatalog,
+        favorites: [SearchEntry] = [],
+        descriptionRequired: Bool = false,
+        onSubmit: @escaping (Int, Int, String, String, String, String, String, Int) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.date = date
+        self.suggestedDescription = suggestedDescription
+        self.projectCatalog = projectCatalog
+        self.favorites = favorites
+        self.descriptionRequired = descriptionRequired
+        self.onSubmit = onSubmit
+        self.onCancel = onCancel
+        let model = TimeRangeModel(
+            start: TimelineGeometry.minutesSinceMidnight(from: startTime) ?? 0,
+            duration: durationMinutes
+        )
+        _startMinutes = State(initialValue: model.start)
+        _durationMinutes = State(initialValue: model.duration)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -58,15 +85,7 @@ struct TimelineEntryCreationSheet: View {
                 .font(.system(size: Theme.FontSize.callout, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
 
-            HStack(spacing: 6) {
-                Text("\(startTime) – \(endTime)")
-                    .font(.system(size: Theme.FontSize.body, design: .monospaced))
-                    .foregroundStyle(theme.textSecondary)
-
-                Text("(\(durationMinutes) min)")
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundStyle(theme.textTertiary)
-            }
+            TimeRangeEditor(startMinutes: $startMinutes, durationMinutes: $durationMinutes)
         }
     }
 
@@ -147,20 +166,18 @@ struct TimelineEntryCreationSheet: View {
                     entry.projectName,
                     entry.taskName,
                     entry.customerName,
-                    descriptionText
+                    descriptionText,
+                    TimeRangeModel.format(startMinutes),
+                    durationMinutes
                 )
             }
             .keyboardShortcut(.defaultAction)
-            .disabled(selectedEntry == nil || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(selectedEntry == nil || durationMinutes <= 0
+                      || descriptionText.trimmingCharacters(in: .whitespaces).isEmpty)
         }
     }
 
     // MARK: - Computed
-
-    private var endTime: String {
-        let endMinutes = (TimelineGeometry.minutesSinceMidnight(from: startTime) ?? 0) + durationMinutes
-        return TimelineGeometry.timeString(fromMinutes: endMinutes)
-    }
 
     private static let headerDateFormatter: DateFormatter = {
         let fmt = DateFormatter()
@@ -231,9 +248,9 @@ struct TimelineEntryEditSheet: View {
     @Environment(\.theme) private var theme
 
     @State private var editedDate: Date
-    @State private var startHour: Int
-    @State private var startMinute: Int
-    // (hasStartTime toggle removed — start time is always required in the edit sheet)
+    /// Minutes since midnight. Entries without a start time open at 09:00;
+    /// start time is always required in the edit sheet.
+    @State private var startMinutes: Int
     @State private var showDeleteConfirmation: Bool = false
     @State private var durationMinutes: Int
     @State private var descriptionText: String
@@ -269,16 +286,10 @@ struct TimelineEntryEditSheet: View {
         let parsedDate = Self.parseDate(entry.date) ?? fallbackDate
         _editedDate = State(initialValue: parsedDate)
 
-        if let timeStr = entry.startTime,
-           let total = TimelineGeometry.minutesSinceMidnight(from: timeStr) {
-            _startHour = State(initialValue: total / 60)
-            _startMinute = State(initialValue: total % 60)
-        } else {
-            _startHour = State(initialValue: 9)
-            _startMinute = State(initialValue: 0)
-        }
-
-        _durationMinutes = State(initialValue: max(entry.seconds / 60, 1))
+        let initialStart = entry.startTime.flatMap { TimelineGeometry.minutesSinceMidnight(from: $0) } ?? 9 * 60
+        let range = TimeRangeModel(start: initialStart, duration: entry.seconds / 60)
+        _startMinutes = State(initialValue: range.start)
+        _durationMinutes = State(initialValue: range.duration)
         _descriptionText = State(initialValue: entry.description)
     }
 
@@ -380,41 +391,7 @@ struct TimelineEntryEditSheet: View {
                         .datePickerStyle(.compact)
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Start")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                    HStack(spacing: 2) {
-                        TextField("", value: $startHour, format: .number)
-                            .frame(width: 44)
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(.roundedBorder)
-                        Text(":")
-                            .foregroundStyle(theme.textTertiary)
-                        TextField("", value: $startMinute, format: .number)
-                            .frame(width: 44)
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                    .font(.system(size: Theme.FontSize.callout, design: .monospaced))
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Duration")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundStyle(theme.textTertiary)
-                    HStack(spacing: 4) {
-                        TextField("", value: $durationMinutes, format: .number)
-                            .frame(width: 60)
-                            .multilineTextAlignment(.trailing)
-                            .textFieldStyle(.roundedBorder)
-                        Text("min")
-                            .font(.system(size: Theme.FontSize.caption))
-                            .foregroundStyle(theme.textTertiary)
-                    }
-                }
-
-                Spacer(minLength: 0)
+                TimeRangeEditor(startMinutes: $startMinutes, durationMinutes: $durationMinutes)
             }
         }
     }
@@ -568,11 +545,7 @@ struct TimelineEntryEditSheet: View {
             Button("Save") {
                 guard let selected = selectedEntry else { return }
                 let dateStr = TimelineGeometry.dateString(from: editedDate)
-                let startTimeStr: String? = String(
-                    format: "%02d:%02d",
-                    max(0, min(23, startHour)),
-                    max(0, min(59, startMinute))
-                )
+                let startTimeStr: String? = TimeRangeModel.format(startMinutes)
                 onSave(EditedEntryFields(
                     projectId: selected.projectId,
                     taskId: selected.taskId,

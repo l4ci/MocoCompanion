@@ -190,12 +190,12 @@ struct TimelinePaneView: View {
                 projectCatalog: projectCatalog,
                 favorites: favoriteSearchEntries,
                 descriptionRequired: descriptionRequired,
-                onSubmit: { projectId, taskId, projectName, taskName, customerName, description in
+                onSubmit: { projectId, taskId, projectName, taskName, customerName, description, startTime, durationMinutes in
                     Task {
                         await viewModel.createEntry(
                             date: dateStr,
-                            startTime: startTimeStr,
-                            durationSeconds: creation.durationMinutes * 60,
+                            startTime: startTime,
+                            durationSeconds: durationMinutes * 60,
                             projectId: projectId,
                             taskId: taskId,
                             projectName: projectName,
