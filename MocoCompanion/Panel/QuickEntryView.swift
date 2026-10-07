@@ -58,6 +58,8 @@ struct QuickEntryView: View {
                     focusedField = .search
                 }
             } else {
+                // Fuzzy search runs on every read; evaluate it once per render.
+                let items = sm.displayItems
                 SearchFieldView(
                     searchText: $sm.searchText,
                     selectedIndex: $sm.selectedIndex,
@@ -65,7 +67,7 @@ struct QuickEntryView: View {
                     isSearchEmpty: sm.isSearchEmpty,
                     hasActiveTimer: sm.hasActiveTimer,
                     hasMinSearchChars: sm.hasMinSearchChars,
-                    displayItemCount: sm.displayItems.count,
+                    displayItemCount: items.count,
                     avatarImage: appState.session.cachedAvatarImage,
                     userFirstname: appState.session.currentUserProfile?.firstname,
                     showKeyboardHints: appState.settings.showKeyboardHints,
@@ -97,9 +99,9 @@ struct QuickEntryView: View {
                             Task { await appState.fetchProjects() }
                         }
                     )
-                } else if sm.phase.isSearching && !sm.searchResults.isEmpty {
+                } else if sm.phase.isSearching && !items.isEmpty {
                     SearchResultsListView(
-                        items: sm.displayItems,
+                        items: items,
                         selectedIndex: $sm.selectedIndex,
                         hoveredIndex: $sm.hoveredIndex,
                         favoritesManager: favoritesManager,
@@ -109,7 +111,7 @@ struct QuickEntryView: View {
                     )
                 }
 
-                if sm.phase.isSearching && sm.searchResults.isEmpty && sm.hasMinSearchChars && !appState.catalog.projects.isEmpty {
+                if sm.phase.isSearching && items.isEmpty && sm.hasMinSearchChars && !appState.catalog.projects.isEmpty {
                     QuickEntryNoResultsView()
                 }
 
