@@ -16,17 +16,19 @@ struct ProjectPickerRow: View {
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundStyle(theme.textTertiary)
                     .lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(entry.projectName)
-                        .font(.system(size: Theme.FontSize.callout, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
+                Text(entry.projectName)
+                    .font(.system(size: Theme.FontSize.callout, weight: .medium))
+                    .foregroundStyle(theme.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\u{203A}")
                         .foregroundStyle(theme.textTertiary)
                     Text(entry.taskName)
                         .font(.system(size: Theme.FontSize.callout))
                         .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: 0)
@@ -44,6 +46,7 @@ struct ProjectPickerRow: View {
             in: RoundedRectangle(cornerRadius: Theme.Radius.small, style: .continuous)
         )
         .contentShape(Rectangle())
+        .help("\(entry.projectName) \u{203A} \(entry.taskName)")
         .onTapGesture { onTap() }
     }
 }
