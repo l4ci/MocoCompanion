@@ -32,11 +32,14 @@ actor ShadowEntryStore {
                 try database.createTable(sql: Self.createTableSQL)
                 let oldColumns = try database.query("PRAGMA table_info(shadow_entries_legacy)").compactMap { $0["name"] as? String }
                 let selections = oldColumns.map { column -> String in
+                    // Keep both CASE predicates identical: a row losing its id
+                    // must become pending_create, or it is an invisible ghost.
+                    let isLegacyDraft = "(sync_status = 'pending_create' OR (local_id IS NOT NULL AND sync_status = 'dirty'))"
                     if column == "id" {
-                        return "CASE WHEN sync_status = 'pending_create' OR local_id IS NOT NULL THEN NULL ELSE id END"
+                        return "CASE WHEN \(isLegacyDraft) THEN NULL ELSE id END"
                     }
                     if column == "sync_status" {
-                        return "CASE WHEN local_id IS NOT NULL AND sync_status = 'dirty' THEN 'pending_create' ELSE sync_status END"
+                        return "CASE WHEN \(isLegacyDraft) THEN 'pending_create' ELSE sync_status END"
                     }
                     return column
                 }

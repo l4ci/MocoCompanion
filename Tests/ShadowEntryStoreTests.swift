@@ -335,7 +335,12 @@ extension ShadowEntryStoreTests {
         try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (100, \(placeholders))", params: values)
         try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (101, \(placeholders))", params: values)
         try db.execute("UPDATE shadow_entries SET local_id = 'legacy', sync_status = 'pending_create', start_time = '10:30' WHERE id = 101")
+        // A synced row that merely carries a local_id keeps its server id.
+        try db.execute("INSERT INTO shadow_entries (id, \(names.joined(separator: ","))) VALUES (102, \(placeholders))", params: values)
+        try db.execute("UPDATE shadow_entries SET local_id = 'synced-legacy', sync_status = 'synced' WHERE id = 102")
         let migrated = try ShadowEntryStore(database: db)
+        #expect(try await migrated.entry(id: 102)?.localId == "synced-legacy")
+        #expect(try await migrated.entry(id: 102)?.sync.status == .synced)
         #expect(try await migrated.entry(localId: "legacy")?.id == nil)
         #expect(try await migrated.entry(localId: "legacy")?.startTime == "10:30")
         #expect(try await migrated.entry(id: 100) != nil)
